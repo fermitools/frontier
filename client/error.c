@@ -26,9 +26,10 @@ static const char *ferror[]=
   "no such RS",					/*-11*/
   "Frontier API is not initialized",		/*-12*/
   "MD5 digest mismatch",			/*-13*/
+  "Payload error signalled from server",	/*-14*/
   0
  };
-static int ferror_last=13;
+static int ferror_last=14;
 
 
 static const char *cerror[]=

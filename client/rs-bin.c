@@ -115,12 +115,16 @@ FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec)
   rs->size=fp->blob_size;
   rs->pos=0;
   rs->nrec=fp->nrec;
+  
+  rs->payload_error=fp->error_code;
+  rs->payload_msg=fp->error_msg;
 
   *ec=FRONTIER_OK;
   return rs;
  }
 
-
+ 
+ 
 void frontierRSBlob_close(FrontierRSBlob *rs,int *ec)
  {
   *ec=FRONTIER_OK;

@@ -30,6 +30,8 @@ struct s_FrontierPayload
  {
   int id;
   int encoding;
+  int error_code;
+  char *error_msg;
   char *blob;
   int blob_size;
   unsigned int nrec;

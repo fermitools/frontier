@@ -42,6 +42,9 @@ FrontierPayload *frontierPayload_create()
   bzero(pl->md5_str,36);
   bzero(pl->srv_md5_str,36);
   
+  pl->error_code=0;
+  pl->error_msg=(void*)0;
+  
   return pl;
  }
 
@@ -51,6 +54,8 @@ void frontierPayload_delete(FrontierPayload *pl)
   if(!pl) return;
 
   if(pl->blob) frontier_mem_free(pl->blob);
+  
+  if(pl->error_msg) frontier_mem_free(pl->error_msg);
 
   frontierMemData_delete(pl->md);
   frontier_mem_free(pl);
@@ -68,6 +73,8 @@ int frontierPayload_finalize(FrontierPayload *fp)
  {
   char *md5_ctx;
   int i;
+  
+  if(fp->error_code!=FRONTIER_OK) return FRONTIER_EPAYLOAD;
   
   fp->blob=(char*)frontier_mem_alloc(fp->md->len);
   fp->blob_size=base64_ascii2bin(fp->md->buf,fp->md->len,fp->blob,fp->md->len);

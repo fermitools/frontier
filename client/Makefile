@@ -24,7 +24,7 @@ INC		=	-Iexpat/lib -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
 
-HDR	=	frontier.h
+HDR	=	frontier.h fn-internal.h
 
 all: libcurl libfrontier.a distrib
 

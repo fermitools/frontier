@@ -28,6 +28,7 @@
 #define FRONTIER_ENORS		-11	/*no such RS*/
 #define FRONTIER_ENOTINIT	-12	/*frontier was not initialized*/
 #define FRONTIER_EMD5		-13	/*MD5 digest mismatch*/
+#define FRONTIER_EPAYLOAD	-14	/*payload error*/
 
 #define FRONTIER_EEND		-100	/*error values less than (-100) are libcurl errors*/
 
@@ -53,6 +54,8 @@ typedef struct s_FrontierRespStat FrontierRespStat;
 
 struct s_FrontierRSBlob
  {
+  int payload_error;
+  const char *payload_msg;
   const char *buf;
   unsigned int size;
   unsigned int pos;

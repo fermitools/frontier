@@ -56,6 +56,8 @@ int main(int argc, char **argv)
     print_time("start:  ");
     ds.getData(vrq);
     print_time("finish: ");
+    
+    std::cout<<"URL <"<<ds.getUrl()<<">\n";
 
     for(int i=1;i<=vrq.size();i++)
      {

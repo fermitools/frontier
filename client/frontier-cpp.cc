@@ -134,8 +134,23 @@ void DataSource::setCurrentLoad(int n)
   FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
   if(ec!=FRONTIER_OK) LOGIC_ERROR_NR(this,"Can not set current load",ec);
   internal_data=rsb;
+  if(getCurrentLoadError()!=FRONTIER_OK) LOGIC_ERROR_NR(this,getCurrentLoadErrorMessage(),FRONTIER_EPAYLOAD);
  }
 
+ 
+int DataSource::getCurrentLoadError() const
+ {
+  FrontierRSBlob *rsb=(FrontierRSBlob*)internal_data;
+  return rsb->payload_error;
+ }
+ 
+
+const char* DataSource::getCurrentLoadErrorMessage() const
+ {
+  FrontierRSBlob *rsb=(FrontierRSBlob*)internal_data;
+  return rsb->payload_msg; 
+ }
+ 
 
 unsigned int DataSource::getRecNum()
  {

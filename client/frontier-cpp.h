@@ -116,7 +116,10 @@ class DataSource
               const std::string& proxy_url);
    void setReload(int reload);
    void getData(const std::vector<const Request*>& v_req);
+   const std::string getUrl() const {return *(url);}
    void setCurrentLoad(int n);
+   int getCurrentLoadError() const;
+   const char* getCurrentLoadErrorMessage() const;
    unsigned int getRecNum();
    int getInt();
    long getLong();
