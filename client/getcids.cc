@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     
     for(int i=0;i<nrec;i++)
      {
-      long cid=ds.getLong();
+      long cid=ds.getLongLong();
       std::cout<<cid<<'\n';
      }
    }

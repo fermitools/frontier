@@ -41,11 +41,11 @@ int main(int argc, char **argv)
     int nrec=ds.getRecNum();
     std::cout<<"Got "<<nrec<<" records back."<<'\n';
     
-    std::vector<long> v_cid;
+    std::vector<int> v_cid;
     
     for(int i=0;i<nrec;i++)
      {
-      long cid=ds.getLong();
+      int cid=ds.getLongLong();
       v_cid.insert(v_cid.end(),cid);
      }
      
