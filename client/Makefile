@@ -129,6 +129,12 @@ request_each.o: request_each.cc frontier-cpp.h
 request_each: all request_each.o frontier-cpp.h
 	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier
 
+test-pescalib.o: test-pescalib.cc frontier-cpp.h
+	$(CXX) -g -Idist/include -c test-pescalib.cc
+
+test-pescalib: all test-pescalib.o frontier-cpp.h
+	$(CXX) -g -Ldist/lib -o test-pescalib test-pescalib.o $(LIBS) -lfrontier
+
 clean:
 	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each
 	(cd expat; make clean)
