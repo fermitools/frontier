@@ -2,6 +2,7 @@ package gov.fnal.frontier;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.ListIterator;
 
 /**
  * This class defines what data to obtain from from a data source for a specific object.  It goes
@@ -46,6 +47,16 @@ public class XmlDescriptor extends Descriptor {
         for(int i = 0; i < wheres.size(); i++)
             ( (WhereClause) wheres.get(i)).validate();
     }
+
+    /**
+     * Returns an iterator which when used will return an Object which may be cast to an
+     * {@link Attribute} object.
+     * @return ListIterator
+     */
+    public ListIterator getAttributes() {
+        return attributes.listIterator();
+    }
+
 
     public void setSelectClause(String aSelectClause) {
         selectClause = aSelectClause;
