@@ -83,7 +83,7 @@ int do_main(int argc, char **argv);
 
 int main(int argc, char **argv)
  { 
-  for(int i=0;i<2;i++)
+  for(int i=0;i<1;i++)
    {
     //std::cout<<i<<'\n';
     do_main(argc,argv);
@@ -108,28 +108,32 @@ int do_main(int argc, char **argv)
     if(argc==2) cid=argv[1];
     else cid="91271";
     
-    frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",cid);
-
-    std::vector<const frontier::Request*> vrq;
-    vrq.insert(vrq.end(),&req1);
-    ds.getData(vrq); 
-
-    ds.setCurrentLoad(1);
-    
-    int nrec=ds.getRecNum();
-    std::cout<<"CID <"<<cid<<"> nrec "<< nrec<<'\n';
-    
-    std::vector<PESCalib*> v_sbp(nrec);
-    for(int i=0;i<nrec;i++)
+    for(int n=0;n<1;n++)
      {
-      v_sbp[i]=new PESCalib(ds);
-      v_sbp[i]->print();
-     }
     
-    // Do some usefull things here ...
+      frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",cid);
 
-    // Clean
-    for(int i=0;i<nrec;i++) delete v_sbp[i]; 
+      std::vector<const frontier::Request*> vrq;
+      vrq.insert(vrq.end(),&req1);
+      ds.getData(vrq); 
+
+      ds.setCurrentLoad(1);
+    
+      int nrec=ds.getRecNum();
+      std::cout<<"CID <"<<cid<<"> nrec "<< nrec<<'\n';
+    
+      std::vector<PESCalib*> v_sbp(nrec);
+      for(int i=0;i<nrec;i++)
+       {
+        v_sbp[i]=new PESCalib(ds);
+        v_sbp[i]->print();
+       }
+    
+       // Do some usefull things here ...
+
+      // Clean
+      for(int i=0;i<nrec;i++) delete v_sbp[i]; 
+     }
     
 #ifdef FNTR_USE_EXCEPTIONS   
    }

@@ -65,15 +65,15 @@ const BLOB_TYPE BLOB_TYPE_DOUBLE=4;
 const BLOB_TYPE BLOB_TYPE_TIME=5;
 const BLOB_TYPE BLOB_TYPE_ARRAY_BYTE=6;
 const BLOB_TYPE BLOB_TYPE_EOR=7;
-  
+
+const char *getFieldTypeName(BLOB_TYPE t);  
 
 class DataSource;
  
-// You are not going to use this class directly. Never. It's here only for inlining.
 class AnyData
  {
   private:
-  friend class DataSource;	// I love C++ :-)
+   friend class DataSource;
    union
     {
      long long i8;
@@ -92,8 +92,8 @@ class AnyData
    float castToFloat();
    double castToDouble();
    std::string* castToString();
-     
-  public:
+
+  public:     
    explicit AnyData(): isNull(0),type_error(FRONTIER_OK),t(BLOB_TYPE_NONE){}
    inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
@@ -101,15 +101,19 @@ class AnyData
    inline void set(double d){t=BLOB_TYPE_DOUBLE;v.d=d;type_error=FRONTIER_OK;}
    inline void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;type_error=FRONTIER_OK;}
    inline void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;type_error=FRONTIER_OK;}
+   inline void setEOR(){t=BLOB_TYPE_EOR;type_error=FRONTIER_OK;}
    inline BLOB_TYPE type() const{return t;}
+   inline int isEOR() const{return (t==BLOB_TYPE_EOR);}
 
    inline int getInt(){if(isNull) return 0;if(t==BLOB_TYPE_INT4) return v.i4; return castToInt();}
    inline long long getLongLong(){if(isNull) return 0; if(t==BLOB_TYPE_INT8 || t==BLOB_TYPE_TIME) return v.i8; return castToLongLong();}
    inline float getFloat(){if(isNull) return 0.0; if(t==BLOB_TYPE_FLOAT) return v.f; return castToFloat();}
    inline double getDouble(){if(isNull) return 0.0;if(t==BLOB_TYPE_DOUBLE) return v.d; return castToDouble();}
    inline std::string* getString(){if(isNull) return NULL; if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s); return castToString();}   
-      
-   ~AnyData(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!   
+   
+   inline void clean(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
+   
+   ~AnyData(){clean();} // Thou art warned!!!   
  };
  
 
@@ -122,8 +126,6 @@ class DataSource
    void *internal_data;
    BLOB_TYPE last_field_type;
 
-   int getAnyData(AnyData* buf);
-   
   public:
    int err_code;
    std::string err_msg;
@@ -150,6 +152,7 @@ class DataSource
    // Data fields extractors
    // These methods change DS position to the next field
    // Benchmarking had shown that inlining functions below does not improve performance
+   int getAnyData(AnyData* buf);   
    int getInt();
    long getLong();
    long long getLongLong();

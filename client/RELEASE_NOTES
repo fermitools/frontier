@@ -1,0 +1,35 @@
+
+v1.0
+This is the first release of Frontier client API. 
+Sergey Kosyakov, serge@fnal.gov
+
+v1.0.1
+The library name has been changed to libfrontier_client.so
+Sergey Kosyakov, serge@fnal.gov
+
+v1.0.2
+LD_LIBRARY_PATH bug fixed
+Sergey Kosyakov, serge@fnal.gov
+
+v1.1 09/14/2004
+- Per-thread (global if not threaded) error message holder
+- uniform error handling with detailed messages
+- number of error codes reduced to 7l they are logically combined in 4 groups
+- the library never calls abort() any more
+- attempt to refresh cache before server failover
+- uniform log report
+- 4 log levels: nolog, error, warning and debug
+- logs could be redirected to file (stdout by default)
+- 2 new environment variables to control log: FRONTIER_LOG_LEVEL and FRONTIER_LOG_FILE
+- automatic kit preparation when "make dist"
+- 4 executable into the KIT: fn-maincc, fn-maintest, fn-pescalib and fn-any
+- fn-any can show any XSD object as it is returned by the server
+- AnyData optimized by inlining and calls streamlining
+- new public call in DataSource: getAnyData(AnyData *any)
+- new public call in AnyData: isEOR()
+- "make all" (or just "make") now builds executables as well
+- EOR is fully supported now (see test-any.cc as an usage example)
+- the lib version elevated to 1.1.0
+
+Sergey Kosyakov, serge@fnal.gov
+

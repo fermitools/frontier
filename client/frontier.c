@@ -258,18 +258,20 @@ static int get_data(Channel *chn,const char *uri)
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,chn->reload);
   
   ret=frontierHttpClnt_open(chn->ht_clnt,uri);
-  if(ret) return ret;
+  if(ret) goto end;
   
   while(1)
    {
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
-    if(ret<=0) return ret;
+    if(ret<=0) goto end;
     ret=write_data(chn->resp,buf,ret);
-    if(ret!=FRONTIER_OK) 
-     return ret;
+    if(ret!=FRONTIER_OK)  goto end;
    }
-     
-  return FRONTIER_OK;
+   
+end:
+  frontierHttpClnt_close(chn->ht_clnt);
+        
+  return ret;
  }
  
 

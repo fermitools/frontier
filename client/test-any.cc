@@ -13,51 +13,6 @@
 #include <iostream>
 #include <stdexcept>
 
-
-class TOFTacParm
- {
-  public:
-   int geomid;
-   int parmType;
-   double par0;
-   double par1;
-   double par2;
-   double par3;
-   std::vector<float> *cov;
-
-  TOFTacParm(frontier::CDFDataSource& ds)
-   {
-    geomid=ds.getInt();
-    parmType=ds.getInt();
-    par0=ds.getDouble();
-    par1=ds.getDouble();
-    par2=ds.getDouble();
-    par3=ds.getDouble();
-    cov=ds.getRawAsArrayFloat();
-   }
-   
-  ~TOFTacParm()
-   {
-    delete cov;
-   }
-   
-  void print()
-   {
-    unsigned i;
-    
-    std::cout<<geomid<<' ';
-    std::cout<<parmType<<' ';
-    std::cout<<par0<<' ';
-    std::cout<<par1<<' ';
-    std::cout<<par2<<' ';
-    std::cout<<par3<<" [";
-    
-    for(i=0;i<cov->size();i++) std::cout<<cov->operator[](i)<<' ';
-    
-    std::cout<<']';
-   }
- };
-
 int do_main(int argc, char **argv);
 
 int main(int argc, char **argv)
@@ -72,24 +27,32 @@ int main(int argc, char **argv)
  
 int do_main(int argc, char **argv)
  {
- 
+  //char vc;
+  int vi;
+  long long vl;
+  float vf;
+  double vd;
+  std::string *vs;
+  
 #ifdef FNTR_USE_EXCEPTIONS 
   try
    {
 #endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc!=2)
+    if(argc!=4)
      {
-      std::cout<<"Usage: "<<argv[0]<<" cid_num\n";
+      std::cout<<"Usage: "<<argv[0]<<" object_name key_name key_val\n";
       exit(1);
      }
+     
+    std::cout<<"Requesting \""<<argv[1]<<"\" key \""<<argv[2]<<"\" : \""<<argv[3]<<"\""<<std::endl;
 
     frontier::CDFDataSource ds;
     
-    ds.setReload(1);
+    //ds.setReload(1);
 
-    frontier::Request req1("TOFTacParm","1",frontier::BLOB,"cid",argv[1]);
+    frontier::Request req1(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);
@@ -97,22 +60,55 @@ int do_main(int argc, char **argv)
 
     ds.setCurrentLoad(1);
     
-    int nrec=ds.getRecNum();
-    std::cout<<"CID <"<<argv[1]<<"> nrec "<< nrec<<'\n';
+    int field_num=0;
     
-    std::vector<TOFTacParm*> v_sbp(nrec);
-    for(int i=0;i<nrec;i++)
+    std::cout<<"\nObject field types:\n";
+    
+    frontier::AnyData ad;
+    
+    while(1)
      {
-      v_sbp[i]=new TOFTacParm(ds);
-      v_sbp[i]->print();
-      std::cout<<'\n';
+      ds.getAnyData(&ad);
+      if(ad.isEOR()) break;
+      std::cout<<++field_num<<" "<<frontier::getFieldTypeName(ad.type())<<std::endl;
+      ad.clean();
      }
     
-    // Do some usefull things here ...
+    int nrec=ds.getRecNum();
+    std::cout<<"\nResult contains "<< nrec<<" objects.\n";
+        
+    ds.setCurrentLoad(1);
 
-    // Clean
-    for(int i=0;i<nrec;i++) delete v_sbp[i]; 
+    for(int n=0;n<nrec;n++)
+     {
+      for(int k=0;k<field_num;k++)
+       {
+        ds.getAnyData(&ad);
+        switch(ad.type())
+         {
+          //case frontier::BLOB_TYPE_BYTE:       vc=ds.getByte(); break;
+          case frontier::BLOB_TYPE_INT4:       vi=ad.getInt(); std::cout<<vi; break;
+          case frontier::BLOB_TYPE_INT8:       vl=ad.getLongLong(); std::cout<<vl; break;
+          case frontier::BLOB_TYPE_FLOAT:      vf=ad.getFloat(); std::cout<<vf; break;
+          case frontier::BLOB_TYPE_DOUBLE:     vd=ad.getDouble(); std::cout<<vd; break;
+          case frontier::BLOB_TYPE_TIME:       vl=ad.getLongLong(); std::cout<<vl; break;
+          case frontier::BLOB_TYPE_ARRAY_BYTE: vs=ad.getString(); std::cout<<(*vs); delete vs; break;	  
+	  default: std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; exit(1);
+	 }
+	if(k+1<field_num) std::cout<<" ";
+	ad.clean();
+       }
+      ds.getAnyData(&ad);
+      if(!ad.isEOR())
+       {
+        std::cout<<"Error: must be EOR here\n";
+	exit(1);
+       }
+      ad.clean();
+      std::cout<<std::endl;
+     }
     
+        
 #ifdef FNTR_USE_EXCEPTIONS   
    }
   catch(std::exception& e)

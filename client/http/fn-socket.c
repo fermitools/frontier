@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
+//static int total_socket=0;
  
 int frontier_socket()
  {
@@ -38,13 +39,23 @@ int frontier_socket()
   goto ok;
   
 err:
-  if(s>=0) close(s);
+  if(s>=0) frontier_socket_close(s);
   frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
   return FRONTIER_ESYS;
   
 ok:  
+  //++total_socket;
+  //printf("so %d\n",total_socket);
   return s;
  }
+ 
+ 
+void frontier_socket_close(int s)
+ {
+  close(s);
+  //--total_socket;
+  //printf("sc %d\n",total_socket);
+ } 
  
 
 int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)

@@ -16,14 +16,14 @@ ifeq ($(CXX),KCC)
 CXXOPT_LIB	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
 CXXOPT_APP	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO		=	KCC -shared --no_exceptions -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier.so.$(FN_VER_MAJOR)
+LINK_SO		=	KCC -shared --no_exceptions -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier_client.so.$(FN_VER_MAJOR)
 else
 # GCC settings
 CXX		=	c++
 CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO		=	c++ -shared -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier.so.$(FN_VER_MAJOR)
+LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR)
 endif
 
 # Common (hopefully) settings
@@ -35,8 +35,52 @@ LIBS		=
 OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
 HDR		=	frontier.h fn-internal.h http/fn-htclient.h
+BINAPP		=	fn-maincc fn-maintest fn-pescalib fn-any
 
-all: htclient libexpat libfrontier.so distrib
+
+
+all: htclient libexpat libfrontier_client.so $(BINAPP)
+
+
+
+#####################################################
+### BEGIN KIT RELATED STUFF. Note: requires gmake :-(
+
+package := frontier_client
+tmpdir := $(shell pwd)/tmp
+files := ./RELEASE_NOTES ./README ./lib/*.so* ./include/frontier_client/*.h ./ups/*.table
+distfile := $(tmpdir)/$(package).tar
+distfile_gz := $(distfile).gz
+
+
+dist-prepare: $(tmpdir)
+
+$(tmpdir):
+	mkdir -p $(tmpdir)
+
+dist: all dist-prepare $(distfile_gz)
+
+$(distfile_gz): all dist-prepare
+	rm -fr dist
+	mkdir dist
+	mkdir dist/lib
+	cp libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
+	(cd dist/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR) )
+	(cd dist/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
+	mkdir dist/include
+	mkdir dist/include/frontier_client
+	cp frontier-cpp.h dist/include/frontier_client
+	cp frontier.h dist/include/frontier_client
+	cp RELEASE_NOTES dist/
+	cp README dist/
+	cp -r ups dist/
+	@echo "Making $@"
+	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
+	rm -f $(distfile_gz); gzip $(distfile)
+
+
+### END KIT RELATED STUFF. 
+#####################################################
 
 htclient:
 	(cd http && CC=$(CC) COPT="$(COPT)" make all)
@@ -44,29 +88,18 @@ htclient:
 libexpat:
 	(cd expat && make all)	
 
-libfrontier.so: $(OBJ) http/.libs
-	rm -f libfrontier.so
-	rm -f libfrontier.so.$(FN_VER_MAJOR)
-	rm -f libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR)
+libfrontier_client.so: $(OBJ) http/.libs
+	rm -f libfrontier_client.so
+	rm -f libfrontier_client.so.$(FN_VER_MAJOR)
+	rm -f libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR)
 	rm -rf .libs
 	mkdir .libs
 	cp ./http/.libs/*.o .libs
 	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
 	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
-	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR)
-	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so
-
-distrib:
-	rm -fr dist
-	mkdir dist
-	mkdir dist/lib
-	cp libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
-	(cd dist/lib/ && ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR) )
-	(cd dist/lib/ && ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so )
-	mkdir dist/include
-	cp frontier-cpp.h dist/include
-	cp frontier.h dist/include
+	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR)
+	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so
 
 
 fn-base64.o: fn-base64.c $(HDR)
@@ -99,9 +132,6 @@ error.o: error.c $(HDR)
 fn-config.o: fn-config.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-config.c
 
-frontier: libfrontier.a main.o
-	$(CC) $(COPT) $(LIBDIR) -L. -o frontier main.o $(LIBS) -lfrontier
-
 main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
@@ -115,48 +145,48 @@ frontier-cpp.o: frontier-cpp.cc frontier-cpp.h $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c frontier-cpp.cc
 
 maincc.o: maincc.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Idist/include -c maincc.cc
+	$(CXX) $(CXXOPT_APP) -I. -c maincc.cc
 
-maincc: all maincc.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier
+fn-maincc: maincc.o frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -L. -o fn-maincc maincc.o $(LIBS) -lfrontier_client
 
 maintest.o: maintest.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Idist/include -c maintest.cc
+	$(CXX) $(CXXOPT_APP) -I. -c maintest.cc
 
-maintest: all maintest.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier
+fn-maintest: maintest.o frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -L. -o fn-maintest maintest.o $(LIBS) -lfrontier_client
 
 getcids.o: getcids.cc frontier-cpp.h
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
 getcids: all getcids.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier_client
 
 request_each.o: request_each.cc frontier-cpp.h
 	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
 request_each: all request_each.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier_client
 
 test-pescalib.o: test-pescalib.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Idist/include -c test-pescalib.cc
+	$(CXX) $(CXXOPT_APP) -I. -c test-pescalib.cc
 
-test-pescalib: all test-pescalib.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o test-pescalib test-pescalib.o $(LIBS) -lfrontier
+fn-pescalib: test-pescalib.o frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -L. -o fn-pescalib test-pescalib.o $(LIBS) -lfrontier_client
 
 test-any.o: test-any.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Idist/include -c test-any.cc
+	$(CXX) $(CXXOPT_APP) -I. -c test-any.cc
 
-test-any: all test-any.o frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o test-any test-any.o $(LIBS) -lfrontier
+fn-any: test-any.o frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -L. -o fn-any test-any.o $(LIBS) -lfrontier_client
 
 clean:
-	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each \
-              test-pescalib test-any
+	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)
 	(cd expat && make clean)
 	(cd http && make clean)
 	rm -fr dist
 	rm -rf .libs
 	rm -rf ti_files
+	rm -rf $(tmpdir)
 
 

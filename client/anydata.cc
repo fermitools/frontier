@@ -14,7 +14,13 @@
 
 using namespace frontier;
 
-static const char *blob_type_name[]={"byte","int4","int8","float","double","time","string"};
+static const char *blob_type_name[]={"byte","int4","int8","float","double","time","string","EOR"};
+
+const char *frontier::getFieldTypeName(BLOB_TYPE t)
+ {
+  t=t&(~BLOB_BIT_NULL);
+  return blob_type_name[t];
+ }
  
 int AnyData::castToInt()
  {

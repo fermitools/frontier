@@ -184,19 +184,11 @@ int DataSource::getAnyData(AnyData* buf)
   int ec=FRONTIER_OK;
   BLOB_TYPE dt;
   
-  /* Ignore EOR markers 
-   * NOTE: EOR must never have BLOB_BIT_NULL
-   */
-  do
-   {
-    dt=frontierRSBlob_getByte(rs,&ec);
-    //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
-    if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
-   }while(dt==BLOB_TYPE_EOR);
-   
+  dt=frontierRSBlob_getByte(rs,&ec);
+  //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
   last_field_type=dt;
-  //std::cout<<"Extracted type prefix "<<(int)dt<<'\n';
-  
+   
   if(dt&BLOB_BIT_NULL)
    {
     //std::cout<<"The field is NULL\n";
@@ -204,6 +196,7 @@ int DataSource::getAnyData(AnyData* buf)
     buf->t=dt&(~BLOB_BIT_NULL);
     return 0;
    }
+  //std::cout<<"Extracted type prefix "<<(int)dt<<'\n';  
   
   char *p;
   int len;  
@@ -225,6 +218,7 @@ int DataSource::getAnyData(AnyData* buf)
        p[len]=0; // To emulate C string
        buf->set(len,p);
        break;
+    case BLOB_TYPE_EOR: buf->setEOR(); break;
     default: 
          //std::cout<<"Unknown type prefix "<<(int)dt<<'\n';
          LOGIC_ERROR(this,"unknown type prefix",FRONTIER_EIARG,-1);
@@ -250,7 +244,10 @@ int DataSource::getInt()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return -1;
+  do
+   {
+    if(getAnyData(&ad)) return -1;
+   }while(ad.t==BLOB_TYPE_EOR);
   return ad.getInt();
  }
 
@@ -258,8 +255,10 @@ int DataSource::getInt()
 long DataSource::getLong()
  {
   AnyData ad;
-  
-  if(getAnyData(&ad)) return -1;
+  do
+   {
+    if(getAnyData(&ad)) return -1;
+   }while(ad.t==BLOB_TYPE_EOR);
   
   if(sizeof(long)==8) return ad.getLongLong();  
   return ad.getInt();
@@ -270,7 +269,10 @@ long long DataSource::getLongLong()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return -1;
+  do
+   {
+    if(getAnyData(&ad)) return -1;
+   }while(ad.t==BLOB_TYPE_EOR);
   
   return ad.getLongLong();  
  }
@@ -280,7 +282,11 @@ double DataSource::getDouble()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return -1;  
+  do
+   {
+    if(getAnyData(&ad)) return -1;  
+   }while(ad.t==BLOB_TYPE_EOR);
+   
   return ad.getDouble();
  }
  
@@ -288,8 +294,11 @@ double DataSource::getDouble()
 float DataSource::getFloat()
  {
   AnyData ad;
-  
-  if(getAnyData(&ad)) return -1;  
+  do
+   {
+    if(getAnyData(&ad)) return -1;  
+   }while(ad.t==BLOB_TYPE_EOR);
+   
   return ad.getFloat();
  } 
 
@@ -298,7 +307,10 @@ long long DataSource::getDate()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return -1;
+  do
+   {
+    if(getAnyData(&ad)) return -1;
+   }while(ad.t==BLOB_TYPE_EOR);
   
   return ad.getLongLong();   
  }
@@ -308,7 +320,11 @@ std::string* DataSource::getString()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return NULL;
+  do
+   {
+    if(getAnyData(&ad)) return NULL;
+   }while(ad.t==BLOB_TYPE_EOR);
+   
   return ad.getString();
  }
  
@@ -318,7 +334,7 @@ std::string* DataSource::getBlob()
   return getString();
  }
 
-
+ 
 DataSource::~DataSource()
  {
   int ec;

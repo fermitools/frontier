@@ -19,6 +19,7 @@
 
 
 int frontier_socket();
+void frontier_socket_close(int s);
 int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen);
 int frontier_write(int s,const char *buf, int len);
 int frontier_read(int s, char *buf, int size);

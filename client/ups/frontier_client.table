@@ -1,0 +1,19 @@
+FILE=TABLE
+PRODUCT=frontier_client
+
+
+Group:
+  Flavor=ANY
+  Qualifiers="KAI-v4_0f"
+
+  Flavor=ANY
+  Qualifiers="GCC-v3.3"
+
+Common:
+  Action=Setup
+    setupenv()
+    proddir()
+    envPrepend(LD_LIBRARY_PATH, "${UPS_PROD_DIR}/lib")
+
+END:
+

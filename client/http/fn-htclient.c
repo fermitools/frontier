@@ -326,7 +326,7 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
  
 void frontierHttpClnt_close(FrontierHttpClnt *c)
  {
-  close(c->socket);
+  frontier_socket_close(c->socket);
   c->socket=-1;
  }
  
