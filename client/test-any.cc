@@ -21,6 +21,24 @@
 
 int do_main(int argc, char **argv);
 
+static std::string escape_list="\\\'";
+
+static void str_escape_quota(std::string *str)
+ {
+  std::string::size_type pos;
+  
+  pos=0;
+  while(1)
+   {
+    pos=str->find_first_of(escape_list,pos);
+    if(pos>=str->size()) return;
+    //std::cout<<"pos="<<pos<<'\n';
+    str->insert(pos,1,'\\');    
+    pos+=2;
+   }
+ }
+
+ 
 int main(int argc, char **argv)
  {
   while(1)
@@ -126,6 +144,7 @@ int do_main(int argc, char **argv)
                }
               else
                {
+                str_escape_quota(vs);
                 std::cout<<'\''<<(*vs)<<'\''; 
                 delete vs;
                }
