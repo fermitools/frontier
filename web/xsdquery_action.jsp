@@ -7,7 +7,7 @@
 %>
 <html>
 <body bgcolor="#cc6600">
-<head>
+<head> 
 <title>xsdquery_action.jpg</title>
 </head>
 <body>

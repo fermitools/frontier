@@ -1,6 +1,6 @@
 <%@ page isErrorPage="true" %>
 <html>
-<body bgcolor="#ff0000">
+<body bgcolor="#ffffff">
 
 <h1>Error page for xsdquery_action.jsp</h1>
 
