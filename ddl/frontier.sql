@@ -10,5 +10,4 @@ SPOOL frontier.lst
 @@frontier.syn
 @@frontier.trg
 @@frontier.grt
-
 SPOOL OFF

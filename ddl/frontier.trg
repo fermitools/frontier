@@ -1,8 +1,6 @@
 -- D:\mydocs\docs\desinger\frontier.trg
 --
 -- Generated for Oracle 9i on Tue Aug 24  13:54:32 2004 by Server Generator 9.0.2.92.10
- 
-
 PROMPT Creating Trigger 'FD_PREUPDATE_TRG'
 CREATE OR REPLACE TRIGGER FD_PREUPDATE_TRG
  BEFORE UPDATE
@@ -27,8 +25,3 @@ begin
 end;
 /
 SHOW ERROR
-
-
-
-
-
