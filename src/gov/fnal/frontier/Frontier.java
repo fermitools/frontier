@@ -17,6 +17,11 @@ public final class Frontier
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
   private static String conf_xsd_table;
+  
+  private static String conf_monitor_node;  // MonAlisa stuff, node address events to be sent to
+  private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
+  private static Monitor monitor;           // MonAlisa stuff, wrapper class
+  
     
   public long time_expire=-1;
   public boolean noCache=false;
@@ -31,11 +36,29 @@ public final class Frontier
     conf_server_name=prb.getString("ServerName");
     conf_ds_name=prb.getString("DataSourceName");
     conf_xsd_table=prb.getString("XsdTableName");
+    conf_monitor_node=prb.getString("MonitorNode");
+    conf_monitor_delay=prb.getString("MonitorMillisDelay");
     
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
-    
+
+    if(conf_monitor_node!=null && conf_monitor_delay!=null) 
+     {
+      try
+       {
+        monitor=new Monitor(conf_monitor_node,conf_monitor_delay);
+        monitor.setDaemon(true);
+        monitor.start();
+       }
+      catch(Exception e)
+       {
+        Frontier.Log("MonAlisa monitor failed to start:",e);
+        monitor=null;
+       }
+     } 
+    else Frontier.Log("MonAlisa monitor was not configured.");        
+        
     initialized=true;
    }
           

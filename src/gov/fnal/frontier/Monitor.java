@@ -31,7 +31,8 @@ public class Monitor extends Thread
    * an event.
    * @throws Exception
    */
-  public Monitor(String host, String delayInMilliseconds) throws Exception {
+  public Monitor(String host, String delayInMilliseconds) throws Exception 
+   {
     Long millisecs = new Long(delayInMilliseconds);
     delay = millisecs.longValue();
     destList.add(host);
@@ -39,7 +40,8 @@ public class Monitor extends Thread
     InetAddress address = InetAddress.getLocalHost();
     nodeName =  address.getHostName();
     fail_count=0;
-  }
+    Frontier.Log("MonAlisa monitor has been created: h="+host+", d="+delayInMilliseconds);
+   }
 
   /**
    * Increase the hit count, where this count identifies a single access to the servelet.
@@ -54,6 +56,7 @@ public class Monitor extends Thread
    */
   public void run() 
    {
+    Frontier.Log("MonAlisa monitor has been started.");
     boolean loop = true;
     while (!interrupted() && loop) 
      {
