@@ -37,6 +37,8 @@
 
 #define FRONTIER_MAX_PAYLOADNUM	32
 
+
+
 typedef unsigned long FrontierChannel;
 
 struct s_FrontierRespStat
@@ -67,6 +69,7 @@ char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec);
 int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec);
 long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec);
 double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);
+void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec);
 
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr));
 

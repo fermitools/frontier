@@ -31,9 +31,9 @@ all: libcurl libfrontier.a distrib
 libcurl:
 	(cd curl; make all)
 
-libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o frontier-cpp.o
+libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o anydata.o frontier-cpp.o
 	rm -f libfrontier.a
-	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o frontier-cpp.o
+	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o anydata.o frontier-cpp.o
 	ranlib libfrontier.a
 
 distrib:
@@ -77,6 +77,9 @@ frontier: libfrontier.a main.o
 
 main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
+
+anydata.o: anydata.cc frontier-cpp.h $(HDR)
+	$(CXX) $(COPT) $(CXXOPT) $(INC) -c anydata.cc
 
 frontier-cpp.o: frontier-cpp.cc frontier-cpp.h $(HDR)
 	$(CXX) $(COPT) $(CXXOPT) $(INC) -c frontier-cpp.cc

@@ -148,7 +148,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	Encoder encoder = null;
 	try {
 	    if (encoding.compareToIgnoreCase("blob")==0)
-		encoder = new BlobEncoder(writer);
+		encoder = new BlobTypedEncoder(writer);
 	    else if (encoding.compareToIgnoreCase("xml")==0)
 		throw new RequestHandlerException("XML encoding is not yet supported.");
 	    else if (encoding.compareToIgnoreCase("csv")==0)

@@ -12,7 +12,10 @@
 #include <endian.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <strings.h>
 #include "fn-internal.h"
+
+#define TYPED_BLOB
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
@@ -139,6 +142,7 @@ void frontierRSBlob_start(FrontierRSBlob *rs,int *ec)
   rs->pos=0;
  }
 
+ 
 
 char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
  {
@@ -154,6 +158,23 @@ char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
   *ec=FRONTIER_OK;
   return ret;
  }
+ 
+ 
+void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
+ {
+  const char *buf;
+  
+  if(rs->pos>=rs->size-(len-1))
+   {
+    *ec=FRONTIER_ENOROW;
+    return;
+   }
+  buf=rs->buf+rs->pos;
+  bcopy(buf,p,len);
+  rs->pos+=len;
+  *ec=FRONTIER_OK;
+  return; 
+ } 
 
 
 int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec)
