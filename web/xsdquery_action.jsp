@@ -11,7 +11,7 @@
 <title>xsdquery_action.jpg</title>
 </head>
 <body>
-<H1 align="center"><font class="blue">X</font>ML <font color="blue">S</font>ervice<font color="blue">D</font>escriptor Detail</h1>
+<H1 align="center"><font color="red">X</font>ML <font color="red">S</font>ervice<font color="red">D</font>escriptor Detail</h1>
 <table align="center">
     <tr>
         <td>Table: <b><%= type %></b> Version: <b><%= version %></b></td>
