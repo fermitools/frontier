@@ -83,7 +83,7 @@ public class xsdLoader {
             String oracleUrl =
                 "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)"
                 + "(PORT=1521)(HOST=fcdflnx1.fnal.gov))(CONNECT_DATA=(SID=cdfrep01)))";
-            conn = DriverManager.getConnection(oracleUrl, "frontier_prd", "frontier_prd");
+            conn = DriverManager.getConnection(oracleUrl, "user", "password");
             pstmt = conn.prepareStatement(blobInsert);
         } catch(Exception ex) {
             throw new Exception("connect - " + ex.getMessage());
