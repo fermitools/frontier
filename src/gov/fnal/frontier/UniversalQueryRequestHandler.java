@@ -39,8 +39,8 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	    encoder = getEncoder(writer);
 	    Servicer servicer = classLoader.load(objectName,objectVersion);
 	    servicer.validate(command);
-	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion,noLF);
-	    stream(" encoding=\"" + encoding + "\">",LF);
+	    stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion,noLF);
+	    stream("\" encoding=\"" + encoding + "\">",LF);
 	    produceData(servicer);
 	} catch (RequestHandlerException e) {
 	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion,noLF);
@@ -90,7 +90,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	    stream("<data>",noLF);
 	    long recordCnt = servicer.marshal(encoder,resultSet);
 	    stream("</data>",LF);
-	    stream("</quality error=\"0\" records=\"" + recordCnt + "\">",LF);
+	    stream("<quality error=\"0\" records=\"" + recordCnt + "\"/>",LF);
 	    stream("</payload>",LF);
 	} catch (SQLException e) {
 	    stream("</data>",LF);

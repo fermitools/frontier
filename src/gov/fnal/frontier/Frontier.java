@@ -48,8 +48,13 @@ public final class Frontier extends CacheHttpServlet {
         throws IOException, ServletException {
 
 	String queryString = request.getQueryString();
-        response.setContentType("text/plain");
+	response.setContentType("text/xml");
 	response.setCharacterEncoding("US-ASCII");
+	// For Squid
+ 	response.setHeader("Cache-Control","max-age=31557600");
+ 	response.setHeader("Expires","Wed, 15 Jan 2005 19:22:28 GMT");
+ 	response.setHeader("Last-Modified","Wed, 13 Jan 2004 19:22:28 GMT");
+
         writer = response.getOutputStream();
 
 	stream("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
