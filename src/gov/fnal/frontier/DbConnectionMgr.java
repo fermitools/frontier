@@ -11,74 +11,59 @@ import javax.sql.DataSource;
  * Singleton class which provides database connections.  The specific
  * database supported is determined by configuring the server.xml file.
  * @author Stephen P. White <swhite@fnal.gov>
+ * udapted for Frontier3 by: Sergey Ksoyakov
  * @version $Revision$
  */
-public class DbConnectionMgr {
+public class DbConnectionMgr 
+ {
+  private static DbConnectionMgr instance=null;
+  private static Boolean mutex=new Boolean(true);
+  private DataSource dataSource=null;
 
-    private static DbConnectionMgr instance;
-    private DataSource dataSource = null;
+  public static DbConnectionMgr getDbConnectionMgr() throws Exception
+   {
+    if(instance!=null) return instance;
+    
+    synchronized(mutex)
+     {
+      if(instance!=null) return instance;      
+      DbConnectionMgr m=new DbConnectionMgr();
+      instance=m;
+     }
+    return instance;
+   }
 
-    /**
-     * Obtains the singleton instance of a DbConnectionMgr.  The instance is
-     * created if it does not exist.
-     * @return DbConnectionMgr
-     */
-    public static synchronized DbConnectionMgr getDbConnectionMgr() {
-        if(instance == null)
-            instance = new DbConnectionMgr();
-        return instance;
-    }
+  
+  private DbConnectionMgr() throws Exception
+   {
+    Context initContext=new InitialContext();
+    Context envContext=(Context)initContext.lookup("java:/comp/env");
+    System.out.println("Looking for ["+Frontier.getDsName()+"]");
+    dataSource = (DataSource)envContext.lookup(Frontier.getDsName());
+    //dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
+    if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
+   }
 
-    /**
-     * Initializes the DbConnectionMgr with data from the context data.  (Tomcat
-     * XML files.)
-     * @throws DbConnectionMgrException
-     */
-    public synchronized void initialize() throws DbConnectionMgrException {
-        if(dataSource == null) {
-            try {
-                Context initContext = new InitialContext();
-                Context envContext = (Context) initContext.lookup("java:/comp/env");
-                dataSource = (DataSource) envContext.lookup(Frontier.getDsName());
-            } catch(NamingException e) {
-                throw new DbConnectionMgrException(e.getMessage());
-            }
-        }
-    }
+  
+  public Connection acquire() throws Exception 
+   {
+    Connection connection;
+    connection=dataSource.getConnection();
+    return connection;
+   }
 
-    /**
-     * Obtains an active  connection to the database from the pool.  If one is
-     * not available the request will be queued.
-     * @throws DbConnectionMgrException
-     * @return Connection
-     */
-    public Connection acquire() throws DbConnectionMgrException {
-        Connection connection = null;
-        try {
-            connection = dataSource.getConnection();
-        } catch(SQLException e) {
-            throw new DbConnectionMgrException(e.getMessage());
-        }
-        return connection;
-    }
-
-    /**
-     * Returns a connection to the pool of available connections making it
-     * available to other users.
-     * @param dbConnection Connection
-     * @throws DbConnectionMgrException
-     */
-    public void release(Connection dbConnection) throws DbConnectionMgrException {
-        try {
-            if(dbConnection != null)
-                dbConnection.close();
-        } catch(SQLException e) {
-            throw new DbConnectionMgrException(e.getMessage());
-        }
-    }
-
-    /**
-     * Private constructor for the singleton instance.
-     */
-    private DbConnectionMgr() {}
-}
+ 
+  public void release(Connection dbConnection) throws Exception 
+   {
+    if(dbConnection!=null) dbConnection.close();
+   }
+   
+   
+  // This one to get frontier descriptors (or plugins), could have different DS
+  public Connection getDescriptorConnection() throws Exception
+   {
+    Connection connection;
+    connection=dataSource.getConnection();
+    return connection;   
+   }
+ }
