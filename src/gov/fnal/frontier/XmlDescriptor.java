@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 
 /**
- * $Id$
- * $Author$
- * $Date$
- * $Revision$
+ * This class defines what data to obtain from from a data source for a specific object.  It goes
+ * to specify how to translate that data for the end client.  Finally it details how the data
+ * may be obtained.
+ * @author Stephen P. White <swhite@fnal.gov>
+ * @version $Revision$
  */
-
 public class XmlDescriptor extends Descriptor {
 
     private String name = null;
@@ -73,6 +73,14 @@ public class XmlDescriptor extends Descriptor {
 
     public void addAttribute(String type, String field) throws LoaderException {
         attributes.add(new Attribute(type, field));
+    }
+
+    public int getAttributeCount() {
+        return attributes.size();
+    }
+
+    public String getAttributeType(int index) {
+        return ( (Attribute) attributes.get(index) ).getType();
     }
 
     public WhereClause addWhereClause() {
