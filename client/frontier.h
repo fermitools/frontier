@@ -97,6 +97,9 @@ void frontier_md5_init(void *ctx);
 void frontier_md5_update(void *ctx,const unsigned char *data,unsigned int len);
 void frontier_md5_final(void *ctx,unsigned char *out);
 
+void *frontier_malloc(size_t size);
+void frontier_free(void *ptr);
+
 
 #endif /*__HEADER_H_FRONTIER_H*/
 

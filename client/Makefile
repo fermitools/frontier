@@ -32,7 +32,8 @@ INC		=	-I./expat/local/include -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
 
-OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
+OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o \
+                        error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
 HDR		=	frontier.h fn-internal.h
 
 all: htclient libexpat libfrontier.so distrib
@@ -73,6 +74,9 @@ fn-base64.o: fn-base64.c $(HDR)
 
 fn-md5.o: fn-md5.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-md5.c
+
+fn-mem.o: fn-mem.c $(HDR)
+	$(CC) $(COPT) $(INC) -c fn-mem.c
 
 frontier.o: frontier.c $(HDR)
 	$(CC) $(COPT) $(INC) -c frontier.c

@@ -321,7 +321,7 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    }
   len+=ret;
    
-  printf("Request <%s>\n",buf);
+  //printf("Request <%s>\n",buf);
    
   ret=frontier_write(c->socket,buf,len);
   if(ret<0)

@@ -79,9 +79,19 @@ class PESCalib
    }
  };
 
- 
+int do_main(int argc, char **argv);
 
 int main(int argc, char **argv)
+ {
+  while(1)
+   {
+    do_main(argc,argv);
+    break;
+   }
+ }
+
+ 
+int do_main(int argc, char **argv)
  {
  
 #ifdef FNTR_USE_EXCEPTIONS 
@@ -98,7 +108,7 @@ int main(int argc, char **argv)
 
     frontier::CDFDataSource ds;
     
-    ds.setReload(1);
+    //ds.setReload(1);
 
     frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",argv[1]);
 
@@ -136,6 +146,7 @@ int main(int argc, char **argv)
     exit(1);
    }
 #endif //FNTR_USE_EXCEPTIONS   
+  return 0;
  }
 
 
