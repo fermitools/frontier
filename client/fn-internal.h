@@ -33,6 +33,9 @@ struct s_FrontierPayload
   char *blob;
   int blob_size;
   unsigned int nrec;
+  unsigned char md5[16];
+  char md5_str[36];
+  char srv_md5_str[36];
   FrontierMemData *md;
  };
 typedef struct s_FrontierPayload FrontierPayload;

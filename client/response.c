@@ -55,9 +55,17 @@ xml_startElement(void *userData,const char *name,const char **atts)
    {
     for(i=0;atts[i];i+=2)
      {
-      if(strcmp(atts[i],"records")!=0) continue;
-      fr->payload[fr->payload_num-1]->nrec=atoi(atts[i+1]);
-      break;
+      if(strcmp(atts[i],"records")==0)
+       {
+        fr->payload[fr->payload_num-1]->nrec=atoi(atts[i+1]);
+	continue;
+       }
+      if(strcmp(atts[i],"md5")==0)
+       {
+        bcopy(atts[i+1],fr->payload[fr->payload_num-1]->srv_md5_str,32);
+	fr->payload[fr->payload_num-1]->srv_md5_str[32]=0;
+	continue;       
+       }
      }
    }
  }
@@ -155,6 +163,8 @@ int FrontierResponse_append(FrontierResponse *fr,char *buf,int len)
 
 int frontierResponse_finalize(FrontierResponse *fr)
  {
+  int i;
+  
   if(XML_Parse(fr->parser,"",0,1)==XML_STATUS_ERROR) 
    {
     fr->error=FRONTIER_XMLPARSE;
@@ -166,6 +176,12 @@ int frontierResponse_finalize(FrontierResponse *fr)
   XML_SetUserData(fr->parser,(void*)0);
   XML_ParserFree(fr->parser);
   fr->parser=(void*)0;
+  
+  for(i=0;i<fr->payload_num;i++)
+   {
+    printf("%d r:[%s] l:[%s]\n",i,fr->payload[i]->srv_md5_str,fr->payload[i]->md5_str);
+    if(strncmp(fr->payload[i]->srv_md5_str,fr->payload[i]->md5_str,32)) return FRONTIER_EMD5;
+   }
 
   return FRONTIER_OK;
  }

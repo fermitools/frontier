@@ -75,5 +75,6 @@ maincc: libfrontier.a maincc.o frontier-cpp.h
 clean:
 	rm -f *.o *.core libfrontier.a frontier maincc
 	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
+	(cd expat; rm -f libtool Makefile config.log config.status)
 
 

@@ -27,6 +27,7 @@
 #define FRONTIER_ENOROW		-10	/*end of RS*/
 #define FRONTIER_ENORS		-11	/*no such RS*/
 #define FRONTIER_ENOTINIT	-12	/*frontier was not initialized*/
+#define FRONTIER_EMD5		-13	/*MD5 digest mismatch*/
 
 #define FRONTIER_EEND		-100	/*error values less than (-100) are libcurl errors*/
 
