@@ -12,24 +12,26 @@
 
 static const char *ferror[]=
  {
-  "OK",						/*0*/
-  "invalid argument",				/*-1*/
-  "no more memory",				/*-2*/
-  "libcurl initialization failed", 		/*-3*/
-  "Channel can not be created",    		/*-4*/
-  "libcurl has not accepted the URL", 		/*-5*/
-  "surprise - unknown error!",			/*-6*/
-  "HTTP response code is not 200",		/*-7*/
-  "XML parser can not parse the response",	/*-8*/
-  "Basse64 decode failed",			/*-9*/
-  "no more rows in the RS",			/*-10*/
-  "no such RS",					/*-11*/
-  "Frontier API is not initialized",		/*-12*/
-  "MD5 digest mismatch",			/*-13*/
-  "Payload error signalled from server",	/*-14*/
+  "OK",							/*0*/
+  "invalid argument",					/*-1*/
+  "no more memory",					/*-2*/
+  "libcurl initialization failed", 			/*-3*/
+  "Channel can not be created",    			/*-4*/
+  "libcurl has not accepted the URL", 			/*-5*/
+  "surprise - unknown error!",				/*-6*/
+  "HTTP response code is not 200",			/*-7*/
+  "XML parser can not parse the response",		/*-8*/
+  "Basse64 decode failed",				/*-9*/
+  "no more rows in the RS",				/*-10*/
+  "no such RS",						/*-11*/
+  "Frontier API is not initialized",			/*-12*/
+  "MD5 digest mismatch",				/*-13*/
+  "Payload error signalled from server",		/*-14*/
+  "FRONTIER_SERVER environment variable is not set",	/*-15*/
+  "Generated request URL is too big",			/*-16*/
   0
  };
-static int ferror_last=14;
+static int ferror_last=16;
 
 
 static const char *cerror[]=

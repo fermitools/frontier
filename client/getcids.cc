@@ -16,9 +16,9 @@
 
 int main(int argc, char **argv)
  {
-  if(argc!=4)
+  if(argc!=3)
    {
-    std::cout<<"Usage: "<<argv[0]<<" host port object_name"<<'\n';
+    std::cout<<"Usage: "<<argv[0]<<" server_url object_name"<<'\n';
     exit(1);
    }
       
@@ -26,11 +26,11 @@ int main(int argc, char **argv)
    {
     frontier::init();
 
-    frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
+    frontier::CDFDataSource ds(argv[1]);
     
     //ds.setReload(1);
 
-    frontier::Request req("frontier_get_cid_list","1",frontier::BLOB,"table_name",argv[3]);
+    frontier::Request req("frontier_get_cid_list","1",frontier::BLOB,"table_name",argv[2]);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req);

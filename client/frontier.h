@@ -29,6 +29,8 @@
 #define FRONTIER_ENOTINIT	-12	/*frontier was not initialized*/
 #define FRONTIER_EMD5		-13	/*MD5 digest mismatch*/
 #define FRONTIER_EPAYLOAD	-14	/*payload error*/
+#define FRONTIER_EENVSRV	-15	/*FRONTIER_SERVER env is not set*/
+#define FRONTIER_EREQTOOBIG	-16	/*generated request URL is too big*/
 
 #define FRONTIER_EEND		-100	/*error values less than (-100) are libcurl errors*/
 
@@ -76,11 +78,10 @@ void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
 
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr));
 
-FrontierChannel frontier_createChannel(int *ec);
+FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec);
 void frontier_closeChannel(FrontierChannel chn);
-void frontier_setProxy(FrontierChannel u_channel,const char *proxy,int *ec);
 void frontier_setReload(FrontierChannel u_channel,int reload);
-int frontier_getRawData(FrontierChannel chn,const char *url);
+int frontier_getRawData(FrontierChannel chn,const char *uri);
 void frontier_getRespStat(FrontierChannel chn,FrontierRespStat *stat);
 const char *frontier_getHttpHeaderName(FrontierChannel c,int num);
 const char *frontier_getHttpHeaderValue(FrontierChannel c,int num);

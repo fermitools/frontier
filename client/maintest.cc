@@ -33,9 +33,9 @@ void print_time(const char *msg)
 
 int main(int argc, char **argv)
  {   
-  if(argc<6)
+  if(argc<5)
    {
-    std::cout<<"Usage: "<<argv[0]<<" host port object_name key_name key_value [{object_name key_name key_value} ...]"<<'\n';
+    std::cout<<"Usage: "<<argv[0]<<" server_url object_name key_name key_value [{object_name key_name key_value} ...]"<<'\n';
     exit(1);
    }
       
@@ -43,12 +43,12 @@ int main(int argc, char **argv)
    {
     frontier::init();
 
-    frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
+    frontier::CDFDataSource ds(argv[1]);
     
     //ds.setReload(1);
     
     std::vector<const frontier::Request*> vrq;
-    for(int i=3;i+2<argc;i+=3)
+    for(int i=2;i+2<argc;i+=3)
      {
       frontier::Request* req=new frontier::Request(argv[i],"1",frontier::BLOB,argv[i+1],argv[i+2]);     
       vrq.insert(vrq.end(),req);
@@ -57,8 +57,6 @@ int main(int argc, char **argv)
     ds.getData(vrq);
     print_time("finish: ");
     
-    std::cout<<"URL <"<<ds.getUrl()<<">\n";
-
     for(int i=1;i<=vrq.size();i++)
      {
       ds.setCurrentLoad(i);

@@ -95,12 +95,8 @@ class AnyData
 class DataSource
  {
   private:
-   std::string host;
-   int port;
-   std::string app_path;
-   std::string proxy;
    unsigned long channel;
-   std::string *url;
+   std::string *uri;
    void *internal_data;
 
    int getAnyData(AnyData* buf);
@@ -109,14 +105,10 @@ class DataSource
    int err_code;
    std::string err_msg;
    
-   explicit 
-   DataSource(const std::string& host_name,
-              int port_number,
-              const std::string& application_path,
-              const std::string& proxy_url);
+   explicit DataSource(const std::string& server_url="",const std::string* proxy_url=NULL);
+   
    void setReload(int reload);
    void getData(const std::vector<const Request*>& v_req);
-   const std::string getUrl() const {return *(url);}
    void setCurrentLoad(int n);
    int getCurrentLoadError() const;
    const char* getCurrentLoadErrorMessage() const;
@@ -126,6 +118,7 @@ class DataSource
    double getDouble();
    std::string *getString();
    std::string *getBlob();
+   
    virtual ~DataSource();
  };
 
@@ -133,11 +126,8 @@ class DataSource
 class CDFDataSource:public virtual DataSource
  {
   public:
-   explicit
-   CDFDataSource(const std::string& host_name,
-                 int port_number,
-                 const std::string& application_path,
-                 const std::string& proxy_url):DataSource(host_name,port_number,application_path,proxy_url){}
+   explicit CDFDataSource(const std::string& server_url="",const std::string* proxy_url=NULL):DataSource(server_url,proxy_url){}
+   
    std::vector<unsigned char> *getRawAsArrayUChar();
    std::vector<int> *getRawAsArrayInt();
    std::vector<float> *getRawAsArrayFloat();

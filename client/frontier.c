@@ -72,18 +72,34 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
 
 
 
-static Channel *channel_create(int *ec)
+static Channel *channel_create(const char *srv,const char *proxy,int *ec)
  {
   Channel *chn;
 
   chn=frontier_mem_alloc(sizeof(Channel));
   if(!chn) {*ec=FRONTIER_EMEM;return chn;}
 
+  chn->cfg=frontierConfig_get(srv,proxy);
+  if(!chn->cfg)
+   {
+    frontier_mem_free(chn);
+    *ec=FRONTIER_EMEM;
+    return (void*)0;   
+   }
+  if(!chn->cfg->server_num)
+   {
+    frontierConfig_delete(chn->cfg);
+    frontier_mem_free(chn);
+    *ec=FRONTIER_EENVSRV;
+    return (void*)0;      
+   }
+  
   chn->resp=(void*)0;
  
   chn->md_head=frontierMemData_create();
   if(!chn->md_head)
    {
+    frontierConfig_delete(chn->cfg);
     frontier_mem_free(chn);
     *ec=FRONTIER_EMEM;
     return (void*)0;
@@ -92,6 +108,7 @@ static Channel *channel_create(int *ec)
   chn->curl=curl_easy_init();
   if(!chn->curl)
    {
+    frontierConfig_delete(chn->cfg);
     frontierMemData_delete(chn->md_head);
     frontier_mem_free(chn);
     *ec=FRONTIER_ECURLI;
@@ -99,7 +116,6 @@ static Channel *channel_create(int *ec)
    }
   
   chn->status=FRONTIER_SEMPTY;
-  chn->proxy_url=(char*)0;
   chn->reload=0;
   chn->http_status_line=(char*)0;
 
@@ -117,16 +133,17 @@ static void channel_delete(Channel *chn)
   frontierMemData_delete(chn->md_head);
   frontierResponse_delete(chn->resp);
 
-  if(chn->proxy_url) frontier_mem_free((void*)chn->proxy_url);
+  frontierConfig_delete(chn->cfg);
+  
   if(chn->http_status_line) frontier_mem_free((void*)chn->http_status_line);
 
   frontier_mem_free(chn);
  }
 
 
-FrontierChannel frontier_createChannel(int *ec)
+FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec)
  {
-  Channel *chn=channel_create(ec);
+  Channel *chn=channel_create(srv,proxy,ec);
   return (unsigned long)chn;
  }
 
@@ -134,33 +151,6 @@ FrontierChannel frontier_createChannel(int *ec)
 void frontier_closeChannel(FrontierChannel fchn)
  {
   channel_delete((Channel*)fchn);
- }
-
-
-void frontier_setProxy(FrontierChannel u_channel,const char *proxy,int *ec)
- {
-  Channel *chn=(Channel*)u_channel;
-  int len;
-
-  if(!proxy)
-   {
-    *ec=FRONTIER_EIARG;
-    return;
-   }
-
-  len=strlen(proxy);
-  if(!len)
-   {
-    *ec=FRONTIER_EIARG;
-    return;
-   }
-  
-  if(chn->proxy_url) frontier_mem_free((void*)chn->proxy_url);
-
-  chn->proxy_url=str_copy(proxy,len);
-
-  if(!chn->proxy_url) *ec=FRONTIER_EMEM;
-  else *ec=FRONTIER_OK;
  }
 
  
@@ -347,32 +337,35 @@ static int prepare_channel(Channel *chn)
  }
  
 
-int frontier_getRawData(FrontierChannel u_channel,const char *url)
+int frontier_getRawData(FrontierChannel u_channel,const char *uri)
  {
   CURLcode res;
   Channel *chn=(Channel*)u_channel;
   struct curl_slist *headers=(void*)0;
   int ret=FRONTIER_OK;
   long v_long;
+  const char *req_url;
+  const char *proxy_url;
 
   if(!chn) {ret=FRONTIER_EIARG; goto err;}
 
   ret=prepare_channel(chn);
   if(ret) goto err;
 
-  res=curl_easy_setopt(chn->curl,CURLOPT_URL,url);
+  req_url=frontierConfig_getRequestUrl(chn->cfg,uri,&ret);
+  if(ret!=FRONTIER_OK) goto err;
+
+  res=curl_easy_setopt(chn->curl,CURLOPT_URL,req_url);
   if(res) {ret=FRONTIER_EEND-res; goto err;}  
     
   if(chn->reload) headers=curl_slist_append(headers, "pragma: no-cache");
   else headers=curl_slist_append(headers, "pragma:");
   res=curl_easy_setopt(chn->curl,CURLOPT_HTTPHEADER,headers);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}  
-
-  if(chn->proxy_url)
-   {
-    res=curl_easy_setopt(chn->curl,CURLOPT_PROXY,chn->proxy_url);
-    if(res) {ret=FRONTIER_EEND-res; goto err;}
-   }
+  if(res) {ret=FRONTIER_EEND-res; goto err;}
+  
+  proxy_url=frontierConfig_getProxyUrl(chn->cfg);
+  res=curl_easy_setopt(chn->curl,CURLOPT_PROXY,proxy_url);
+  if(res) {ret=FRONTIER_EEND-res; goto err;}
 
   res=curl_easy_perform(chn->curl);
   //printf("Res=%d\n",res);

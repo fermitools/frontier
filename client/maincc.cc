@@ -179,17 +179,18 @@ class CalTrigWeights
 
 int main(int argc, char **argv)
  {
-  if(argc!=3)
-   {
-    std::cout<<"Usage: "<<argv[0]<<" host port"<<'\n';
-    exit(1);
-   }
+  std::string server_url="";
+  std::string proxy_url="";
  
   try
    {
     frontier::init();    
 
-    frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
+    if(argc>1) server_url=argv[1];
+    if(argc>2) proxy_url=argv[2];
+    
+    frontier::CDFDataSource ds(server_url,&proxy_url);
+    //frontier::CDFDataSource ds;
     
     //ds.setReload(1);
 

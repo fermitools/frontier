@@ -55,28 +55,23 @@ int frontier::init()
   return ret;
  }
 
+
  
-DataSource::DataSource(const std::string& host_name,int port_number,const std::string& application_path,const std::string& proxy_url)
+DataSource::DataSource(const std::string& server_url,const std::string* proxy_url)
  {
   int ec=FRONTIER_OK;
+  const char *proxy_url_c=NULL;
 
-  host=host_name;
-  port=port_number;
-  app_path=application_path;
-  proxy=proxy_url;
-  url=NULL;
+  uri=NULL;
   internal_data=NULL;
   err_code=0;
   err_msg="";
+  
+  if(proxy_url) proxy_url_c=proxy_url->c_str();
 
-  channel=frontier_createChannel(&ec);
+  channel=frontier_createChannel(server_url.c_str(),proxy_url_c,&ec);
   if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not create frontier channel",ec);
   
-  if(proxy.size()>0)
-   {
-    frontier_setProxy(channel,proxy.c_str(),&ec);
-    if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not register proxy",ec);
-   }
  }
 
  
@@ -90,14 +85,13 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
  {
   int ec;
 
-  if(url) {delete url; url=NULL;}
+  if(uri) {delete uri; uri=NULL;}
 
   if(internal_data) {frontierRSBlob_close((FrontierRSBlob*)internal_data,&ec);internal_data=NULL;}
 
   std::ostringstream oss;
   char delim='?';
  
-  oss << "http://" << host << ":" << port << app_path << "Frontier";
   for(std::vector<const Request*>::size_type i=0;i<v_req.size();i++)
    {
     oss << delim << "type=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
@@ -120,10 +114,10 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
      }
    }
 
-  url=new std::string(oss.str());
+  uri=new std::string(oss.str());
   //std::cout << "URL <" << *url << ">\n";
 
-  ec=frontier_getRawData(channel,url->c_str());
+  ec=frontier_getRawData(channel,uri->c_str());
   if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not get data",ec);
  }
 
@@ -245,7 +239,7 @@ DataSource::~DataSource()
   int ec;
   if(internal_data) {frontierRSBlob_close((FrontierRSBlob*)internal_data,&ec);internal_data=NULL;}
   frontier_closeChannel(channel);
-  if(url) delete url;
+  if(uri) delete uri;
  }
 
 

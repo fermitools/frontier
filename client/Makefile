@@ -31,9 +31,9 @@ all: libcurl libfrontier.a distrib
 libcurl:
 	(cd curl; make all)
 
-libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o anydata.o frontier-cpp.o
+libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
 	rm -f libfrontier.a
-	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o anydata.o frontier-cpp.o
+	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o fn-config.o anydata.o frontier-cpp.o
 	ranlib libfrontier.a
 
 distrib:
@@ -72,11 +72,17 @@ memdata.o: memdata.c $(HDR)
 error.o: error.c $(HDR)
 	$(CC) $(COPT) $(INC) -c error.c
 
+fn-config.o: fn-config.c $(HDR)
+	$(CC) $(COPT) $(INC) -c fn-config.c
+
 frontier: libfrontier.a main.o
 	$(CC) $(COPT) $(LIBDIR) -L. -o frontier main.o $(LIBS) -lfrontier
 
 main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
+
+main: all main.o
+	$(CC) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier -lfn-curl
 
 anydata.o: anydata.cc frontier-cpp.h $(HDR)
 	$(CXX) $(COPT) $(CXXOPT) $(INC) -c anydata.cc
@@ -109,7 +115,7 @@ request_each: all request_each.o frontier-cpp.h
 	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier -lfn-curl
 
 clean:
-	rm -f *.o *.core libfrontier.a frontier maincc maintest getcids request_each
+	rm -f *.o *.core libfrontier.a frontier main maincc maintest getcids request_each
 	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
 	(cd expat; rm -f libtool Makefile config.log config.status)
 	(cd curl; make clean)

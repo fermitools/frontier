@@ -64,16 +64,43 @@ void frontierResponse_delete(FrontierResponse *fr);
 int FrontierResponse_append(FrontierResponse *fr,char *buf,int len);
 int frontierResponse_finalize(FrontierResponse *fr);
 
+#define FRONTIER_MAX_SERVERN	4	// Max number of servers in FRONTIER_SERVER env. variable
+#define FRONTIER_MAX_PROXYN	4	// Max number of proxies in FRONTIER_PROXY env. variable
+
+#define FRONTIER_ENV_SERVER	"FRONTIER_SERVER"
+#define FRONTIER_ENV_PROXY	"FRONTIER_PROXY"
+
+#define FRONTIER_MAX_REQUEST_URL	4096
+
+struct s_FrontierConfig
+ {
+  char *server[FRONTIER_MAX_SERVERN];
+  char *proxy[FRONTIER_MAX_PROXYN];
+  int server_num;
+  int proxy_num;
+  int server_cur;
+  int proxy_cur;
+  char buf[FRONTIER_MAX_REQUEST_URL];
+ };
+typedef struct s_FrontierConfig FrontierConfig;
+FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url);
+const char *frontierConfig_getServerUrl(FrontierConfig *cfg);
+const char *frontierConfig_getRequestUrl(FrontierConfig *cfg,const char *uri,int *ec);
+const char *frontierConfig_getProxyUrl(FrontierConfig *cfg);
+int frontierConfig_nextServer(FrontierConfig *cfg);
+int frontierConfig_nextProxy(FrontierConfig *cfg);
+void frontierConfig_delete(FrontierConfig *cfg);
+
 
 struct s_Channel
  {
+  FrontierConfig *cfg;
   FrontierResponse *resp;
   FrontierMemData *md_head;
   void *curl;
   int http_resp_code;
   int status;
   int error;
-  const char *proxy_url;
   int reload;
   const char *http_status_line;
  };

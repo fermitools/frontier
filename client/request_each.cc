@@ -17,9 +17,9 @@
 
 int main(int argc, char **argv)
  {
-  if(argc!=4)
+  if(argc!=3)
    {
-    std::cout<<"Usage: "<<argv[0]<<" host port object_name"<<'\n';
+    std::cout<<"Usage: "<<argv[0]<<" server_url object_name"<<'\n';
     exit(1);
    }
       
@@ -27,11 +27,11 @@ int main(int argc, char **argv)
    {
     frontier::init();
 
-    frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
+    frontier::CDFDataSource ds(argv[1]);
     
     //ds.setReload(1);
 
-    frontier::Request req("frontier_get_cid_list","1",frontier::BLOB,"table_name",argv[3]);
+    frontier::Request req("frontier_get_cid_list","1",frontier::BLOB,"table_name",argv[2]);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req);
@@ -54,9 +54,9 @@ int main(int argc, char **argv)
       std::ostringstream oss;
       oss<<v_cid[i];
       std::string cid=oss.str();
-      std::cout<<argv[3]<<" "<<(i+1)<<" of "<<nrec<<'\t'<<cid;      
+      std::cout<<argv[2]<<" "<<(i+1)<<" of "<<nrec<<'\t'<<cid;      
       frontier::Request req1("calibrunlists","1",frontier::BLOB,"cid",cid);
-      frontier::Request req2(argv[3],"1",frontier::BLOB,"cid",cid);
+      frontier::Request req2(argv[2],"1",frontier::BLOB,"cid",cid);
       std::vector<const frontier::Request*> vrq1;
       vrq1.insert(vrq1.end(),&req1);
       vrq1.insert(vrq1.end(),&req2);
