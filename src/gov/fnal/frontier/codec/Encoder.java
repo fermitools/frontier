@@ -1,4 +1,4 @@
-/*
+/**
  * Frontier encoder interface
  * @author: Sergey Kosyakov
  */
