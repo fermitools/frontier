@@ -1,6 +1,6 @@
 package gov.fnal.frontier;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
@@ -28,7 +28,7 @@ public class ServicerFactory {
      */
     private class SFDataResult {
         public String type = null;
-        public BufferedInputStream data = null;
+        public ByteArrayInputStream data = null;
 
         /**
          * Constructor for a private class.
@@ -36,7 +36,7 @@ public class ServicerFactory {
          * @param aData BufferedInputStream data required for creating the {@link Servicer}
          * sub-class.
          */
-        SFDataResult(String aType, BufferedInputStream aData) {
+        SFDataResult(String aType, ByteArrayInputStream aData) {
             type = aType;
             data = aData;
         }
@@ -72,6 +72,10 @@ public class ServicerFactory {
                 throw new ServicerFactoryException("Received an unknown type of " + result.type);
             }
         } catch (LoaderException e) {
+            System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+                e);
+            e.printStackTrace();
+            System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
             throw new ServicerFactoryException(e.getMessage());
         }
         return servicer;
@@ -104,8 +108,9 @@ public class ServicerFactory {
                     throw new ServicerFactoryException("Multiple rows obtained for query. "
                                                        + query);
                 Blob blob = rs.getBlob(2);
-                result = new SFDataResult(rs.getString(1),
-                                          new BufferedInputStream(blob.getBinaryStream()));
+                int bLen = (int) blob.length();
+                byte[] bData = blob.getBytes((long) 1,bLen);
+                result = new SFDataResult(rs.getString(1),new ByteArrayInputStream(bData));
                 recordCnt++;
             }
             if (recordCnt == 0) {
