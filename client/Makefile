@@ -48,7 +48,7 @@ all: htclient libexpat libfrontier_client.so $(BINAPP)
 
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
-files := ./RELEASE_NOTES ./README ./lib/*.so* ./include/frontier_client/*.h ./ups/*.table
+files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.so* ./include/frontier_client/*.h ./ups/*.table
 distfile := $(tmpdir)/$(package).tar
 distfile_gz := $(distfile).gz
 
