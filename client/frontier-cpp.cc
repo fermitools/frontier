@@ -125,23 +125,15 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
  
   for(std::vector<const Request*>::size_type i=0;i<v_req.size();i++)
    {
+    oss << delim << "type=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
     const char *enc;
     switch(v_req[i]->enc)
      {
       case BLOB: enc="BLOB"; break;
       default: LOGIC_ERROR_NR(this,"Unknown encoding requested",FRONTIER_EIARG);
-     }    
-    if(v_req[i]->is_meta)
-     {
-      oss << delim << "meta=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
-      oss << delim << "encoding=" << enc;
      }
-    else
-     {
-      oss << delim << "type=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
-      oss << delim << "encoding=" << enc;
-      oss << delim << v_req[i]->key1 << '=' << v_req[i]->val1;
-     }
+    oss << delim << "encoding=" << enc;
+    oss << delim << v_req[i]->key1 << '=' << v_req[i]->val1;
 
     if(v_req[i]->v_key)
      {

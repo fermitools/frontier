@@ -1,16 +1,21 @@
 $Id$
 
-v1.0
-This is the first release of Frontier client API. 
-Sergey Kosyakov, serge@fnal.gov
+Project Wiki: http://lynx.fnal.gov/ntier-wiki/
 
-v1.0.1
-The library name has been changed to libfrontier_client.so
-Sergey Kosyakov, serge@fnal.gov
+v1.1.3 11/12/2004
+- simple frontier-id has been added from MAIN branch
+- fixed bug on htclient
 
-v1.0.2
-LD_LIBRARY_PATH bug fixed
-Sergey Kosyakov, serge@fnal.gov
+v1.1.2 09/17/2004
+- frontier.h and frontier-cpp.h moved into include/frontier_client for consistency
+- new method DataSource::isEOF() allows to verify full response demarshalling
+- two new methods for diag/benchmarking tools: DataSource:getRSBinarySize() and DataSource::getRSBinaryPos()
+- fn-any adapted to test isEOF()
+
+
+v1.1.1 (GCC only) 09/15/2004
+- compiled with CDF KIT gcc-3.3.1
+
 
 v1.1 09/14/2004
 - Per-thread (global if not threaded) error message holder
@@ -32,24 +37,18 @@ v1.1 09/14/2004
 - EOR is fully supported now (see test-any.cc as an usage example)
 - the lib version elevated to 1.1.0
 
-v1.1.1 (GCC only) 09/15/2004
-- compiled with CDF KIT gcc-3.3.1
 
-v1.1.2 09/17/2004
-- frontier.h and frontier-cpp.h moved into include/frontier_client for consistency
-- new method DataSource::isEOF() allows to verify full response demarshalling
-- two new methods for diag/benchmarking tools: DataSource:getRSBinarySize() and DataSource::getRSBinaryPos()
-- fn-any adapted to test isEOF()
+v1.0.2
+LD_LIBRARY_PATH bug fixed
+Sergey Kosyakov, serge@fnal.gov
 
-v2.0.1 10/25/2004
- - MetaRequest class added; it requests column names and types information
- - test-any.cc (fn-any) rewritten to use MetaRequest (example of usage)
- - client passes process id, user id, user name and user full name (if set) in requests to server
- - library version excavated to 2.0.1
- 
-v2.0.2 10/25/2004
- - bug which could destroy failover chain has been fixed
- - library version changed to 2.0.2
- 
+
+v1.0.1
+The library name has been changed to libfrontier_client.so
+Sergey Kosyakov, serge@fnal.gov
+
+
+v1.0
+This is the first release of Frontier client API. 
 Sergey Kosyakov, serge@fnal.gov
 

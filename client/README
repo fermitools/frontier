@@ -1,6 +1,6 @@
 $Id$
 
-Frontier client API v2.0.2
+Frontier client API v1.1.3
 
 1. To compile from CVS:
 make
@@ -22,6 +22,6 @@ export FRONTIER_LOG_LEVEL=error
 
 
 
-For more details, guides/manuals see http://whcdf03.fnal.gov/ntier-wiki/FrontPage
+For more details, guides/manuals see http://lynx.fnal.gov/ntier-wiki/
 
 Sergey Kosyakov, serge@fnal.gov

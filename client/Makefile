@@ -9,10 +9,11 @@
 #
 
 FN_VER_MAJOR	=	1
-FN_VER_MINOR	=	1.2
+FN_VER_MINOR	=	2.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
+FNAPI_VERSION	=	KCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
 CXXOPT_LIB	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
 CXXOPT_APP	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
@@ -20,6 +21,7 @@ COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	KCC -shared --no_exceptions -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier_client.so.$(FN_VER_MAJOR)
 else
 # GCC settings
+FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
 CXX		=	c++
 CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
@@ -115,7 +117,7 @@ fn-mem.o: fn-mem.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-mem.c
 
 frontier.o: frontier.c $(HDR)
-	$(CC) $(COPT) $(INC) -c frontier.c
+	$(CC) -DFNAPI_VERSION="\"$(FNAPI_VERSION)\"" $(COPT) $(INC) -c frontier.c
 
 response.o: response.c $(HDR)
 	$(CC) $(COPT) $(INC) -c response.c
