@@ -124,7 +124,7 @@ static void channel_delete(Channel *chn)
 FrontierChannel frontier_createChannel(int *ec)
  {
   Channel *chn=channel_create(ec);
-  return (unsigned int)chn;
+  return (unsigned long)chn;
  }
 
 

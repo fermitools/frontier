@@ -83,6 +83,11 @@ float frontier_n2h_f32(const void* p);
 long long frontier_n2h_i64(const void* p);
 double frontier_n2h_d64(const void* p);
 
+size_t frontier_md5_get_ctx_size();
+void frontier_md5_init(void *ctx);
+void frontier_md5_update(void *ctx,const unsigned char *data,unsigned int len);
+void frontier_md5_final(void *ctx,unsigned char *out);
+
 
 #endif /*__HEADER_H_FRONTIER_H*/
 

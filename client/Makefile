@@ -25,9 +25,9 @@ HDR	=	frontier.h
 all: libfrontier.a
 
 
-libfrontier.a: expat/lib/xmltok.o fn-base64.o frontier.o response.o payload.o rs-bin.o memdata.o error.o frontier-cpp.o
+libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o frontier-cpp.o
 	rm -f libfrontier.a
-	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o frontier-cpp.o
+	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o frontier-cpp.o
 	ranlib libfrontier.a
 
 expat/lib/xmltok.o:
@@ -35,6 +35,9 @@ expat/lib/xmltok.o:
 
 fn-base64.o: fn-base64.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-base64.c
+
+fn-md5.o: fn-md5.c $(HDR)
+	$(CC) $(COPT) $(INC) -c fn-md5.c
 
 frontier.o: frontier.c $(HDR)
 	$(CC) $(COPT) $(INC) -c frontier.c

@@ -46,7 +46,11 @@
 #if defined(XML_USE_MSC_EXTENSIONS)
 #define XMLCALL __cdecl
 #elif defined(__GNUC__)
+#ifdef __amd64__
+#define XMLCALL
+#else
 #define XMLCALL __attribute__((cdecl))
+#endif
 #else
 /* For any platform which uses this definition and supports more than
    one calling convention, we need to extend this definition to
