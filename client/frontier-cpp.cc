@@ -230,6 +230,7 @@ int DataSource::getAnyData(AnyData* buf)
     //printf("The field is NULL\n");
     buf->isNull=1;
     buf->t=dt&(~BLOB_BIT_NULL);
+    buf->v.str.p=NULL;
     return 0;
    }
   //printf("Extracted type prefix %d\n",dt);  
