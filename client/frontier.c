@@ -289,11 +289,14 @@ end:
  }
  
 
+#define ERR_LAST_BUF_SIZE 256
+ 
 int frontier_getRawData(FrontierChannel u_channel,const char *uri)
  {
   Channel *chn=(Channel*)u_channel;
   int ret=FRONTIER_OK;
   FrontierHttpClnt *clnt;
+  char err_last_buf[ERR_LAST_BUF_SIZE];
 
   if(!chn) 
    {
@@ -302,8 +305,8 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
    }
   
   clnt=chn->ht_clnt;
-
   chn->reload=chn->user_reload;
+  bzero(err_last_buf,ERR_LAST_BUF_SIZE);
   
   while(1)
    {
@@ -314,6 +317,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
       if(ret==FRONTIER_OK) break;
      }
     frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Request failed: %d %s",ret,frontier_getErrorMsg());
+    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request failed: %d %s",ret,frontier_getErrorMsg());
     
     if(!chn->reload)
      {
@@ -335,7 +339,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
       frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Trying next server");
       continue;      
      }    
-    frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies");
+    frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
     break;
    }
    
