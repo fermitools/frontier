@@ -33,9 +33,9 @@ void print_time(const char *msg)
 
 int main(int argc, char **argv)
  {   
-  if(argc!=6)
+  if(argc<6)
    {
-    std::cout<<"Usage: "<<argv[0]<<" host port object_name key_name key_value"<<'\n';
+    std::cout<<"Usage: "<<argv[0]<<" host port object_name key_name key_value [{object_name key_name key_value} ...]"<<'\n';
     exit(1);
    }
       
@@ -46,18 +46,25 @@ int main(int argc, char **argv)
     frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
     
     //ds.setReload(1);
-
-    frontier::Request req(argv[3],"1",frontier::BLOB,argv[4],argv[5]);
-
+    
     std::vector<const frontier::Request*> vrq;
-    vrq.insert(vrq.end(),&req);
+    for(int i=3;i+2<argc;i+=3)
+     {
+      frontier::Request* req=new frontier::Request(argv[i],"1",frontier::BLOB,argv[i+1],argv[i+2]);     
+      vrq.insert(vrq.end(),req);
+     }
     print_time("start:  ");
     ds.getData(vrq);
     print_time("finish: ");
 
-    ds.setCurrentLoad(1);
-    int nrec=ds.getRecNum();
-    std::cout<<"Got "<<nrec<<" records back."<<'\n';
+    for(int i=1;i<=vrq.size();i++)
+     {
+      ds.setCurrentLoad(i);
+      int nrec=ds.getRecNum();
+      std::cout<<"Payload "<<i<<" number of records "<<nrec<<'\n';
+      delete vrq[i-1];
+     }
+    
    }
   catch(std::exception& e)
    {
