@@ -66,9 +66,7 @@ public final class Frontier extends CacheHttpServlet {
 	response.setContentType("text/xml");
 	response.setCharacterEncoding("US-ASCII");
 	// For Squid
- 	//response.setHeader("Cache-Control","max-age=31557600");
  	response.setDateHeader("Expires",timestamp+time_expire);
- 	//response.setHeader("Last-Modified","Wed, 13 Jan 2004 19:22:28 GMT");
 
 	connMgr = DbConnectionMgr.getDbConnectionMgr();
 	parser  = new CommandParser();

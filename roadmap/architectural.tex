@@ -47,39 +47,99 @@ to deliver.  These definitions identify several important features:
 \item the \emph{name} and \emph{version} of this type
 \item the \emph{names} and \emph{types} of the attributes that will be
 returned
-\item the combinations of attributes that form \emph{keys} (AND condition
-is assumed for compound keys)
+\item the combinations of attributes that form \emph{keys}
 \item an implied \emph{order} in which attributes are gaurenteed
 to be delivered
 \end{enumerate}
 
-Desired attributes will always be returned in lexical ordering by
-name of the attribute.
 In addition to the things listed above, it may be worthwhile allowing
 information that is domain specific, such as connecting this type
 to a namespace or identifying SQL statements that can be used to
 retrieve the information efficiently from a database.  Data type 
 definitions will be in XML.
 
+Below is the definition of the XML protocol which defines a single query
+to a table or tables. 
+
 \begin{verbatim}
 
-<definition type=Thing version=3>
- <attr type=short name=ID key-position=1/>
- <attr type=char name=version key-position=2/>
- <attr type=long name=Run />
- <attr type=int name=Piglet />
- <attr type=double name=Swine />
- <attr type=int name=Many length=30 />
- <attr type=string name=Name />
- <attr type=string name=Args length=20 />
- <returned-attr-list>Run Piglet Swine Many Name Args</returned-attr-list>
- <key>ID</key>
- <key>Run Piglet</key>
- <key>Swine Run</key>
- <private-stuff>blah blah blah</private-stuff>
-</definition>
+<descriptor type="calibrunlist" version="1" xmlversion="1"/>
+  <attribute position="1" type="int" field ="calib_run"/>
+  <attribute position="3" type="float" field="calc_value"/>
+  <attribute position="2" type="long" field="calib_version"/>
+  <select>cr.calib_run, cr.calib_version, func(n)</select>
+  <from>calibrunlist cr</from>
+  <where>
+    <clause>cid=@parm</clause>
+    <param> position="1" type="int" key="cid"/>
+  </where>
+  <where>
+    <clause>run=@param and xyz=@param</clause>
+    <param position="1" type="int" key="run"/>
+    <param position="2" type="string" key="xyz"/>
+  </where>
+  <final>order by ..... desc</final>
+</descriptor>
 
 \end{verbatim}
+
+\begin{enumerate}
+\item \emph{descriptor} - Top level tag describing what the data is for.
+\begin{itemize}
+\item \emph{type} - Name of the specific object this descriptor is for.
+\item \emph{version} - Version number of the object.
+\item \emph{xmlversion} - The version of XML which is being used to process the descriptor.
+\end{itemize}
+\item \emph{attribute} - Describles a datum which is being returned. The datum will be marshed 
+according to the order of the \emph{attribute} tags.
+\begin{itemize}
+\item \emph{position} - The location of the datam in the \emph{select} tag this \emph{attribute}
+is decribing.
+\item \emph{type} - How the data will be marsheled out.  This is also the value returned when 
+the client requests a description.  Valid values are:
+\begin{itemize}
+\item \emph{int}
+\item \emph{long}
+\item \emph{double}
+\item \emph{string}
+\item \emph{bytes}
+\item \emph{date}
+\end{itemize}
+\item \emph{field} - The name of the filed provided to the client when asked for a description.
+\end{itemize}
+\item \emph{select} - The fields returned from a query.
+\item \emph{where} - A wrapper around tags which describe a specific where clause.  There may be 
+multiples of this  tag.  The application decides on the \emph{where} to use based on the keys 
+provided in the URL.
+\item \emph{clause} - The SQL for the where clause, without the word ``where'', This will be used 
+in the query.  Parameters may be passed in by useing the keyword ``@param''.  
+\item \emph{param} - Identifies which ``@param'' keyword to replace with what value.
+\begin{itemize}
+\item \emph{position} - Which keyword to replace with this parameter
+\item \emph{type} - How that keyword string is to be translated.  Valid values are
+\begin{itemize}
+\item \emph{int}
+\item \emph{long}
+\item \emph{double}
+\item \emph{string}
+\item \emph{date}
+\end{itemize}
+\item \emph{key} - What key, supplied on the URL, which is being substituted into the parameter.
+\end{itemize}
+\item \emph{final} - Any final SQL clause which should be included in the query.
+
+\end{enumerate}
+
+In this definition a single description contains one select.  That select may have multiple where
+clauses.  The where clause is chosen based on the keys provided in the URL.  Consideration was given
+to allowing multiple selects in a description.  This has not been included due to the amount of 
+effort required versus the amount of expected use.  
+
+Consideration was also given for adding a second descriptor which defines how to convert the data
+from the result set to the user object.  This has been put off to keep the initial implemention
+fairly straight forward.  It may be added in the future.  The tag \emph{xmlversion} was added to 
+make these changes possible.
+
 
 \subsection{Nature of the returned data}
 
@@ -339,8 +399,6 @@ payload bundle; they are received as distinct items.
 
 The reply is an XML datagram.  The XML serves as a descriptive wrapper
 around the data payload.
-
-\subsubsection{Datagram XML protocol}
 
 The datagram XML's protocol identifies the data being returned, detailing the contents 
 of each section of data being returned being quality of the data section. An example of a 
