@@ -9,7 +9,7 @@
 #
 
 FN_VER_MAJOR	=	1
-FN_VER_MINOR	=	0.0
+FN_VER_MINOR	=	1.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
@@ -71,6 +71,8 @@ $(distfile_gz): all dist-prepare
 	mkdir dist/include/frontier_client
 	cp frontier-cpp.h dist/include/frontier_client
 	cp frontier.h dist/include/frontier_client
+	mkdir dist/bin
+	cp $(BINAPP) dist/bin/
 	cp RELEASE_NOTES dist/
 	cp README dist/
 	cp -r ups dist/

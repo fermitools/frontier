@@ -14,6 +14,7 @@ Common:
     setupenv()
     proddir()
     envPrepend(LD_LIBRARY_PATH, "${UPS_PROD_DIR}/lib")
+    envPrepend(PATH, "${UPS_PROD_DIR}/bin")
 
 END:
 
