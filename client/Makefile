@@ -55,7 +55,9 @@ libfrontier.so: fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o me
 distrib:
 	rm -fr dist/lib dist/include
 	mkdir dist/lib
-	cp libfrontier.* dist/lib/
+	cp libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
+	(cd dist/lib/; ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR) )
+	(cd dist/lib/; ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so )
 	mkdir dist/include
 	cp frontier-cpp.h dist/include
 	cp frontier.h dist/include
