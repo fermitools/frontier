@@ -246,6 +246,7 @@
     <pathelement location="${junit.jar}"/>
     <pathelement location="${build.home}/classes"/>
     <pathelement location="${build.home}/test"/>
+    <pathelement location="${build.home}/WEB-INF/classes"/>
   </path>
 
 
