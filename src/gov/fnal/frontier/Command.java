@@ -59,6 +59,8 @@ public class Command
      {
       Command c=new Command();
       
+      System.out.println("p0=["+param[0]+"]");
+      
       if(param[0].equals("type"))
        {
         c.cmd_domain=CMD_GET;
@@ -80,7 +82,7 @@ public class Command
         throw new Exception("Unsupported request type ["+param[0]+"]");
        }
        
-      if(!get_next_param(param,env,query_str)) throw new Exception("Incomplete - first down and 10!");
+      if(get_next_param(param,env,query_str)) throw new Exception("Incomplete - first down and 10!");
       
       if(param[0].equals("encoding")) c.encoder=param[1];
       else throw new Exception("Unexpected parameter ["+param[0]+"="+param[1]+"]");
@@ -100,7 +102,7 @@ public class Command
    
 
    
-  private boolean static get_next_param(String[] param,Object[] env,String str) throws Exception
+  private static boolean get_next_param(String[] param,Object[] env,String str) throws Exception
    {
     param[0]=null;
     param[1]=null;
@@ -124,7 +126,7 @@ public class Command
     param[0]=par;    
     if(par.equals("type") || par.equals("meta"))
      {
-      st=new StrinTokenizer(val,":");
+      st=new StringTokenizer(val,":");
       param[1]=st.nextToken();
       if(st.hasMoreTokens()) param[2]=st.nextToken();
       if(st.hasMoreTokens()) param[3]=st.nextToken();

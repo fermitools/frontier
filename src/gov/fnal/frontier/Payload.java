@@ -1,6 +1,7 @@
 package gov.fnal.frontier;
 
 import java.sql.*;
+import java.io.*;
 
 public class Payload
  {
@@ -8,8 +9,18 @@ public class Payload
   private Command cmd;
   private FrontierDataObject fdo;
   
-  private static finale String fds_sql=
+  private static final String fds_sql=
    "select xsd_type,xsd_data from "+Frontier.getXsdTableName()+" where name = ? and version = ? ";
+   
+  public boolean noCache=false;
+  public long time_expire=1000000;
+  public String type;
+  public String version;
+  public String encoder;
+  public int err_code;
+  public String err_msg;
+  public String md5;
+  public int rec_num;
   
   protected Payload(Command a_cmd,DbConnectionMgr a_dbm) throws Exception
    {
@@ -43,5 +54,18 @@ public class Payload
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
       if(con!=null) try{dbm.release(con);}catch(Exception e){}
      }
+     
+    type=cmd.obj_name;
+    version=cmd.obj_version;
+    encoder=cmd.encoder;
+    err_code=0;
+    err_msg="";
+    md5="";
+    rec_num=0;
+   }
+   
+   
+  public void send(OutputStream out) throws Exception
+   {
    }
  }

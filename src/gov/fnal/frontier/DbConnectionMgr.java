@@ -37,9 +37,10 @@ public class DbConnectionMgr
   private DbConnectionMgr() throws Exception
    {
     Context initContext=new InitialContext();
-    //Context envContext = (Context) initContext.lookup("java:/comp/env");
-    //dataSource = (DataSource) envContext.lookup(Frontier.getDsName());
-    dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
+    Context envContext=(Context)initContext.lookup("java:/comp/env");
+    System.out.println("Looking for ["+Frontier.getDsName()+"]");
+    dataSource = (DataSource)envContext.lookup(Frontier.getDsName());
+    //dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
     if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
    }
 

@@ -27,7 +27,7 @@ public final class Frontier
   private static synchronized void init() throws Exception
    {
     if(initialized) return;
-    PropertyResourceBundle prb=PropertyResourceBundle.getBundle("config");
+    ResourceBundle prb=PropertyResourceBundle.getBundle("config");
     conf_server_name=prb.getString("ServerName");
     conf_ds_name=prb.getString("DataSourceName");
     conf_xsd_table=prb.getString("XsdTableName");
@@ -59,7 +59,7 @@ public final class Frontier
 
     try 
      {
-      logClientDesc();          
+      logClientDesc(req);          
       connMgr=DbConnectionMgr.getDbConnectionMgr();
       commandList=Command.parse(req);
       payloads_num=commandList.size();
@@ -71,7 +71,7 @@ public final class Frontier
         if(p.noCache) noCache=true;
         if(time_expire<0) time_expire=p.time_expire;
         if(p.time_expire<time_expire) time_expire=p.time_expire;
-        aPayloads.append(p);
+        aPayloads.add(p);
        }
      } 
     finally 
@@ -85,16 +85,15 @@ public final class Frontier
    }
 
    
-  private void logClientDesc() throws Exception
+  private void logClientDesc(HttpServletRequest req) throws Exception
    {
-    String queryString=URLDecoder.decode(req.getQueryString(),"US_ASCII");
-    StringBuffer client_desc=new StringBuffer("");
+    String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); StringBuffer client_desc=new StringBuffer("");
     client_desc.append("start threads:");
     client_desc.append(count_current);
     client_desc.append(" query ");
     client_desc.append(queryString);
     client_desc.append(" raddr ");
-    client_desc.append(request.getRemoteAddr());
+    client_desc.append(req.getRemoteAddr());
     client_desc.append(" frontier-id: ");
     client_desc.append(req.getHeader("x-frontier-id"));
     for(Enumeration en=req.getHeaderNames();en.hasMoreElements();)

@@ -9,71 +9,71 @@ public class ResponseFormat
  {
   static void handleError(String where, Exception e)
    {
-    System.out.ptrintln("Error is ignored in ResponseFormat."+where+":"+e);
+    System.out.println("Error is ignored in ResponseFormat."+where+":"+e);
    }
 
 
   static void begin(ServletOutputStream out,String version,String xmlversion) throws Exception
    {
-    out.write("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>\n");
-    out.write("<!DOCTYPE frontier SYSTEM \"http://frontier.fnal.gov/frontier.dtd\">\n");
-    out.write("<frontier version=\"");
-    out.write(version);
-    out.write("\" xmlversion=\"");
-    out.write(xmlversion);
-    out.write("\">\n");
+    out.print("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>\n");
+    out.print("<!DOCTYPE frontier SYSTEM \"http://frontier.fnal.gov/frontier.dtd\">\n");
+    out.print("<frontier version=\"");
+    out.print(version);
+    out.print("\" xmlversion=\"");
+    out.print(xmlversion);
+    out.print("\">\n");
    }
 
    
   static void transaction_start(ServletOutputStream out,int num) throws Exception
    {
-    out.write(" <transaction payloads=\"");
-    out.write(num);
-    out.write("\">\n");
+    out.print(" <transaction payloads=\"");
+    out.print(num);
+    out.print("\">\n");
    }
 
    
   static void transaction_end(ServletOutputStream out) throws Exception
    {
-    out.write(" </transaction>\n");
+    out.print(" </transaction>\n");
    }
       
    
   static void payload_start(ServletOutputStream out,String type,String version,String encoder) throws Exception
    {
-    out.write("  <payload type=\"");
-    out.write(type);
-    out.write("\" version=\"");
-    out.write(version);
-    out.write("\" encoding=\"");
-    out.write(encoding);
-    out.write("\">\n");
-    out.write("   <data>");
+    out.print("  <payload type=\"");
+    out.print(type);
+    out.print("\" version=\"");
+    out.print(version);
+    out.print("\" encoding=\"");
+    out.print(encoder);
+    out.print("\">\n");
+    out.print("   <data>");
    }
 
    
   static void payload_end(ServletOutputStream out,int err_code,String err_msg,String md5,int rec_num) throws Exception
    {
-    out.write("</data>\n");
-    out.write("   <quality error=\"");
-    out.write(err_code);
+    out.print("</data>\n");
+    out.print("   <quality error=\"");
+    out.print(err_code);
     if(err_msg.length()>0)
      {
-      out.write("\" message=\"");
-      out.write(java.net.URLEncoder.encode(err_msg,"US_ASCII"));
+      out.print("\" message=\"");
+      out.print(java.net.URLEncoder.encode(err_msg,"US-ASCII"));
      }
     if(md5.length()>0)
      {
-      out.write("\" md5=\"");
-      out.write(md5);
+      out.print("\" md5=\"");
+      out.print(md5);
      }    
     if(rec_num>=0)
      {
-      out.write("\" records=\"");
-      out.write(rec_num);
+      out.print("\" records=\"");
+      out.print(rec_num);
      }
-    out.write("\"/>\n");
-    out.write("  </payload>");
+    out.print("\"/>\n");
+    out.print("  </payload>");
    }
          
   
@@ -81,7 +81,7 @@ public class ResponseFormat
    {
     try
      {
-      out.write("\n  <global_error>"+java.net.URLEncoder.encode(msg,"US_ASCII")+"</global_error>\n");
+      out.print("\n  <global_error>"+java.net.URLEncoder.encode(msg,"US-ASCII")+"</global_error>\n");
      }
     catch(Exception e)
      {
@@ -94,7 +94,7 @@ public class ResponseFormat
    {
     try
      {
-      out.write("</frontier>\n");
+      out.print("</frontier>\n");
      }
     catch(Exception e)
      {

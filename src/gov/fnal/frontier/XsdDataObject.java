@@ -3,6 +3,7 @@ package gov.fnal.frontier;
 import java.io.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
+import gov.fnal.frontier.codec.Encoder;
 
 
 public class XsdDataObject extends DefaultHandler implements FrontierDataObject
@@ -19,7 +20,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }
 
       
-  void fdo_init(byte[] body) throws Exception
+  public void fdo_init(byte[] body) throws Exception
    {
     String xml=new String(body);
     XMLReader parser=null;
@@ -44,12 +45,12 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }
  
      
-  void fdo_get(OutputStream out,Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public void fdo_get(OutputStream out,Encoder enc,String method,FrontierDataStream fds) throws Exception
    {
    }
    
    
-  void fdo_meta(OutputStream out,Encoder enc) throws Exception
+  public void fdo_meta(OutputStream out,Encoder enc) throws Exception
    {
    }
   
@@ -66,14 +67,14 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   
   public void startElement(String uri,String local,String raw, Attributes attrs) throws SAXException 
    {
-    System.out.printl("startElem u="+uri+",l="+local+",r="+raw+",a="+attrs);
+    System.out.println("startElem u="+uri+",l="+local+",r="+raw+",a="+attrs);
     if(attrs!=null) 
      {
-      for(int i=0;i<attrs.length();i++) 
+      for(int i=0;i<attrs.getLength();i++) 
        {
         String n=attrs.getQName(i);
         String v=attrs.getValue(i);
-        System.out.println("attr "+n+":"+v+".";
+        System.out.println("attr "+n+":"+v+".");
        }
      }
    }

@@ -19,7 +19,7 @@ public final class FrontierServlet extends HttpServlet
     
     try
      {
-      writer=response.getOuputStream();      
+      out=response.getOutputStream();      
       response.setContentType("text/xml");
       response.setCharacterEncoding("US-ASCII");
       try
@@ -32,8 +32,7 @@ public final class FrontierServlet extends HttpServlet
       catch(Exception e)
        {
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
-        ResponseFromat.putGlobalError(out,"Error: "+e);
-        ResponseFormat.close(out);
+        ResponseFormat.putGlobalError(out,"Error: "+e);
         return;
        }
        
@@ -43,7 +42,7 @@ public final class FrontierServlet extends HttpServlet
        {
         for(int i=0;i<frontier.payloads_num;i++)
          {
-          Payload p=frontier.getPayload(i);          
+          Payload p=(Payload)frontier.aPayloads.get(i);          
           ResponseFormat.payload_start(out,p.type,p.version,p.encoder);
           try
            {
@@ -68,7 +67,7 @@ public final class FrontierServlet extends HttpServlet
     catch(Exception e)
      {
       Frontier.Log("Error: MUST NEVER HAPPEN HERE!: ",e);
-      ResponseFromat.putGlobalError(out,"Error: "+e);
+      ResponseFormat.putGlobalError(out,"Error: "+e);
      }
     finally
      {
