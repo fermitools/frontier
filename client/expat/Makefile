@@ -8,6 +8,9 @@ all: local/lib/libfn-expat.so.1.0.0
 
 
 local/lib/libfn-expat.so.1.0.0:
+	rm -rf local
+	mkdir local
+	mkdir local/lib
 	gunzip -c expat-1.95.7.tar.gz|tar xf -
 	(cd expat-1.95.7/lib; patch < ../../patch_expat_h)
 	sh conf.sh
@@ -20,8 +23,5 @@ local/lib/libfn-expat.so.1.0.0:
 
 clean:
 	rm -rf expat-1.95.7
-	rm -rf local/bin
-	rm -rf local/include
-	rm -rf local/man
-	rm -rf local/lib/libfn-expat*
+	rm -rf local
 

@@ -58,7 +58,8 @@ libfrontier.so: $(OBJ)
 	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so
 
 distrib:
-	rm -fr dist/lib dist/include
+	rm -fr dist
+	mkdir dist
 	mkdir dist/lib
 	cp libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
 	(cd dist/lib/; ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR) )
@@ -147,5 +148,6 @@ clean:
 	rm -fr dist/lib dist/include
 	rm -rf .libs
 	rm -rf ti_files
+	rm -fr dist
 
 
