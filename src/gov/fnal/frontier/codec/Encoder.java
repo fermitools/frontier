@@ -6,6 +6,7 @@ package gov.fnal.frontier.codec;
 
 public interface Encoder
  {
+  public void flush() throws Exception;
   public void writeInt(int v) throws Exception;
   public void writeLong(long v) throws Exception;
   public void writeDouble(double v) throws Exception;

@@ -11,11 +11,12 @@ import java.io.*;
 public class BlobEncoder implements Encoder
  {
   protected DataOutputStream os;
+  protected Base64.OutputStream b64os;
   private long out_size=0;
 
   public BlobEncoder(OutputStream out) throws Exception
    {
-    OutputStream b64os=new Base64.OutputStream(out);
+    b64os=new Base64.OutputStream(out);
     os=new DataOutputStream(b64os);
    }
 
@@ -62,9 +63,18 @@ public class BlobEncoder implements Encoder
     throw new Exception("Not implemented yet");
    }
 
-  public void close() throws Exception
+  public void flush() throws Exception
    {
     os.flush();
+    b64os.flushBase64();
+   }
+
+
+  public void close() throws Exception
+   {
+    os.close();
+    os=null;
+    b64os=null;
    }
  }
 
