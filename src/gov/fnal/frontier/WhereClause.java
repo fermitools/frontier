@@ -11,6 +11,7 @@ public class WhereClause {
 
     ArrayList params = new ArrayList();
     String[] phrases = null;
+    int requiredNumberOfParams = 0;  // The number of @params that MUST exist in the XSD.
 
     /**
      * Private class internal to WhereClause which identifies a single parameter of the
@@ -45,7 +46,32 @@ public class WhereClause {
      * @param clause String
      */
     public void addClause(String clause) {
+        requiredNumberOfParams = countSubString(clause,"@param");
         phrases = clause.split("@param");
+    }
+
+    /**
+     * Parses a string and returns a count of the number of sub strings it contains.  This should
+     * be done with the XML parser.  The structure of a where clause in the XSD should be
+     * reconsidered.
+     * @param aString String
+     * @param subString String
+     * @return int
+     */
+    private int countSubString(String aString,String subString) {
+        int paramCnt = 0;
+        int position = 0;
+        int startIndex = 0;
+        int subStringLength = subString.length();
+
+        int frount = 0;
+        for(int back=subStringLength;back<=aString.length();back++) {
+            String partial = aString.substring(frount,back);
+            if (partial.equals(subString))
+                paramCnt += 1;
+            frount += 1;
+        }
+        return paramCnt;
     }
 
     /**
@@ -75,7 +101,7 @@ public class WhereClause {
             if(phrases.length > 1)
                 throw new LoaderException(
                     "Where clause - not enough keys were included for the @params in the clause.");
-        } else if(params.size() != phrases.length)
+        } else if(params.size() != requiredNumberOfParams)
             throw new LoaderException(
                 "Where clause - not enough keys were included for the @params in the clause.");
     }
