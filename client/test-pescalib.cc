@@ -34,32 +34,32 @@ class PESCalib
  {
   public:
    long long address;
-   double gain;
-   double sourcemean;
-   double sourcerms;
-   double sourcenorm;
-   double lasernorm;
-   double linearity1;
-   double linearity2;
-   double linearity3;
-   double attenuation1;
-   double attenuation2;
-   double attenuation3;
+   float gain;
+   float sourcemean;
+   float sourcerms;
+   float sourcenorm;
+   float lasernorm;
+   float linearity1;
+   float linearity2;
+   float linearity3;
+   float attenuation1;
+   float attenuation2;
+   float attenuation3;
 
   PESCalib(frontier::CDFDataSource& ds)
    {
     address=ds.getLongLong();
-    gain=ds.getDouble();
-    sourcemean=ds.getDouble();
-    sourcerms=ds.getDouble();
-    sourcenorm=ds.getDouble();
-    lasernorm=ds.getDouble();
-    linearity1=ds.getDouble();
-    linearity2=ds.getDouble();
-    linearity3=ds.getDouble();
-    attenuation1=ds.getDouble();
-    attenuation2=ds.getDouble();
-    attenuation3=ds.getDouble();
+    gain=ds.getFloat();
+    sourcemean=ds.getFloat();
+    sourcerms=ds.getFloat();
+    sourcenorm=ds.getFloat();
+    lasernorm=ds.getFloat();
+    linearity1=ds.getFloat();
+    linearity2=ds.getFloat();
+    linearity3=ds.getFloat();
+    attenuation1=ds.getFloat();
+    attenuation2=ds.getFloat();
+    attenuation3=ds.getFloat();
    }
    
   void print()
