@@ -54,6 +54,17 @@ static std::string create_err_msg(const char *str)
 
 using namespace frontier;
 
+
+void Request::addKey(const std::string& key,const std::string& value)
+ {
+  if(!v_key) v_key=new std::vector<std::string>();
+  if(!v_val) v_val=new std::vector<std::string>();
+  
+  v_key->insert(v_key->end(),key);
+  v_val->insert(v_val->end(),value);
+ }
+ 
+
 Request::~Request()
  {
   if(v_val) {delete v_val; v_val=NULL;}

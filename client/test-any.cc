@@ -46,23 +46,28 @@ int do_main(int argc, char **argv)
 #endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc!=4)
+    if(argc<4)
      {
-      std::cout<<"Usage: "<<argv[0]<<" object_name key_name key_val\n";
+      std::cout<<"Usage: "<<argv[0]<<" object_name key_name key_val {key_name key_val}\n";
       exit(1);
      }
      
-    std::cout<<"Requesting \""<<argv[1]<<"\" key \""<<argv[2]<<"\" : \""<<argv[3]<<"\""<<std::endl;
+    //std::cout<<"Requesting \""<<argv[1]<<"\" key \""<<argv[2]<<"\" : \""<<argv[3]<<"\""<<std::endl;
 
     frontier::CDFDataSource ds;
     CHECK_ERROR();
     
     //ds.setReload(1);
 
-    frontier::Request req1(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
+    frontier::Request req(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
 
     std::vector<const frontier::Request*> vrq;
-    vrq.insert(vrq.end(),&req1);
+    for(int i=4;i+1<argc;i+=2)
+     {
+      req.addKey(argv[i],argv[i+1]);     
+     }
+    
+    vrq.insert(vrq.end(),&req);
     ds.getData(vrq);
     CHECK_ERROR();
 
