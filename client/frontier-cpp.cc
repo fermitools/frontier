@@ -191,6 +191,20 @@ DataSource::~DataSource()
  }
 
 
+std::vector<unsigned char>* CDFDataSource::getRawAsArrayUChar()
+ {
+  std::string *blob=getBlob();
+  int len=blob->size();
+  std::vector<unsigned char> *ret=new std::vector<unsigned char>(len);
+  const char *s=blob->c_str();
+  for(int i=0;i<len;i++)
+   {
+    ret->operator[](i)=s[i];
+   }
+  delete blob;
+  return ret;
+ }
+
 
 std::vector<int>* CDFDataSource::getRawAsArrayInt()
  {

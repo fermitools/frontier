@@ -85,6 +85,7 @@ class CDFDataSource:public virtual DataSource
                  int port_number,
                  const std::string& application_path,
                  const std::string& proxy_url):DataSource(host_name,port_number,application_path,proxy_url){}
+   std::vector<unsigned char> *getRawAsArrayUChar();
    std::vector<int> *getRawAsArrayInt();
    std::vector<float> *getRawAsArrayFloat();
    std::vector<double> *getRawAsArrayDouble();
