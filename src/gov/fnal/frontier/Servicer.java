@@ -22,23 +22,17 @@ public class Servicer {
      "select CALIB_RUN,CALIB_VERSION,PERIOD,DATA_STATUS from CALIBRUNLISTS WHERE CID = ? ";
     
     String tableName    = null;
-    public Long   cid          = null;
+    public int param_num=1;
+    public Command cmd=null;
 
     Servicer() {}
 
     public void validate(Command command) throws ServicerValidationException {
 
-	String type = command.get("type");
+        cmd=command;
+	String type=command.get("type");
 	StringTokenizer typeComponets = new StringTokenizer(type,":");
-	tableName    = typeComponets.nextToken();
-	String cidKey    = command.get("cid");
-	if (cidKey == null)
-	    throw new ServicerValidationException("The key 'cid' was not provided.");
-	try {
-	    cid = new Long(cidKey);
-	} catch (NumberFormatException e) {
-	    throw new ServicerValidationException("Unable to convert value of cid to long. Value is: " + cidKey);
-	}
+	tableName=typeComponets.nextToken();
     }
 	
     public String getSql() {
@@ -49,6 +43,12 @@ public class Servicer {
 	    sql=sql+" order by 1,2";
 	else if(tableName.compareToIgnoreCase("pescalib")==0)
 	    sql=sql_pescalib;
+	else if(tableName.compareToIgnoreCase("frontier_get_cid_list")==0)
+	    {
+	     sql="select cid from "+cmd.get("table_name");
+	     System.out.println("Get cid sql <"+sql+">");
+	     param_num=0;
+	    }
 	return sql;
     }
 

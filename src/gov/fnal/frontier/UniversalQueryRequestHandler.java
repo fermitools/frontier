@@ -73,7 +73,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	String sql=servicer.getSql();
 	try {
 	    stmt=connection.prepareStatement(sql);
-	    stmt.setLong(1,servicer.cid.longValue());
+	    if(servicer.param_num>0) stmt.setString(1,servicer.cmd.get("cid"));
 	    rs=stmt.executeQuery();
 	    marshal(servicer,rs);
 	} catch (SQLException e) {
