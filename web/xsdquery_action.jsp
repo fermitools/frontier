@@ -6,19 +6,18 @@
    String version = request.getParameter("version");
 %>
 <html>
+<body bgcolor="yellow">
 <head>
-<title>spw action</title>
+<title>xsdquery_action.jpg</title>
 </head>
 <body>
-<H1 align="center">XML Service Descriptor for </h1>
+<H1 align="center"><font class="blue">X</font>ML <font color="blue">S</font>ervice<font color="blue">D</font>escriptor Detail</h1>
 <table align="center">
     <tr>
-        <td>Table: <b><%= type %></b></td>
-    </tr>
-    <tr>
-        <td>Version: <b><%= version %></b></td>
+        <td>Table: <b><%= type %></b> Version: <b><%= version %></b></td>
     </tr>
 </table>
+<br /><br />
 <table border="3" align="center">
 <tr>
           <th>Attribute</th>
@@ -29,8 +28,8 @@
     while (it.hasNext()) {
         Attribute at = (Attribute) it.next(); %>
         <tr>
-            <td> <%= at.getField() %> </td>
-            <td> <%= at.getType()  %> </td>
+            <td bgcolor="white"> <%= at.getField() %> </td>
+            <td bgcolor="white"> <%= at.getType()  %> </td>
         </tr>
  <% } %>
 </table>

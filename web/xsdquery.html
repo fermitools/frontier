@@ -1,19 +1,26 @@
 <html>
+<body bgcolor="yellow">
 <head>
 <title>XSD Query</title>
 </head>
 <body>
-<h1 align="center">Returns XSD Table Details.</h1>
-<form   method="post" action="spw_action.jsp">
-    <p align="center">
-    <label for="type">Table Name: </label>
-    <input ttabindex="1" type="test" name="type" value="" >
-    <br />
-    <label for="version"> Version: </label>
-    <input tabindex="2" type="text" name="version" value="" >
-    <br /><br />
-    <input tabindex="3" type="submit" name="Submit" value="Submit" >
-    </p>
+<h1 align="center"><font color="blue">X</font>ML <font color="blue">S</font>ervice <font color="blue">D</font>escriptor Query Form</h1>
+<form   method="post" action="xsdquery_action.jsp">
+    <table align="center">
+        <tr>
+                <td><label for="type">Table Name:</label></td>
+                <td><input tabindex="1" type="test" name="type" value="" ></td>
+        </tr>
+            <tr>
+                    <td><label for="version">Version:</label></td>
+                    <td><input tabindex="2" type="text" name="version" value="" ></td>
+            </tr>
+    </table>
+    <table align="center">
+        <tr>
+                    <td><input tabindex="3" type="submit" name="Submit" value="Submit" ></td>
+            </tr>
+        </table>
 </form>
 </body>
 </html>
