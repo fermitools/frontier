@@ -10,13 +10,15 @@ public class CommandParserValueException extends CommandParserException {
     /**
      * Constructor.
      */
-    CommandParserValueException() {}
+    public CommandParserValueException() {
+        super();
+    }
 
     /**
      * Constructor.
      * @param message String informational data about the exception.
      */
-    CommandParserValueException(String message) {
+    public CommandParserValueException(String message) {
         super(message);
     }
 

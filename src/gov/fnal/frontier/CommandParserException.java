@@ -5,18 +5,20 @@ package gov.fnal.frontier;
  * @author Stephen P. White <swhite@fnal.gov>
  * @version $Revision$
  */
-public class CommandParserException extends Exception {
+public class CommandParserException extends FrontierException {
 
     /**
      * Constructor.
      */
-    CommandParserException() {}
+    public CommandParserException() {
+        super();
+    }
 
     /**
      * Constructor
      * @param message String informational data about the exception.
      */
-    CommandParserException(String message) {
+    public CommandParserException(String message) {
         super(message);
     }
 

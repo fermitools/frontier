@@ -5,18 +5,20 @@ package gov.fnal.frontier;
  * @author Stephen P. White <swhite@fnal.gov>
  * @version $Revision$
  */
-public class ServicerFactoryException extends Exception {
+public class ServicerFactoryException extends FrontierException {
 
     /**
      * Constructor.
      */
-    ServicerFactoryException() {}
+    public ServicerFactoryException() {
+        super();
+    }
 
     /**
      * Constructor.
      * @param message String informational message about the exception.
      */
-    ServicerFactoryException(String message) {
+    public ServicerFactoryException(String message) {
         super(message);
     }
 

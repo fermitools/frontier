@@ -6,18 +6,20 @@ package gov.fnal.frontier;
  * @version $Revision$
  */
 
-public class RequestHandlerException extends Exception {
+public class RequestHandlerException extends FrontierException {
 
     /**
      * Constructor.
      */
-    RequestHandlerException() {}
+    public RequestHandlerException() {
+        super();
+    }
 
     /**
      * Constructor.
      * @param message String informational data about the exception.
      */
-    RequestHandlerException(String message) {
+    public RequestHandlerException(String message) {
         super(message);
     }
 

@@ -10,13 +10,15 @@ public class ServicerValidationException extends ServicerException {
     /**
      * Constructor.
      */
-    ServicerValidationException() {}
+    public ServicerValidationException() {
+        super();
+    }
 
     /**
      * Constructor.
      * @param message String informational message about the exception.
      */
-    ServicerValidationException(String message) {
+    public ServicerValidationException(String message) {
         super(message);
     }
 }

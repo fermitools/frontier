@@ -11,8 +11,10 @@ package gov.fnal.frontier;
  * @author Stephen P. White <swhite@fnal.gov>
  * @version $Revision$
  */
-class DbConnectionMgrException extends Exception {
-    public DbConnectionMgrException() {}
+class DbConnectionMgrException extends FrontierException {
+    public DbConnectionMgrException() {
+        super();
+    }
 
     /**
      * Constructor

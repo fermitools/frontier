@@ -1,16 +1,18 @@
 package gov.fnal.frontier;
 
+
+
 /**
  * Exception
  * @author Stephen P. White <swhite@fnal.gov>
  * @version $Revision$
  */
-public class CommandException extends FrontierException {
+public class FrontierException extends Exception {
 
     /**
      * Constructor
      */
-    CommandException() {
+    public FrontierException() {
         super();
     }
 
@@ -18,7 +20,7 @@ public class CommandException extends FrontierException {
      * Constructor.
      * @param message String informational data about the exception
      */
-    CommandException(String message) {
+    public FrontierException(String message) {
         super(message);
     }
 

@@ -7,13 +7,15 @@ package gov.fnal.frontier;
  */
 public class LoaderException extends RequestHandlerException {
 
-    LoaderException() {}
+    public LoaderException() {
+        super();
+    }
 
     /**
      * Constructor.
      * @param message String informational data about the exception.
      */
-    LoaderException(String message) {
+    public LoaderException(String message) {
         super(message);
     }
 }

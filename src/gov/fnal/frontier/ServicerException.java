@@ -10,13 +10,15 @@ public class ServicerException extends RequestHandlerException {
     /**
      * Constructor.
      */
-    ServicerException() {}
+    public ServicerException() {
+        super();
+    }
 
     /**
      * Constructor
      * @param message String informational message about the exception.
      */
-    ServicerException(String message) {
+    public ServicerException(String message) {
         super(message);
     }
 }
