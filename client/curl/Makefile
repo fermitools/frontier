@@ -8,7 +8,7 @@ all: local/lib/libcurl.a
 
 
 local/lib/libcurl.a:
-	gzcat curl-7.11.1.tar.gz|tar xvf -
+	gunzip -c curl-7.11.1.tar.gz|tar xvf -
 	sh conf.sh
 	(cd curl-7.11.1;make && make install)
 
