@@ -51,7 +51,7 @@ public class XmlServicer implements Servicer {
     }
 
     /**
-     * Controls querying the data from the data base and encoding that data onto the stream.
+     * Controls querying the data from the database and encoding that data onto the stream.
      * @param connection Connection live connection to the database.
      * @param encoder Encoder a sub-calls of Encoder to use for marshalling data to a stream.
      * @throws ServicerException
@@ -59,20 +59,30 @@ public class XmlServicer implements Servicer {
      */
     public long process(Connection connection, Encoder encoder) throws ServicerException {
         long recordCnt = 0;
+        Statement stmt = null;
+        ResultSet rs = null;
         try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(sqlStatement);
+            stmt = connection.createStatement();
+            rs = stmt.executeQuery(sqlStatement);
             while(rs.next()) {
                 recordCnt++;
                 write(encoder, rs);
                 encoder.writeEOR();
             }
-            stmt.close();
             encoder.flush();
         } catch(SQLException e) {
             throw new ServicerException(e.getMessage());
         } catch(Exception e) {
             throw new ServicerException(e.getMessage());
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {}
+            try {
+                if (stmt != null)
+                    stmt.close();
+            } catch (SQLException e) {}
         }
         return recordCnt;
     }
