@@ -44,11 +44,12 @@ public class Monitor extends Thread
    }
 
   /**
-   * Increase the hit count, where this count identifies a single access to the servelet.
+   * Set number of hits
    */
-  public synchronized void increment() {
-    hits += 1;
-  }
+  protected void set_count(int count_total)
+   {
+    hits=count_total;
+   }
 
   /**
    * When started executes the thread in a loop which sends an event and sleeps for time

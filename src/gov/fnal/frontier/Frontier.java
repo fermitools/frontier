@@ -78,7 +78,7 @@ public final class Frontier
    }
           
 
-  public Frontier(HttpServletRequest req,HttpServletResponse res,HttpSession ses) throws Exception 
+  public Frontier(HttpServletRequest req,HttpServletResponse res) throws Exception 
    {
     if(!initialized) init();
 
@@ -94,6 +94,7 @@ public final class Frontier
       local_id=count_total;
      }        
     Thread.currentThread().setName("id="+local_id);
+    if(monitor!=null) monitor.set_count(count_total);
 
     try 
      {

@@ -29,7 +29,6 @@ public final class FrontierServlet extends HttpServlet
    {
     ServletOutputStream out=null;
     Frontier frontier=null;
-    HttpSession session=null;
     
     try
      {
@@ -38,9 +37,8 @@ public final class FrontierServlet extends HttpServlet
       response.setCharacterEncoding("US-ASCII");
       try
        {
-        session=request.getSession();
-        frontier=new Frontier(request,response,session);
-        response.setDateHeader("Expires",frontier.time_expire);
+        frontier=new Frontier(request,response);
+        response.setDateHeader("Expires",java.lang.System.currentTimeMillis()+frontier.time_expire);
         if(frontier.noCache) response.setHeader("Pragma","no-cache");
        }
       catch(Exception e)
