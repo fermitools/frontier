@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.oreilly.servlet.CacheHttpServlet;
 import java.net.URLDecoder;
+import java.util.Calendar;
 
 /**
  * Top level Frontier servlet object called by Tomcat.
@@ -39,7 +40,7 @@ public final class Frontier extends CacheHttpServlet {
 
         int local_current;
         int id;
-        long timestamp;
+        Calendar timestamp = Calendar.getInstance();
         DbConnectionMgr connMgr = null;
         CommandParser parser = null;
         ArrayList commandList = null;
@@ -52,15 +53,14 @@ public final class Frontier extends CacheHttpServlet {
             local_current = count_current;
         }
 
-        timestamp = (new java.util.Date()).getTime();
         String queryString = URLDecoder.decode(request.getQueryString(),"UTF-8");
-        System.out.println("frontierLog " + timestamp + " start " + id + " " + local_current + " "
-                           + queryString);
+        System.out.println("frontierLog " + timestamp.getTime() + " start " + id + " "
+                           + local_current + " " + queryString);
 
         response.setContentType("text/xml");
         response.setCharacterEncoding("US-ASCII");
         // For Squid
-        response.setDateHeader("Expires", timestamp + time_expire);
+        response.setDateHeader("Expires", timestamp.getTimeInMillis() + time_expire);
 
         connMgr = DbConnectionMgr.getDbConnectionMgr();
         parser = new CommandParser();
@@ -96,9 +96,10 @@ public final class Frontier extends CacheHttpServlet {
             local_current = count_current;
         }
 
-        long timestamp2 = (new java.util.Date()).getTime();
-        System.out.println("frontierLog " + timestamp2 + " stop  " + id + " " + local_current + " "
-                           + (timestamp2 - timestamp));
+        Calendar timestamp2 = Calendar.getInstance();
+        System.out.println("frontierLog " + timestamp2.getTime() + " stop  " + id + " "
+                           + local_current + " "
+                           + (timestamp2.getTimeInMillis() - timestamp.getTimeInMillis()));
     }
 
     /**
