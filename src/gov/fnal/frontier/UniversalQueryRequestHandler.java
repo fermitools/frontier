@@ -89,8 +89,18 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	try {
 	    stream("<data>",noLF);
 	    long recordCnt = servicer.marshal(encoder,resultSet);
+	    byte[] md5_digest=encoder.getMD5Digest();
+	    StringBuffer md5_ascii=new StringBuffer("");
+	    for(int i=0;i<md5_digest.length;i++)
+	     {
+	      int v=(int)md5_digest[i];
+	      if(v<0) v=256+v;
+	      String str=Integer.toString(v,16);
+	      if(str.length()==1) md5_ascii.append("0");
+	      md5_ascii.append(str);
+	     }
 	    stream("</data>",LF);
-	    stream("<quality error=\"0\" records=\"" + recordCnt + "\"/>",LF);
+	    stream("<quality error=\"0\" md5=\""+md5_ascii+"\" records=\"" + recordCnt + "\"/>",LF);
 	    stream("</payload>",LF);
 	} catch (SQLException e) {
 	    stream("</data>",LF);

@@ -1,18 +1,22 @@
 /**
  * Implementation of BLOB encoder (Base64 encoded binary stream)
  * as in 3.2.2.1 with updates (see ntier mail list)
+ * $Id$
  *
  * @author Sergey Kosyakov
  */
 package gov.fnal.frontier.codec;
 
 import java.io.*;
+import java.security.*;
+
 
 public class BlobEncoder implements Encoder
  {
   private static final int BUFFER_SIZE=16384;
 
   private DataOutputStream os;
+  private MessageDigest md5;
   private Base64.OutputStream b64os;
   private ByteArrayOutputStream baos;
   private OutputStream channel;
@@ -25,7 +29,8 @@ public class BlobEncoder implements Encoder
 
     baos=new ByteArrayOutputStream();
     b64os=new Base64.OutputStream(baos);
-    os=new DataOutputStream(b64os);
+    md5=MessageDigest.getInstance("MD5");
+    os=new DataOutputStream(new DigestOutputStream(b64os,md5));
    }
 
 
@@ -69,6 +74,7 @@ public class BlobEncoder implements Encoder
 
   public void writeBytes(byte[] v) throws Exception
    {
+    System.out.println("writeBytes(): length "+v.length);
     os.writeInt(v.length);
     out_size+=4;
     os.write(v,0,v.length);
@@ -90,7 +96,7 @@ public class BlobEncoder implements Encoder
 
   public byte[] getMD5Digest() throws Exception
    {
-    throw new Exception("Not implemented yet");
+    return md5.digest();
    }
 
 
