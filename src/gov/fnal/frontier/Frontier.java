@@ -22,7 +22,7 @@ public final class Frontier extends CacheHttpServlet {
     private static Boolean mutex = new Boolean(true);
 
     private static final String frontierVersion = "1.0";
-    private static final String xsdVersion = "1.0";
+    private static final String xmlVersion = "1.0";
 
     /**
      * Respond to a GET request for the content produced by this
@@ -67,7 +67,7 @@ public final class Frontier extends CacheHttpServlet {
         writer = response.getOutputStream();
 
         writer.println("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
-        writer.println("<frontier version=\"" + frontierVersion + "\" xsdVersion=\"" + xsdVersion
+        writer.println("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion
                        + "\">");
         try {
             commandList = parser.parse(queryString);

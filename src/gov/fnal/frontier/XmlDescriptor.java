@@ -83,6 +83,10 @@ public class XmlDescriptor extends Descriptor {
         return ( (Attribute) attributes.get(index) ).getType();
     }
 
+    public String getAttributeField(int index) {
+        return ( (Attribute) attributes.get(index) ).getField();
+    }
+
     public WhereClause addWhereClause() {
         WhereClause where = new WhereClause();
         wheres.add(where);
@@ -122,6 +126,26 @@ public class XmlDescriptor extends Descriptor {
         if(matchingWhere != null)
             whereClause = matchingWhere.buildWhere(command);
         return whereClause;
+    }
+    /**
+     * Returns a printable formatted string of the contents of the instance.
+     * @return String
+     */
+    public String dump() {
+        String dumpString = "XmlDescriptor:"
+            + "\n  name:         " + name
+            + "\n  version:      " + version
+            + "\n  xsdVerxion:   " + xsdVersion
+            + "\n  selectClause: " + selectClause
+            + "\n  fromClause:   " + fromClause
+            + "\n  finalClause:  " + finalClause
+            + "\n  Attributes:";
+        for (int i=0;i<attributes.size();i++)
+            dumpString += "\n    field: " + getAttributeField(i) + " type: " + getAttributeType(i);
+        dumpString += "\nWheres:";
+        for (int i=0;i<wheres.size();i++)
+            dumpString += "\n    where: " + ( (WhereClause) wheres.get(i)).dump();
+        return dumpString;
     }
 
 }

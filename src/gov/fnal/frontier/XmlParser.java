@@ -4,19 +4,31 @@ import java.util.List;
 import java.util.Iterator;
 import org.jdom.Element;
 /**
- * $Id$
- * $Author$
- * $Date$
- * $Revision$
+ * XML parser which supports version 1.0 of the XSD.  It is responsible for parsing the XSD into
+ * a {@link XmlDescriptor}.
+ * @author Stephen P. White <swhite@fnal.gov>
+ * @version $Revision$
  */
-
 public class XmlParser extends Parser {
 
+    /**
+    * Constructor.
+    * @param type String naming the object which is to be parsed - "type" tag from descriptor.
+    * @param version String identifying the version of the object - "version" tag from descriptor.
+    * @param xsdVersion String identifying the XSD verion the XML data uses - "xsdversion" tag
+    * from descriptor.
+    */
     XmlParser(String type, String version, String xsdVersion) {
         super(type, version, xsdVersion);
     }
 
-    public XmlDescriptor parse(Element root) throws LoaderException {
+    /**
+     * Parses the XML data into a {@link XmlDescriptor}.
+     * @param root Element the top jdom Element which contains all other Elements.
+     * @throws LoaderException
+     * @return XmlDescriptor
+     */
+   public XmlDescriptor parse(Element root) throws LoaderException {
         List elements = root.getChildren();
         Iterator i = elements.iterator();
         String name = null;
@@ -29,6 +41,11 @@ public class XmlParser extends Parser {
         return descriptor;
     }
 
+    /**
+     * Manages the parsing of a single element.
+     * @param element Element
+     * @throws LoaderException
+     */
     private void processElement(Element element) throws LoaderException {
         String name = element.getName();
         if(name.equals("select"))
@@ -46,12 +63,22 @@ public class XmlParser extends Parser {
                                       + " in supplied in XSD.");
     }
 
+    /**
+     * Parses the data from an "attribute" tag.
+     * @param element Element
+     * @throws LoaderException
+     */
     private void processAttribute(Element element) throws LoaderException {
         String type = element.getAttributeValue("type");
         String field = element.getAttributeValue("field");
         descriptor.addAttribute(type, field);
     }
 
+    /**
+     * Parses the data from a "where" tag and its sub-tags.
+     * @param element Element
+     * @throws LoaderException
+     */
     private void processWhere(Element element) throws LoaderException {
         List children = element.getChildren();
         Iterator i = children.iterator();
