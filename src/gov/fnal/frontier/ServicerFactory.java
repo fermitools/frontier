@@ -62,16 +62,16 @@ public class ServicerFactory {
 
         SFDataResult result = getData(className, classVersion);
         try {
-            if(result.type.compareToIgnoreCase("xml") == 0) {
+            if (result.type.compareToIgnoreCase("xml") == 0) {
                 XmlDescriptor descriptor = (XmlDescriptor) xmlLoader.load(
                     className, classVersion, result.data);
                 servicer = new XmlServicer(descriptor);
-            } else if(result.type.compareToIgnoreCase("jar") == 0) {
+            } else if (result.type.compareToIgnoreCase("jar") == 0) {
                 throw new ServicerFactoryException("Jar files are not yet supported");
             } else {
                 throw new ServicerFactoryException("Received an unknown type of " + result.type);
             }
-        } catch(LoaderException e) {
+        } catch (LoaderException e) {
             throw new ServicerFactoryException(e.getMessage());
         }
         return servicer;
@@ -90,7 +90,7 @@ public class ServicerFactory {
         ServicerFactoryException {
         SFDataResult result = null;
         String query = "select xsd_type,xsd_data from frontier_descriptor where name = '"
-            + className + "'" + " and version = '" + classVersion + "'";
+                       + className + "'" + " and version = '" + classVersion + "'";
         Connection connection = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -99,36 +99,35 @@ public class ServicerFactory {
             stmt = connection.createStatement();
             rs = stmt.executeQuery(query);
             long recordCnt = 0;
-            while(rs.next()) {
-                if(recordCnt > 0)
+            while (rs.next()) {
+                if (recordCnt > 0)
                     throw new ServicerFactoryException("Multiple rows obtained for query. "
                                                        + query);
                 Blob blob = rs.getBlob(2);
-
                 result = new SFDataResult(rs.getString(1),
                                           new BufferedInputStream(blob.getBinaryStream()));
                 recordCnt++;
             }
-            if(recordCnt == 0) {
+            if (recordCnt == 0) {
                 throw new ServicerFactoryException(
                     "No rows obtained for query. " + query);
             }
-        } catch(DbConnectionMgrException e) {
+        } catch (DbConnectionMgrException e) {
             throw new ServicerFactoryException(e.getMessage());
-        } catch(SQLException e) {
+        } catch (SQLException e) {
             throw new ServicerFactoryException(e.getMessage());
         } finally {
             try {
-                if(rs != null)
+                if (rs != null)
                     rs.close();
-            } catch(SQLException e) {}
+            } catch (SQLException e) {}
             try {
-                if(stmt != null)
+                if (stmt != null)
                     stmt.close();
-            } catch(SQLException e) {}
+            } catch (SQLException e) {}
             try {
                 connMgr.release(connection);
-            } catch(DbConnectionMgrException e) {}
+            } catch (DbConnectionMgrException e) {}
         }
         return result;
     }
