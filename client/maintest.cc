@@ -33,7 +33,7 @@ long long print_time(const char *msg)
 
 static void usage(char **argv)
  {
-  printf("Usage: %s [-r] [-n count] [-s server] -o object key value [{key value}] [{-o object key value [{key value}] }]\n",argv[0]);
+  printf("Usage: %s [-r] [-n count] [-s server] -o object:v[:m] key value [{key value}] [{-o object:v[:m] key value [{key value}] }]\n",argv[0]);
   printf("\t -r        - refresh cache on each request\n");
   printf("\t -n count  - repeat 'count' times\n");
   printf("\t -s server - use this 'server' instead one from environment variables\n");
@@ -56,7 +56,7 @@ int do_main(frontier::DataSource *ds,int obj1_ind,int argc, char **argv)
       if(!p) usage(argv);
       if(strncmp(p,"-o",2)==0) usage(argv);
      }
-    frontier::Request* req=new frontier::Request(arg_p[0],"1",frontier::BLOB,arg_p[1],arg_p[2]);
+    frontier::Request* req=new frontier::Request(arg_p[0],frontier::BLOB,arg_p[1],arg_p[2]);
     arg_p+=3;
     while(*arg_p && strncmp(*arg_p,"-o",2))
      {

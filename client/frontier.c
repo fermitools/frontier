@@ -254,7 +254,7 @@ static int prepare_channel(Channel *chn)
  }
  
  
-static int get_data(Channel *chn,const char *uri)
+static int get_data(Channel *chn,const char *uri,const char *body)
  {
   int ret=FRONTIER_OK;
   char buf[8192];
@@ -271,7 +271,8 @@ static int get_data(Channel *chn,const char *uri)
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,chn->reload);
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
   
-  ret=frontierHttpClnt_open(chn->ht_clnt,uri);
+  if(body) ret=frontierHttpClnt_post(chn->ht_clnt,uri,body);
+  else ret=frontierHttpClnt_open(chn->ht_clnt,uri);
   if(ret) goto end;
   
   while(1)
@@ -290,8 +291,18 @@ end:
  
 
 #define ERR_LAST_BUF_SIZE 256
- 
+
 int frontier_getRawData(FrontierChannel u_channel,const char *uri)
+ {
+  int ret;
+  
+  ret=frontier_postRawData(u_channel,uri,NULL);
+  
+  return ret;
+ }
+ 
+ 
+int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *body)
  {
   Channel *chn=(Channel*)u_channel;
   int ret=FRONTIER_OK;
@@ -310,7 +321,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
   
   while(1)
    {
-    ret=get_data(chn,uri);    
+    ret=get_data(chn,uri,body);    
     if(ret==FRONTIER_OK) 
      {
       ret=frontierResponse_finalize(chn->resp);

@@ -202,17 +202,21 @@ static int read_line(FrontierHttpClnt *c,char *buf,int buf_len)
    
   
 #define FN_REQ_BUF 8192
- 
-int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
+
+static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
  {
   int ret;
-  int len;
+  int len;  
   struct sockaddr_in *sin;
   struct addrinfo *addr;
-  char buf[FN_REQ_BUF];
   FrontierUrlInfo *fui_proxy;
   FrontierUrlInfo *fui_server;
+  char buf[FN_REQ_BUF];
   int is_proxy;
+  char *http_method;
+  
+  http_method=is_post?"POST":"GET";
+
   
   fui_proxy=c->proxy[c->cur_proxy];
   fui_server=c->server[c->cur_server];
@@ -259,25 +263,25 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
      {
       sin->sin_port=htons((unsigned short)(fui_server->port));
      }
-  
+       
     ret=frontier_connect(c->socket,addr->ai_addr,addr->ai_addrlen);
     if(ret==0) break;
     
-    close(c->socket);        
+    close(c->socket);
     addr=addr->ai_next;
    }while(addr);
-  
+   
   if(ret) return ret;
 
   bzero(buf,FN_REQ_BUF);
   
   if(is_proxy)
    {
-    len=snprintf(buf,FN_REQ_BUF,"GET %s/%s HTTP/1.0\r\nHost: %s\r\n",fui_server->url,url,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s %s/%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,url,fui_server->host);
    }
   else
    {
-    len=snprintf(buf,FN_REQ_BUF,"GET /%s/%s HTTP/1.0\r\nHost: %s\r\n",fui_server->path,url,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s /%s/%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,url,fui_server->host);
    }
   if(len>=FN_REQ_BUF)
    {
@@ -293,7 +297,8 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    }
   len+=ret;
    
-  if(c->is_refresh)
+  // POST is always no-cache
+  if(is_post || c->is_refresh)
    {
     ret=snprintf(buf+len,FN_REQ_BUF-len,"Pragma: no-cache\r\n\r\n");
    }
@@ -312,7 +317,15 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    
   ret=frontier_write(c->socket,buf,len);
   if(ret<0) return ret;
-
+  return FRONTIER_OK;
+ }
+ 
+ 
+static int read_connection(FrontierHttpClnt *c)
+ {
+  int ret;
+  char buf[FN_REQ_BUF];
+  
   // Read status line
   ret=read_line(c,buf,FN_REQ_BUF);
   if(ret<0) return ret;
@@ -335,8 +348,48 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"got line <%s>",buf);
    }while(*buf);
             
-  return FRONTIER_OK;
+  return FRONTIER_OK; 
  }
+ 
+
+  
+int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
+ {
+  int ret;
+  
+  ret=get_connection(c,url,0);
+  if(ret) return ret;
+  
+  ret=read_connection(c);
+  return ret;
+ }
+ 
+ 
+ 
+ 
+int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
+ {
+  int ret;
+  int len;
+  
+  ret=get_connection(c,url,1);
+  if(ret) return ret;
+
+  len=body?strlen(body):0;
+  if(len>0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
+    ret=frontier_write(c->socket,body,len);
+    if(ret<0) return ret;
+   }
+  else
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"missing or empty body");
+   }
+
+  ret=read_connection(c);
+  return ret;   
+ } 
  
  
  

@@ -30,18 +30,16 @@ class Request
   protected:
    friend class DataSource;
    std::string obj_name;
-   std::string v;
    encoding_t enc;
    std::vector<std::string> *v_key;
    std::vector<std::string> *v_val;
    int is_meta;
 
   public:
-   Request(const std::string& name,const std::string& version,const encoding_t& encoding):
-           obj_name(name),v(version),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0){};
+   Request(const std::string name,const encoding_t encoding):
+           obj_name(name),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0){};
    
    Request(const std::string& name,
-           const std::string& version,
            const encoding_t& encoding,
            const std::string& key,
            const std::string& value);
@@ -53,9 +51,8 @@ class Request
 class MetaRequest : public Request
  {
   public:
-   explicit 
-   MetaRequest(const std::string& name,const std::string& version,const encoding_t& encoding):
-               Request(name,version,encoding) {is_meta=1;}
+   MetaRequest(const std::string name,encoding_t encoding):
+               Request(name,encoding) {is_meta=1;}
    virtual void addKey(const std::string& key,const std::string& value){}
    virtual ~MetaRequest(){}
  };

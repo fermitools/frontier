@@ -37,6 +37,13 @@ xml_startElement(void *userData,const char *name,const char **atts)
   FrontierResponse *fr=(FrontierResponse*)userData;
 
   //printf("xml_start %s\n",name);
+  
+  if(strcmp(name,"global_error")==0)
+   {
+    fr->error=-1;
+    frontier_setErrorMsg(__FILE__,__LINE__,"Server has signalled Global Error [%s]",atts[1]);
+    return;
+   }  
 
   if(strcmp(name,"payload")==0)
    {

@@ -210,8 +210,8 @@ int do_main(int argc, char **argv)
     
     ds.setReload(1);
 
-    frontier::Request req1("SvxBeamPosition","1",frontier::BLOB,"cid","316011");
-    frontier::Request req2("CALTrigWeights","1",frontier::BLOB,"cid","14319");
+    frontier::Request req1("SvxBeamPosition:1",frontier::BLOB,"cid","316011");
+    frontier::Request req2("CALTrigWeights:1",frontier::BLOB,"cid","14319");
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);

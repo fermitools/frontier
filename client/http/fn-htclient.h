@@ -70,6 +70,7 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url);
 void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh);
 void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id);
 int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url);
+int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body);
 int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len);
 void frontierHttpClnt_close(FrontierHttpClnt *c);
 void frontierHttpClnt_delete(FrontierHttpClnt *c);

@@ -1,0 +1,27 @@
+<!ELEMENT descriptor (attribute+,select,from,where*,final)>
+<!ATTLIST descriptor
+  type CDATA #REQUIRED
+  version CDATA #REQUIRED
+  xsdversion CDATA #REQUIRED>
+
+<!ELEMENT attribute EMPTY>
+<!ATTLIST attribute
+  position CDATA #REQUIRED
+  type (int|long|double|float|string|bytes|date) #REQUIRED
+  field CDATA #REQUIRED>
+
+<!ELEMENT select (#PCDATA)>
+
+<!ELEMENT from (#PCDATA)>
+
+<!ELEMENT where (clause,param*)>
+
+<!ELEMENT clause (#PCDATA)>
+
+<!ELEMENT param EMPTY>
+<!ATTLIST param
+  position CDATA #REQUIRED
+  type (int|long|double|float|string|date) #REQUIRED
+  key CDATA #REQUIRED>
+
+<!ELEMENT final (#PCDATA)>

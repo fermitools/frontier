@@ -55,11 +55,10 @@ static std::string create_err_msg(const char *str)
 using namespace frontier;
 
 Request::Request(const std::string& name,
-                 const std::string& version,
                  const encoding_t& encoding,
                  const std::string& key,
                  const std::string& value):
-                 obj_name(name),v(version),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0)
+                 obj_name(name),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0)
  {
   addKey(key,value);
  };
@@ -143,12 +142,12 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
      }    
     if(v_req[i]->is_meta)
      {
-      oss << delim << "meta=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
+      oss << delim << "meta=" << v_req[i]->obj_name; delim='&';
       oss << delim << "encoding=" << enc;
      }
     else
      {
-      oss << delim << "type=" << v_req[i]->obj_name << ':' << v_req[i]->v; delim='&';
+      oss << delim << "type=" << v_req[i]->obj_name; delim='&';
       oss << delim << "encoding=" << enc;
      }
 
