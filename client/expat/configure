@@ -7715,7 +7715,8 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 if test "$GCC" = yes ; then
                         OLDCFLAGS="$CFLAGS -Wall -Wmissing-prototypes -Wstrict-prototypes"
-    CFLAGS="$OLDCFLAGS -fexceptions"
+#    CFLAGS="$OLDCFLAGS -fexceptions"
+    CFLAGS="$OLDCFLAGS"
     echo "$as_me:$LINENO: checking whether gcc accepts -fexceptions" >&5
 echo $ECHO_N "checking whether gcc accepts -fexceptions... $ECHO_C" >&6
     cat >conftest.$ac_ext <<_ACEOF

@@ -13,7 +13,20 @@
 
 #include <iostream>
 #include <sstream>
+
+// This chunk of code below is ugly, but this is the way things 
+// were done historically (C++/KCC and other junk); 
+// here is C++ in all its glory (incompatibility on binary objects level). 
+// So here is no even a tiny possibility to write a good code. I tried :-(
+#ifdef FNTR_USE_EXCEPTIONS
 #include <stdexcept>
+#define RUNTIME_ERROR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::runtime_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
+#define LOGIC_ERROR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::logic_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
+#else
+#warning "Exceptions are disabled"
+#define RUNTIME_ERROR(o,m,e) do{o->err_code=e; o->err_msg=m;}while(0)
+#define LOGIC_ERROR(o,m,e) do{o->err_code=e; o->err_msg=m;}while(0)
+#endif //USE_EXCEPTIONS
 
 extern "C"
  {
@@ -21,8 +34,6 @@ extern "C"
 #include <stdlib.h>
  };
 
-#define RUNTIME_ERROR(m,e) do{throw std::runtime_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
-#define LOGIC_ERROR(m,e) do{throw std::logic_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
 
 using namespace frontier;
 
@@ -33,12 +44,13 @@ Request::~Request()
  }
 
 
-void frontier::init()
+int frontier::init()
  {
   int ret;
 
   ret=frontier_init(malloc,free);
-  if(ret) RUNTIME_ERROR("Frontier initialization failed",ret);
+  //if(ret) RUNTIME_ERROR("Frontier initialization failed",ret);
+  return ret;
  }
 
 
@@ -52,14 +64,16 @@ DataSource::DataSource(const std::string& host_name,int port_number,const std::s
   proxy=proxy_url;
   url=NULL;
   internal_data=NULL;
+  err_code=0;
+  err_msg="";
 
   channel=frontier_createChannel(&ec);
-  if(ec!=FRONTIER_OK) RUNTIME_ERROR("Can not create frontier channel",ec);
+  if(ec!=FRONTIER_OK) RUNTIME_ERROR(this,"Can not create frontier channel",ec);
   
   if(proxy.size()>0)
    {
     frontier_setProxy(channel,proxy.c_str(),&ec);
-    if(ec!=FRONTIER_OK) RUNTIME_ERROR("Can not register proxy",ec);
+    if(ec!=FRONTIER_OK) RUNTIME_ERROR(this,"Can not register proxy",ec);
    }
  }
 
@@ -83,7 +97,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
     switch(v_req[i]->enc)
      {
       case BLOB: enc="BLOB"; break;
-      default: throw std::logic_error("Unknown encoding requested");
+      default: LOGIC_ERROR(this,"Unknown encoding requested",FRONTIER_EIARG);
      }
     oss << delim << "encoding=" << enc;
     oss << delim << v_req[i]->key1 << '=' << v_req[i]->val1;
@@ -102,7 +116,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
   std::cout << "URL <" << *url << ">\n";
 
   ec=frontier_getRawData(channel,url->c_str());
-  if(ec!=FRONTIER_OK) RUNTIME_ERROR("Can not get data",ec);
+  if(ec!=FRONTIER_OK) RUNTIME_ERROR(this,"Can not get data",ec);
  }
 
 
@@ -110,14 +124,14 @@ void DataSource::setCurrentLoad(int n)
  {
   int ec=FRONTIER_OK;
   FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR("Can not set current load",ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"Can not set current load",ec);
   internal_data=rsb;
  }
 
 
 unsigned int DataSource::getRecNum()
  {
-  if(!internal_data) throw std::logic_error("Current load is not set");
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->nrec;
  }
@@ -125,49 +139,49 @@ unsigned int DataSource::getRecNum()
 
 int DataSource::getInt()
  {
-  if(!internal_data) throw std::logic_error("Current load is not set");
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   int ret=frontierRSBlob_getInt(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR("getInt() failed",ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getInt() failed",ec);
   return ret;
  }
 
 
 long long DataSource::getLong()
  {
-  if(!internal_data) throw std::logic_error("Current load is not set");
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   long long ret=frontierRSBlob_getLong(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR("getLong() failed",ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getLong() failed",ec);
   return ret;
  }
 
 
 double DataSource::getDouble()
  {
-  if(!internal_data) throw std::logic_error("Current load is not set");
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   double ret=frontierRSBlob_getDouble(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR("getDouble() failed",ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getDouble() failed",ec);
   return ret;
  }
 
  
 std::string* DataSource::getString()
  {
-  if(!internal_data) throw std::logic_error("Current load is not set");
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   int len=frontierRSBlob_getInt(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR("getInt() failed",ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getInt() failed",ec);
   char *s=new char[len];
   for(int i=0;i<len;i++)
    {
     s[i]=frontierRSBlob_getByte(rs,&ec);
-    if(ec!=FRONTIER_OK) {delete[] s; LOGIC_ERROR("getInt() failed",ec);}
+    if(ec!=FRONTIER_OK) {delete[] s; LOGIC_ERROR(this,"getInt() failed",ec);}
    }
   std::string *ret=new std::string(s,len);
   delete[] s;
@@ -209,7 +223,7 @@ std::vector<unsigned char>* CDFDataSource::getRawAsArrayUChar()
 std::vector<int>* CDFDataSource::getRawAsArrayInt()
  {
   std::string *blob=getBlob();
-  if(blob->size()%4) {delete blob; throw std::logic_error("Blob size is not multiple of 4 - can not convert to int[]");}
+  if(blob->size()%4) {delete blob; LOGIC_ERROR(this,"Blob size is not multiple of 4 - can not convert to int[]",FRONTIER_EIARG);}
   int len=blob->size()/4;
   std::vector<int> *ret=new std::vector<int>(len);
   const char *s=blob->c_str();
@@ -225,7 +239,7 @@ std::vector<int>* CDFDataSource::getRawAsArrayInt()
 std::vector<float>* CDFDataSource::getRawAsArrayFloat()
  {
   std::string *blob=getBlob();
-  if(blob->size()%4) {delete blob; throw std::logic_error("Blob size is not multiple of 4 - can not convert to float[]");}
+  if(blob->size()%4) {delete blob; LOGIC_ERROR(this,"Blob size is not multiple of 4 - can not convert to float[]",FRONTIER_EIARG);}
   int len=blob->size()/4;
   std::vector<float> *ret=new std::vector<float>(len);
   const char *s=blob->c_str();
@@ -241,7 +255,7 @@ std::vector<float>* CDFDataSource::getRawAsArrayFloat()
 std::vector<double>* CDFDataSource::getRawAsArrayDouble()
  {
   std::string *blob=getBlob();
-  if(blob->size()%8) {delete blob; throw std::logic_error("Blob size is not multiple of 8 - can not convert to double[]");}
+  if(blob->size()%8) {delete blob; LOGIC_ERROR(this,"Blob size is not multiple of 8 - can not convert to double[]",FRONTIER_EIARG);}
   int len=blob->size()/8;
   std::vector<double> *ret=new std::vector<double>(len);
   const char *s=blob->c_str();
@@ -257,7 +271,7 @@ std::vector<double>* CDFDataSource::getRawAsArrayDouble()
 std::vector<long long>* CDFDataSource::getRawAsArrayLong()
  {
   std::string *blob=getBlob();
-  if(blob->size()%8) {delete blob; throw std::logic_error("Blob size is not multiple of 8 - can not convert to int64[]");}
+  if(blob->size()%8) {delete blob; LOGIC_ERROR(this,"Blob size is not multiple of 8 - can not convert to int64[]",FRONTIER_EIARG);}
   int len=blob->size()/8;
   std::vector<long long> *ret=new std::vector<long long>(len);
   const char *s=blob->c_str();

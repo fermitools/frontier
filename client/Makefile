@@ -8,17 +8,21 @@
 # $Id$
 #
 
-CC	=	cc
-CXX	=	c++
-INC	=	-Iexpat/lib -I./curl/local/include -I.
-LIBDIR	=
-LIBS	=
-COPT	=	-pthread -Wall -g -O2 -DFRONTIER_DEBUG
-#COPT	=	-pthread -Wall -O
-CXXOPT	=
+ifeq ($(CXX),KCC)
+# KCC settings
+CXXOPT		=	--no_exceptions -DFNTR_USE_NAMESPACE
+COPT		=	-DFRONTIER_DEBUG
+else
+# GCC settings
+CXX		=	c++
+CXXOPT		=	-DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
+COPT		=	-pthread -Wall -g -O2 -DFRONTIER_DEBUG
+endif
 
-# To disable namespace coment line below
-CXXOPT	+=	-DFNTR_USE_NAMESPACE
+CC		=	cc
+INC		=	-Iexpat/lib -I./curl/local/include -I.
+LIBDIR		=
+LIBS		=
 
 HDR	=	frontier.h
 

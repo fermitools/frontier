@@ -45,7 +45,7 @@ class Request
  };
 
 
-void init();
+int init();
 
 
 class DataSource
@@ -60,6 +60,9 @@ class DataSource
    void *internal_data;
 
   public:
+   int err_code;
+   std::string err_msg;
+   
    explicit 
    DataSource(const std::string& host_name,
               int port_number,
