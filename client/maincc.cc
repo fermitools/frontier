@@ -183,7 +183,7 @@ int main(int argc, char **argv)
    {
     frontier::init();
 
-    frontier::CDFDataSource ds("lynx.fnal.gov",8080,"/Frontier/","");
+    frontier::CDFDataSource ds("edge.fnal.gov",8080,"/Frontier/","");
 
     frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
     frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");

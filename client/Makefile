@@ -10,9 +10,9 @@
 
 CC	=	cc
 CXX	=	c++
-INC	=	-Iexpat/lib -I/usr/local/include -I.
-LIBDIR	=	-L/usr/local/lib
-LIBS	=	-lcurl -lz
+INC	=	-Iexpat/lib -I./curl/local/include -I.
+LIBDIR	=
+LIBS	=
 COPT	=	-pthread -Wall -g -O2 -DFRONTIER_DEBUG
 #COPT	=	-pthread -Wall -O
 CXXOPT	=
@@ -22,13 +22,24 @@ CXXOPT	+=	-DFNTR_USE_NAMESPACE
 
 HDR	=	frontier.h
 
-all: libfrontier.a
+all: libcurl libfrontier.a distrib
 
+libcurl:
+	(cd curl; make all)
 
 libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o frontier-cpp.o
 	rm -f libfrontier.a
 	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o frontier-cpp.o
 	ranlib libfrontier.a
+
+distrib:
+	rm -fr dist/lib dist/include
+	mkdir dist/lib
+	cp libfrontier.a dist/lib/
+	cp curl/local/lib/libcurl.a dist/lib/libfn-curl.a
+	mkdir dist/include
+	cp frontier-cpp.h dist/include
+	cp frontier.h dist/include
 
 expat/lib/xmltok.o:
 	(cd expat; /bin/sh configure --prefix=`pwd`/../local --disable-shared --without-pic && make buildlib)
@@ -67,14 +78,16 @@ frontier-cpp.o: frontier-cpp.cc frontier-cpp.h $(HDR)
 	$(CXX) $(COPT) $(CXXOPT) $(INC) -c frontier-cpp.cc
 
 maincc.o: maincc.cc frontier-cpp.h
-	$(CXX) $(COPT) $(CXXOPT) $(INC) -c maincc.cc
+	$(CXX) -g -Idist/include -c maincc.cc
 
 maincc: libfrontier.a maincc.o frontier-cpp.h
-	$(CXX) $(COPT) $(CXXOPT) $(LIBDIR) -L. -o maincc maincc.o $(LIBS) -lfrontier
+	$(CXX) -g -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier -lfn-curl
 
 clean:
 	rm -f *.o *.core libfrontier.a frontier maincc
 	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
 	(cd expat; rm -f libtool Makefile config.log config.status)
+	(cd curl; make clean)
+	rm -fr dist/lib dist/include
 
 
