@@ -14,15 +14,15 @@
         <servlet-class>gov.fnal.frontier.Frontier</servlet-class>
 	<init-param>
 	 <param-name>ServerName</param-name>
- 	 <param-value>FrontierCMS</param-value>
+ 	 <param-value>Frontier</param-value>
  	</init-param>
 	<init-param>
 	 <param-name>DataSourceName</param-name>
- 	 <param-value>jdbc/frontiercms</param-value>
+ 	 <param-value>jdbc/frontier</param-value>
  	</init-param>
 	<init-param>
 	 <param-name>XsdTableName</param-name>
- 	 <param-value>frontier_descriptors</param-value>
+ 	 <param-value>frontier_descriptor</param-value>
  	</init-param>
         <load-on-startup/>
     </servlet>
