@@ -89,9 +89,8 @@ public class ServicerFactory {
     private SFDataResult getData(String className, String classVersion) throws
         ServicerFactoryException {
         SFDataResult result = null;
-        String query = "select type, data from frontier_descriptor where name = '" + className
-            + "'";
-        query += " and version = '" + classVersion + "'";
+        String query = "select xsd_type,xsd_data from frontier_descriptor where name = '"
+            + className + "'" + " and version = '" + classVersion + "'";
         Connection connection = null;
         Statement stmt = null;
         ResultSet rs = null;
@@ -102,7 +101,8 @@ public class ServicerFactory {
             long recordCnt = 0;
             while(rs.next()) {
                 if(recordCnt > 0)
-                    throw new ServicerFactoryException("Multiple rows obtained for query. " + query);
+                    throw new ServicerFactoryException("Multiple rows obtained for query. "
+                                                       + query);
                 Blob blob = rs.getBlob(2);
 
                 result = new SFDataResult(rs.getString(1),
