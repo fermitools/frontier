@@ -77,7 +77,7 @@ class SvxBeamPosition
 
   SvxBeamPosition(frontier::CDFDataSource& ds)
    {
-    CID=ds.getLongLong();
+    //CID=ds.getLongLong();
     CHANNELID=ds.getLongLong();
     BEAMX=ds.getDouble();
     BEAMY=ds.getDouble();
@@ -154,9 +154,9 @@ class CalTrigWeights
   
   CalTrigWeights(frontier::CDFDataSource& ds)
    {
-    CID=ds.getLongLong();
+    //CID=ds.getLongLong();
     ID=ds.getLongLong();
-    TRIGSCL=ds.getDouble();
+    TRIGSCL=ds.getFloat();
     ET_WEIGHT_CENT=ds.getRawAsArrayFloat();
     ET_WEIGHT_WALL=ds.getRawAsArrayFloat();
     ET_WEIGHT_PLUG=ds.getRawAsArrayFloat();
@@ -197,8 +197,8 @@ int main(int argc, char **argv)
     
     ds.setReload(1);
 
-    frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
-    frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");
+    frontier::Request req1("SvxBeamPosition","1",frontier::BLOB,"cid","316011");
+    frontier::Request req2("CALTrigWeights","1",frontier::BLOB,"cid","14319");
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
     for(int i=0;i<nrec;i++)
      {
       v_sbp[i]=new SvxBeamPosition(ds);
-      std::cout <<v_sbp[i]->CID<<','<<v_sbp[i]->CHANNELID<<'\n';
+      std::cout <<v_sbp[i]->CHANNELID<<','<<v_sbp[i]->BEAMX<<'\n';
      }
     
     // Do some usefull things here ...
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
     for(int i=0;i<nrec;i++)
      {
       v_ctw[i]=new CalTrigWeights(ds);
-      std::cout <<v_ctw[i]->CID<<','<<v_ctw[i]->ID<<std::endl;
+      std::cout <<v_ctw[i]->ID<<std::endl;
      }        
     // Do some usefull things here ...
     
