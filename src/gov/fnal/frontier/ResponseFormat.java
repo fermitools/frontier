@@ -12,6 +12,25 @@ public class ResponseFormat
     System.out.println("Error is ignored in ResponseFormat."+where+":"+e);
    }
 
+  
+  static String xml_str(String msg)
+   {
+    StringBuffer b=new StringBuffer(msg);
+    while(true)
+     {
+      int pos=b.indexOf(">");
+      if(pos<0) break;
+      b.replace(pos,pos+1,"&gt;");
+     }
+    while(true)
+     {
+      int pos=b.indexOf("<");
+      if(pos<0) break;
+      b.replace(pos,pos+1,"&lt;");
+     }
+    return b.toString();
+   }
+   
 
   static void begin(ServletOutputStream out,String version,String xmlversion) throws Exception
    {
@@ -60,7 +79,7 @@ public class ResponseFormat
     if(err_msg.length()>0)
      {
       out.print("\" message=\"");
-      out.print(java.net.URLEncoder.encode(err_msg,"US-ASCII"));
+      out.print(xml_str(err_msg));
      }
     if(md5.length()>0)
      {
@@ -81,7 +100,7 @@ public class ResponseFormat
    {
     try
      {
-      out.print("\n  <global_error>"+java.net.URLEncoder.encode(msg,"US-ASCII")+"</global_error>\n");
+      out.print("\n  <global_error>"+xml_str(msg)+"</global_error>\n");
      }
     catch(Exception e)
      {

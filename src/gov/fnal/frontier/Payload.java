@@ -2,6 +2,7 @@ package gov.fnal.frontier;
 
 import java.sql.*;
 import java.io.*;
+import gov.fnal.frontier.codec.*;
 
 public class Payload
  {
@@ -13,7 +14,7 @@ public class Payload
    "select xsd_type,xsd_data from "+Frontier.getXsdTableName()+" where name = ? and version = ? ";
    
   public boolean noCache=false;
-  public long time_expire=1000000;
+  public long time_expire;
   public String type;
   public String version;
   public String encoder;
@@ -39,14 +40,19 @@ public class Payload
       stmt.setString(1,cmd.obj_name);
       stmt.setString(2,cmd.obj_version);
       rs=stmt.executeQuery();
-      rs.next();
-      String xsd_type=rs.getString("xsd_type");
-      if(!xsd_type.equals("xml")) throw new Exception("Unsupported xsd_type "+xsd_type+".");
+      if(!rs.next()) throw new Exception("Object "+cmd.obj_name+":"+cmd.obj_version+" does not exists");
+      String xsd_type=rs.getString("xsd_type");      
       Blob blob=rs.getBlob("xsd_data");
       int len=(int)blob.length();
       byte[] b=blob.getBytes((long)1,len);
-      fdo=new XsdDataObject(dbm);
-      fdo.fdo_init(b);
+      if(xsd_type.equals("xml"))
+       {
+        fdo=new XsdDataObject(dbm);
+        fdo.fdo_init(b);
+        time_expire=fdo.fdo_get_expiration_time();
+        noCache=fdo.fdo_is_no_cache();
+       }
+      else throw new Exception("Unsupported xsd_type "+xsd_type+".");
      }
     finally
      {
@@ -67,5 +73,49 @@ public class Payload
    
   public void send(OutputStream out) throws Exception
    {
+    Encoder enc=null;
+    rec_num=0;
+    
+    switch(cmd.cmd_domain)
+     {
+      case Command.CMD_GET:
+       enc=new BlobTypedEncoder(out);
+       try { rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds); }
+       finally 
+        { 
+         enc.close(); 
+         md5=md5Digest(enc);
+        }
+       return;
+      
+      case Command.CMD_META:
+       enc=new BlobTypedEncoder(out);
+       try { rec_num=fdo.fdo_meta(enc); }
+       finally 
+        { 
+         enc.close(); 
+         md5=md5Digest(enc);
+        }
+       return;
+       
+      default:
+       throw new Exception("Unsupported command domain "+cmd.cmd_domain);
+     }
    }
+   
+   
+  private String md5Digest(Encoder encoder) throws Exception
+   {
+    StringBuffer md5_ascii=new StringBuffer("");
+    byte[] md5_digest=encoder.getMD5Digest();
+    for(int i=0;i<md5_digest.length;i++) 
+     {
+      int v=(int)md5_digest[i];
+      if(v<0)v=256+v;
+      String str=Integer.toString(v,16);
+      if(str.length()==1)md5_ascii.append("0");
+      md5_ascii.append(str);
+     }
+    return md5_ascii.toString();
+   }  
  }

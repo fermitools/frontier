@@ -68,6 +68,7 @@ public class Command
         c.obj_version=param[2];
         c.command="get";
         c.method=param[3];
+        if(c.method==null) c.method="DEFAULT";
        }
       else if(param[0].equals("meta"))
        {
@@ -82,7 +83,7 @@ public class Command
         throw new Exception("Unsupported request type ["+param[0]+"]");
        }
        
-      if(get_next_param(param,env,query_str)) throw new Exception("Incomplete - first down and 10!");
+      if(get_next_param(param,env,query_str)) throw new Exception("Pass incomplete - 4th down, 10 yds to go!");
       
       if(param[0].equals("encoding")) c.encoder=param[1];
       else throw new Exception("Unexpected parameter ["+param[0]+"="+param[1]+"]");

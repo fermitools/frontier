@@ -31,6 +31,7 @@ public final class FrontierServlet extends HttpServlet
        }
       catch(Exception e)
        {
+        Frontier.Log("Error: ",e);
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
         ResponseFormat.putGlobalError(out,"Error: "+e);
         return;
