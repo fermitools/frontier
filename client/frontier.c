@@ -268,7 +268,8 @@ static int get_data(Channel *chn,const char *uri)
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
     if(ret<=0) return ret;
     ret=write_data(chn->resp,buf,ret);
-    if(ret!=FRONTIER_OK) return ret;
+    if(ret!=FRONTIER_OK) 
+     return ret;
    }
      
   return FRONTIER_OK;
@@ -292,7 +293,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
   chn->reload=chn->user_reload;
   
   while(1)
-   {    
+   {
     ret=get_data(chn,uri);    
     if(ret==FRONTIER_OK) break;    
     frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Request failed: %d %s",ret,frontier_getErrorMsg());

@@ -82,17 +82,18 @@ class PESCalib
 int do_main(int argc, char **argv);
 
 int main(int argc, char **argv)
- {
-  while(1)
+ { 
+  for(int i=0;i<1000;i++)
    {
+    //std::cout<<i<<'\n';
     do_main(argc,argv);
-    break;
    }
  }
 
  
 int do_main(int argc, char **argv)
  {
+  char *cid;
  
 #ifdef FNTR_USE_EXCEPTIONS 
   try
@@ -100,17 +101,14 @@ int do_main(int argc, char **argv)
 #endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc!=2)
-     {
-      std::cout<<"Usage: "<<argv[0]<<" cid_num\n";
-      exit(1);
-     }
-
     frontier::CDFDataSource ds;
     
     //ds.setReload(1);
 
-    frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",argv[1]);
+    if(argc==2) cid=argv[1];
+    else cid="91271";
+    
+    frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",cid);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);
@@ -119,13 +117,13 @@ int do_main(int argc, char **argv)
     ds.setCurrentLoad(1);
     
     int nrec=ds.getRecNum();
-    std::cout<<"CID <"<<argv[1]<<"> nrec "<< nrec<<'\n';
+    //std::cout<<"CID <"<<cid<<"> nrec "<< nrec<<'\n';
     
     std::vector<PESCalib*> v_sbp(nrec);
     for(int i=0;i<nrec;i++)
      {
       v_sbp[i]=new PESCalib(ds);
-      v_sbp[i]->print();
+      //v_sbp[i]->print();
      }
     
     // Do some usefull things here ...

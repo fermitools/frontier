@@ -10,16 +10,7 @@
  */
 
 #include <frontier-cpp.h>
-
-#include <iostream>
 #include <sstream>
-
-
-extern "C"
- {
-#include <frontier.h>
-#include <stdlib.h>
- };
 
 using namespace frontier;
 
@@ -112,7 +103,7 @@ std::string* AnyData::castToString()
    }
   type_error=FRONTIER_EUNKNOWN;
   frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
-  return 0;
+  return NULL;
  }
 
 

@@ -122,6 +122,7 @@ FrontierResponse *frontierResponse_create(int *ec)
     return fr;
    }
 
+  fr->error=0;
   fr->payload_num=0;
   fr->error_payload_ind=-1;
 

@@ -11,8 +11,6 @@
 
 #include <frontier-cpp.h>
 
-#include <iostream>
-#include <sstream>
 
 #ifdef KCC_COMPILE
 // I love C++!
@@ -24,21 +22,18 @@ template class std::vector<int>;
 template class std::vector<long>;
 #endif //KCC_COMPILE
 
-extern "C"
- {
-#include <frontier.h>
 #include <stdlib.h>
- };
 
+#include <sstream>
 
 // This chunk of code below is ugly, but this is the way things 
 // were done historically (C++/KCC and other junk); 
 // here is C++ in all its glory (incompatibility on binary objects level). 
 // So here is no even a tiny possibility to write a good code. I tried :-(
 
-static std::string create_err_msg(const char *m)
+static std::string create_err_msg(const char *str)
  {
-  return std::string(m)+std::string(": ")+std::string(frontier_getErrorMsg());
+  return std::string(str)+std::string(": ")+std::string(frontier_getErrorMsg());
  }
 
 // The crap below supports two schemas of error reporting (for junk KCC and GCC) 
