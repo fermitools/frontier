@@ -1,0 +1,47 @@
+<project name="util" default="compile" basedir=".">
+
+  <property name="build.home"        value="${basedir}/bin"/>
+  <property name="dist.home"         value="${basedir}/dist"/>
+  <property name="src.home"          value="${basedir}/src"/>
+  <property name="lib.home"          value="${basedir}/lib"/>
+
+  <property name="compile.debug"       value="true"/>
+  <property name="compile.deprecation" value="false"/>
+  <property name="compile.optimize"    value="false"/>
+
+  <path id="compile.classpath">
+    <pathelement location="${lib.home}"/>
+    <fileset dir="${lib.home}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="all" depends="clean,compile" />
+
+  <target name="clean" >
+    <delete dir="${build.home}"/>
+    <delete dir="${dist.home}"/>
+  </target>
+
+  <target name="init">
+    <mkdir    dir="${build.home}"/>
+    <mkdir    dir="${dist.home}"/>
+  </target>
+
+  <target name="compile" depends="init">
+    <javac srcdir="${src.home}"
+          destdir="${build.home}"
+            debug="${compile.debug}"
+      deprecation="${compile.deprecation}"
+         optimize="${compile.optimize}">
+        <classpath refid="compile.classpath"/>
+    </javac>
+  </target>
+
+
+  <target name="dist" depends="compile">
+    <jar jarfile="${dist.home}/xsdloader.jar"
+         basedir="${build.home}"/>
+  </target>
+
+</project>
