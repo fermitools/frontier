@@ -89,9 +89,9 @@ public class XmlLoader extends Loader {
                 throw new LoaderException("The XSD is missing the tag 'version' or it is null.");
             if (xsdVersion == null)
                 throw new LoaderException("The XSD is missing the tag 'xsdversion' or it is null.");
-        } catch (IOException e) {
-            throw new LoaderException(e.getMessage());
-        } catch (JDOMException e) {
+        } catch (Exception e) {
+	    e.printStackTrace();
+	    Frontier.Log("Error: "+e,e);
             throw new LoaderException(e.getMessage());
         }
         return new RootReturn(root, type, version, xsdVersion);

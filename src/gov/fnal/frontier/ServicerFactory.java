@@ -2,10 +2,11 @@ package gov.fnal.frontier;
 
 import java.io.ByteArrayInputStream;
 import java.sql.Connection;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 /**
  * This class is repsonsible for creating a @link(Servicer) object of the
@@ -22,13 +23,15 @@ public class ServicerFactory {
 
     private DbConnectionMgr connMgr = DbConnectionMgr.getDbConnectionMgr();
     private XmlLoader xmlLoader = new XmlLoader();
+    private static HashMap xsd_hash=new HashMap();
+    private static Boolean xsd_mutex=new Boolean(true);
 
     /**
      * Private Internal class.
      */
     private class SFDataResult {
-        public String type = null;
-        public ByteArrayInputStream data = null;
+        public String type;
+        public byte[] data;
 
         /**
          * Constructor for a private class.
@@ -36,7 +39,7 @@ public class ServicerFactory {
          * @param aData BufferedInputStream data required for creating the {@link Servicer}
          * sub-class.
          */
-        SFDataResult(String aType, ByteArrayInputStream aData) {
+        SFDataResult(String aType, byte[] aData) {
             type = aType;
             data = aData;
         }
@@ -64,20 +67,18 @@ public class ServicerFactory {
         try {
             if (result.type.compareToIgnoreCase("xml") == 0) {
                 XmlDescriptor descriptor = (XmlDescriptor) xmlLoader.load(
-                    className, classVersion, result.data);
+                    className, classVersion, new ByteArrayInputStream(result.data));
                 servicer = new XmlServicer(descriptor);
             } else if (result.type.compareToIgnoreCase("jar") == 0) {
                 throw new ServicerFactoryException("Jar files are not yet supported");
             } else {
                 throw new ServicerFactoryException("Received an unknown type of " + result.type);
             }
-        } catch (LoaderException e) {
-            System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-                e);
-            e.printStackTrace();
-            System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-            throw new ServicerFactoryException(e.getMessage());
-        }
+        } catch (LoaderException e) 
+	  {
+	   Frontier.Log("Error: " +e,e);
+           throw new ServicerFactoryException(e.getMessage());
+          }
         return servicer;
     }
 
@@ -92,16 +93,28 @@ public class ServicerFactory {
      */
     private SFDataResult getData(String className, String classVersion) throws
         ServicerFactoryException {
-        SFDataResult result = null;
-        String query = "select xsd_type,xsd_data from frontier_descriptor where name = '"
-                       + className + "'" + " and version = '" + classVersion + "'";
+	
+	String xsd_key=className+"___:LSKJSJK:___"+classVersion;
+	
+	SFDataResult result=null;
+	synchronized(xsd_mutex)
+	 {
+          result=(SFDataResult)xsd_hash.get(xsd_key);
+	 }
+	if(result!=null) return result;
+	
+        String query="select xsd_type,xsd_data from "+Frontier.getXsdTableName()+
+	               " where name = ? and version = ? ";
+        Frontier.Log("xsd for "+className+":"+classVersion);
         Connection connection = null;
-        Statement stmt = null;
+        PreparedStatement stmt = null;
         ResultSet rs = null;
         try {
             connection = connMgr.acquire();
-            stmt = connection.createStatement();
-            rs = stmt.executeQuery(query);
+            stmt=connection.prepareStatement(query);
+	    stmt.setString(1,className);
+	    stmt.setString(2,classVersion);
+            rs=stmt.executeQuery();
             long recordCnt = 0;
             while (rs.next()) {
                 if (recordCnt > 0)
@@ -110,13 +123,17 @@ public class ServicerFactory {
                 Blob blob = rs.getBlob(2);
                 int bLen = (int) blob.length();
                 byte[] bData = blob.getBytes((long) 1,bLen);
-                result = new SFDataResult(rs.getString(1),new ByteArrayInputStream(bData));
+                result = new SFDataResult(rs.getString(1),bData);
                 recordCnt++;
             }
             if (recordCnt == 0) {
                 throw new ServicerFactoryException(
                     "No rows obtained for query. " + query);
             }
+  	    synchronized(xsd_mutex)
+	     {
+              xsd_hash.put(xsd_key,result);
+	     }
         } catch (DbConnectionMgrException e) {
             throw new ServicerFactoryException(e.getMessage());
         } catch (SQLException e) {

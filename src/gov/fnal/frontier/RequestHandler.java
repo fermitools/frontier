@@ -11,7 +11,6 @@ import javax.servlet.ServletOutputStream;
  */
 public class RequestHandler {
 
-    Identifier id = null;
     ServletOutputStream writer = null;
 
     /**
@@ -20,8 +19,7 @@ public class RequestHandler {
      * @param aWriter ServletOutputStream Stream to which all data will be
      * output.
      */
-    RequestHandler(Identifier aId, ServletOutputStream aWriter) {
-        id     = aId;
+    RequestHandler(ServletOutputStream aWriter) {
         writer = aWriter;
     }
 

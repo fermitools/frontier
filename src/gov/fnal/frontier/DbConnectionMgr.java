@@ -39,7 +39,7 @@ public class DbConnectionMgr {
             try {
                 Context initContext = new InitialContext();
                 Context envContext = (Context) initContext.lookup("java:/comp/env");
-                dataSource = (DataSource) envContext.lookup("jdbc/frontier");
+                dataSource = (DataSource) envContext.lookup(Frontier.getDsName());
             } catch(NamingException e) {
                 throw new DbConnectionMgrException(e.getMessage());
             }

@@ -76,13 +76,13 @@ public class xsdLoader {
     private void connect() throws Exception {
         try {
             String blobInsert = "INSERT INTO frontier_descriptors";
-            blobInsert += " (name,version,xsd_type,xsd_data)";
-            blobInsert += " VALUES (?,?,?,?)";
+            blobInsert += " (name,version,xsd_type,xsd_data,create_date,create_user)";
+            blobInsert += " VALUES (?,?,?,?,SYSDATE,?)";
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
             String oracleUrl =
                 "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)"
-                + "(PORT=1521)(HOST=fcdflnx1.fnal.gov))(CONNECT_DATA=(SID=cdfrep01)))";
-            conn = DriverManager.getConnection(oracleUrl, "frontier_prd", "frontier_prd");
+                + "(PORT=1521)(HOST=uscmsdb03.fnal.gov))(CONNECT_DATA=(SID=cmscald)))";
+            conn = DriverManager.getConnection(oracleUrl, "cms_reader", "reader");
             pstmt = conn.prepareStatement(blobInsert);
         } catch(Exception ex) {
             throw new Exception("connect - " + ex.getMessage());
@@ -97,6 +97,7 @@ public class xsdLoader {
             pstmt.setString(2, version);
             pstmt.setString(3, type);
             pstmt.setBinaryStream(4, bIn, xsd.length);
+	    pstmt.setString(5, "serge");
             pstmt.execute();
             conn.commit();
         } catch(Exception ex) {
@@ -146,8 +147,8 @@ public class xsdLoader {
                         byte[] xsd = loader.readFile(new FileInputStream(files[i]));
                         loader.blobInsert(obj.type, obj.version, "xml", xsd);
                         gCnt += 1;
-                        //System.out.println(files[i].getName() + " was stored,  xsd data length: "
-                        //                   + xsd.length);
+                        System.out.println(files[i].getName() + " was stored,  xsd data length: "
+                                           + xsd.length);
                         dataLength += xsd.length;
                     } catch (Exception ex) {
                         eCnt += 1;

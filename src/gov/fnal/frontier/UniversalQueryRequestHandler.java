@@ -35,8 +35,8 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      * @param writer ServletOutputStream the stream to write the results of
      * the {@link Command} to.
      */
-    UniversalQueryRequestHandler(Identifier id, ServletOutputStream writer) {
-        super(id, writer);
+    UniversalQueryRequestHandler(ServletOutputStream writer) {
+        super(writer);
     }
 
     /**
@@ -235,9 +235,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      */
     private void recordError(Exception e) {
         Calendar timestamp = Calendar.getInstance();
-        System.out.println("<frontierCMSLog " + timestamp.getTime()
-                           + " ID: " + id.getIdentifier() + "> error: " + e.getMessage());
-        e.printStackTrace();
+        Frontier.Log("Error: " + e.getMessage(),e);
     }
 
     /**

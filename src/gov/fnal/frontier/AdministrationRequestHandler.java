@@ -16,8 +16,8 @@ public class AdministrationRequestHandler extends RequestHandler {
      * @param id {@link Identifier}
      * @param writer ServletOutputStream Stream to write results on.
      */
-    AdministrationRequestHandler(Identifier id, ServletOutputStream writer) {
-        super(id, writer);
+    AdministrationRequestHandler(ServletOutputStream writer) {
+        super(writer);
     }
 
     /**

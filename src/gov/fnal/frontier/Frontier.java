@@ -1,14 +1,17 @@
 package gov.fnal.frontier;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletConfig;
 import com.oreilly.servlet.CacheHttpServlet;
 import java.net.URLDecoder;
-import java.util.Calendar;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.io.*;
 
 /**
  * Top level Frontier servlet object called by Tomcat.
@@ -25,7 +28,65 @@ public final class Frontier extends CacheHttpServlet {
 
     private static final String frontierVersion = "1.0";
     private static final String xmlVersion = "1.0";
+    private static final SimpleDateFormat date_fmt=new SimpleDateFormat("MM/dd/yy HH:mm:ss.SSS z Z");
+    
+    private static boolean initialized=false;
+    
+    private static String conf_server_name="not_set";
+    private static String conf_ds_name;
+    private static String conf_xsd_table;
+    
 
+    public static String getDsName(){return conf_ds_name;}
+    public static String getXsdTableName(){return conf_xsd_table;}
+        
+    
+    private static synchronized void fn_init(ServletConfig sc)
+     {
+      if(initialized) return; // External check is not thread safe
+      try
+       {	
+	conf_server_name=sc.getInitParameter("ServerName");
+	conf_ds_name=sc.getInitParameter("DataSourceName");
+	conf_xsd_table=sc.getInitParameter("XsdTableName");
+	
+	if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
+	if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
+	if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
+	
+	initialized=true;
+       }
+      catch(Exception e)
+       {
+        System.out.println("FRONTIER ERROR: "+e);
+	e.printStackTrace();
+       }
+     }
+     
+     
+    public static void Log(String msg)
+     {
+      StringBuffer buf=new StringBuffer("");
+      buf.append(conf_server_name);
+      buf.append(' ');
+      buf.append(date_fmt.format(new java.util.Date()));
+      buf.append(' ');
+      buf.append(Thread.currentThread().getName());
+      buf.append(' ');
+      buf.append(msg);
+      System.out.println(buf.toString());
+     }
+
+     
+    public static void Log(String msg,Exception e)
+     {     
+      ByteArrayOutputStream baos=new ByteArrayOutputStream();
+      PrintWriter pw=new PrintWriter(baos);
+      e.printStackTrace(pw);
+      pw.flush();
+      Log(msg+"\n"+baos.toString());
+     }
+     
     /**
      * Respond to a GET request for the content produced by this
      * servlet.  This function handles call-outs to the different
@@ -36,11 +97,13 @@ public final class Frontier extends CacheHttpServlet {
      * @throws ServletException if a servlet error occurs
      */
     public void doGet(HttpServletRequest request,
-                      HttpServletResponse response) throws IOException, ServletException {
+                      HttpServletResponse response) throws IOException, ServletException 
+     {
+        if(!initialized) fn_init(getServletConfig());
 
-        int local_current;
-        Identifier id;
-        Calendar timestamp = Calendar.getInstance();
+        int local_id;
+        //Identifier id;
+        long timestamp = (new java.util.Date()).getTime();
         DbConnectionMgr connMgr = null;
         CommandParser parser = null;
         ArrayList commandList = null;
@@ -49,22 +112,38 @@ public final class Frontier extends CacheHttpServlet {
         synchronized (mutex) {
             ++count_total;
             ++count_current;
-            local_current = count_current;
-            id = new Identifier(count_total);
+            local_id=count_total;
+            //id = new Identifier(count_total);
         }
+        
+	Thread.currentThread().setName("id="+local_id);
 
         try {
-            String queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
-            System.out.println("<frontierCMSLog " + timestamp.getTime()
-                               + " ID: " + id.getIdentifier() + ">  "
-                               + " start "
-                               + " threads: " + local_current
-                               + " queryString: " + queryString);
-
-            response.setContentType("text/xml");
+	    String queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
+	    StringBuffer client_desc=new StringBuffer("");
+	    client_desc.append("start threads:");
+	    client_desc.append(count_current);
+	    client_desc.append(" query ");
+	    client_desc.append(queryString);
+	    client_desc.append(" frontier-id: ");
+	    client_desc.append(request.getHeader("x-frontier-id"));
+	    for(Enumeration en=request.getHeaderNames();en.hasMoreElements();)
+	     {
+	      String name=(String)en.nextElement();
+	      if(name.compareToIgnoreCase("via")==0 || name.compareToIgnoreCase("x-forwarded-for")==0)
+	       {
+	        client_desc.append(' ');
+	        client_desc.append(name);
+		client_desc.append(": ");
+	        client_desc.append(request.getHeader(name));
+	       }
+	     }            
+	    Log(client_desc.toString());
+            
+	    response.setContentType("text/xml");
             response.setCharacterEncoding("US-ASCII");
             // For Squid
-            response.setDateHeader("Expires", timestamp.getTimeInMillis() + time_expire);
+            response.setDateHeader("Expires",timestamp+time_expire);
 
             connMgr = DbConnectionMgr.getDbConnectionMgr();
             parser = new CommandParser();
@@ -75,22 +154,22 @@ public final class Frontier extends CacheHttpServlet {
                            xmlVersion
                            + "\">");
             try {
+	        if(!initialized) throw new Exception("The server is not initialized");
                 commandList = parser.parse(queryString);
                 connMgr.initialize();
-                handleRequest(id,commandList, writer);
+                handleRequest(commandList, writer);
             } catch (CommandParserException e) {
                 writer.println("<transaction payloads=\"0\"/>");
-                writer.println(generateBadQualityTag(id,e));
+                writer.println(generateBadQualityTag(e));
             } catch (DbConnectionMgrException e) {
                 /** @todo Need to cleaup th /transaction clauses in this class*/
                 writer.println("</transaction>");
-                System.out.println("Unable to obtain connection: " + e.getMessage());
-                writer.println(generateBadQualityTag(id,e));
+                Log("Unable to obtain connection: " + e.getMessage());
+                writer.println(generateBadQualityTag(e));
             } catch (Exception e) {
                 writer.println("</transaction>");
-                System.out.println("Error: " + e);
-                e.printStackTrace();
-                writer.println(generateBadQualityTag(id,e));
+                Log("Error: " + e,e);
+                writer.println(generateBadQualityTag(e));
             }
 
         } finally {
@@ -98,15 +177,9 @@ public final class Frontier extends CacheHttpServlet {
             writer.close();
             synchronized (mutex) {
                 --count_current;
-                local_current = count_current;
             }
-
-            Calendar timestamp2 = Calendar.getInstance();
-            System.out.println("<frontierCMSLog " + timestamp2.getTime()
-                               + " ID: " + id.getIdentifier() + ">  "
-                               + " stop "
-                               + " threads: " + local_current + " elapsedTime: "
-                               + (timestamp2.getTimeInMillis() - timestamp.getTimeInMillis()));
+	    
+         Log("stop threads:"+count_current+" ET="+((new java.util.Date()).getTime()-timestamp));
         }
     }
 
@@ -118,7 +191,7 @@ public final class Frontier extends CacheHttpServlet {
      * @param writer      The output writer.println to respond to the Command on.
      * @throws ServletException if a servlet error occurs
      */
-    private void handleRequest(Identifier id, ArrayList commandList, ServletOutputStream writer)
+    private void handleRequest(ArrayList commandList, ServletOutputStream writer)
         throws Exception {
         RequestHandler handler = null;
         int numCommands = commandList.size();
@@ -126,15 +199,15 @@ public final class Frontier extends CacheHttpServlet {
         for (int i = 0;i < numCommands;i++) {
             Command command = (Command) commandList.get(i);
             if (command.isUniversalQueryCommand() || command.isMetaQueryCommand())
-                handler = new UniversalQueryRequestHandler(id, writer);
+                handler = new UniversalQueryRequestHandler(writer);
             else if (command.isAdminCommand())
-                handler = new AdministrationRequestHandler(id, writer);
+                handler = new AdministrationRequestHandler(writer);
             else
                 throw new ServletException("Internal error, unknown type of Command.");
             try {
                 handler.process(command);
             } catch (RequestHandlerException e) {
-                generateBadQualityTag(id,e);
+                generateBadQualityTag(e);
             }
         }
         writer.println("</transaction>");
@@ -146,22 +219,11 @@ public final class Frontier extends CacheHttpServlet {
      * @param message Text message to place into writer.println
      * @throws ServletException if a servlet error occurs
      */
-    private String generateBadQualityTag(Identifier id, Exception e) {
-        recordError(id,e);
-        return "<quality error=\"1\" message=\"" + e.getMessage() + "\"/>";
-    }
-
-    /**
-     * Outputs the message from the quality error to the log file.
-     * @param message String text contining the error message.
-     * @todo Need a debug class to handle such messages.
-     */
-    private void recordError(Identifier id, Exception e) {
-        Calendar timestamp = Calendar.getInstance();
-        System.out.println("<frontierCMSLog " + timestamp.getTime()
-                           + "ID: " + id.getIdentifier() + "> error: " + e.getMessage());
-        e.printStackTrace();
-    }
+    private String generateBadQualityTag(Exception e) 
+     {
+      Log("ERROR: "+e,e);
+      return "<quality error=\"1\" message=\"" + e.getMessage() + "\"/>";
+     }
 
 
 } // class Frontier
