@@ -32,6 +32,7 @@ void (*frontier_mem_free)(void *ptr);
 static int initialized=0;
 
 static char frontier_id[FRONTIER_ID_SIZE];
+static char frontier_api_version[]=FNAPI_VERSION;
 
 static void channel_delete(Channel *chn);
 
@@ -111,12 +112,12 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
        }
      }
    }
-   
+
   uid=getuid();
   pwent=getpwuid(uid);
   pid=getpid();
 
-  snprintf(frontier_id,FRONTIER_ID_SIZE,"%d %s(%d) %s",pid,pwent->pw_name,uid,pwent->pw_gecos);
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %d %s(%d) %s",frontier_api_version,pid,pwent->pw_name,uid,pwent->pw_gecos);
   
   initialized=1;
   
@@ -307,7 +308,11 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
   while(1)
    {
     ret=get_data(chn,uri);    
-    if(ret==FRONTIER_OK) break;    
+    if(ret==FRONTIER_OK) 
+     {
+      ret=frontierResponse_finalize(chn->resp);
+      if(ret==FRONTIER_OK) break;
+     }
     frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Request failed: %d %s",ret,frontier_getErrorMsg());
     
     if(!chn->reload)
@@ -334,9 +339,6 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
     break;
    }
    
-  if(ret) return ret;
-
-  ret=frontierResponse_finalize(chn->resp);
   return ret;
  }
 
