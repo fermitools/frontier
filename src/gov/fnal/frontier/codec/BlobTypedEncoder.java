@@ -19,7 +19,7 @@ import java.security.*;
 
 public class BlobTypedEncoder implements Encoder
  {
-  public static final byte BIT_NULL=(byte)(1<<7);	// Signals that the value is NULL
+  public static final byte BIT_NULL=(byte)(1<<7); // Signals that the value is NULL
   public static final byte TYPE_BYTE=0;
   public static final byte TYPE_INT4=1;
   public static final byte TYPE_INT8=2;
@@ -27,7 +27,7 @@ public class BlobTypedEncoder implements Encoder
   public static final byte TYPE_DOUBLE=4;
   public static final byte TYPE_TIME=5;
   public static final byte TYPE_ARRAY_BYTE=6;
-  public static final byte TYPE_EOR=7;			// End Of Record
+  public static final byte TYPE_EOR=7;   // End Of Record
 
   private static final int BUFFER_SIZE=16384;
 
@@ -102,7 +102,7 @@ public class BlobTypedEncoder implements Encoder
    {
     if(v==null)
      {
-      os.writeByte(TYPE_ARRAY_BYTE & BIT_NULL);
+      os.writeByte(TYPE_ARRAY_BYTE | BIT_NULL);
       out_size+=1;
      }
     else
@@ -120,7 +120,7 @@ public class BlobTypedEncoder implements Encoder
    {
     if(v==null)
      {
-      os.writeByte(TYPE_ARRAY_BYTE & BIT_NULL);
+      os.writeByte(TYPE_ARRAY_BYTE | BIT_NULL);
       out_size+=1;
      }
     else
@@ -139,7 +139,7 @@ public class BlobTypedEncoder implements Encoder
    {
     if(v==null)
      {
-      os.writeByte(TYPE_TIME & BIT_NULL);
+      os.writeByte(TYPE_TIME | BIT_NULL);
       out_size+=1;
      }
     else
