@@ -9,7 +9,7 @@
  *
  */
 
-#include <frontier-cpp.h>
+#include <frontier_client/frontier-cpp.h>
 
 
 #ifdef KCC_COMPILE
@@ -171,7 +171,7 @@ const char* DataSource::getCurrentLoadErrorMessage() const
 
 unsigned int DataSource::getRecNum()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->nrec;
  }
@@ -179,7 +179,7 @@ unsigned int DataSource::getRecNum()
  
 unsigned int DataSource::getRSBinarySize()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->size;  
  }
@@ -187,7 +187,7 @@ unsigned int DataSource::getRSBinarySize()
  
 unsigned int DataSource::getRSBinaryPos()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->pos;  
  }
@@ -246,11 +246,11 @@ int DataSource::getAnyData(AnyData* buf)
  
 BLOB_TYPE DataSource::nextFieldType()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   BLOB_TYPE dt=frontierRSBlob_checkByte(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while checking type",ec,-1);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while checking type",ec,0);
   
   return dt;
  }

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include "fn-internal.h"
 
 #define MEMDATA_INISIZE	(4*4096)

@@ -9,7 +9,7 @@
  *
  */
 
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include "fn-internal.h"
 #include "fn-base64.h"
 #include <stdio.h>

@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include "fn-internal.h"
 #include "expat.h"
 

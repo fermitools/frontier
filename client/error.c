@@ -8,7 +8,7 @@
  * $Id$
  *
  */
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

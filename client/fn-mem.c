@@ -9,7 +9,7 @@
  *
  */
 
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

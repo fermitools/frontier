@@ -17,7 +17,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include "fn-internal.h"
 
 #define ENV_BUF_SIZE	1024

@@ -16,7 +16,7 @@
 
 extern "C"
  {
-#include <frontier.h>
+#include <frontier_client/frontier.h>
  };
 
 namespace frontier{

@@ -1,3 +1,4 @@
+$Id$
 
 v1.0
 This is the first release of Frontier client API. 
@@ -30,6 +31,15 @@ v1.1 09/14/2004
 - "make all" (or just "make") now builds executables as well
 - EOR is fully supported now (see test-any.cc as an usage example)
 - the lib version elevated to 1.1.0
+
+v1.1.1 (GCC only) 09/15/2004
+- compiled with CDF KIT gcc-3.3.1
+
+v1.1.2 09/17/2004
+- frontier.h and frontier-cpp.h moved into include/frontier_client for consistency
+- new method DataSource::isEOF() allows to verify full response demarshalling
+- two new methods for diag/benchmarking tools: DataSource:getRSBinarySize() and DataSource::getRSBinaryPos()
+- fn-any adapted to test isEOF()
 
 Sergey Kosyakov, serge@fnal.gov
 

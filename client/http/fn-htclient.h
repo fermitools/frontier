@@ -12,7 +12,7 @@
 #ifndef __HEADER_HTTP_H_FN_HTCLIENT_H
 #define __HEADER_HTTP_H_FN_HTCLIENT_H
 
-#include <frontier.h>
+#include <frontier_client/frontier.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>

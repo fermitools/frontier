@@ -1,5 +1,27 @@
-Frontier client API v1.1
+$Id$
 
-For guides/manuals see http://whcdf03.fnal.gov/ntier-wiki/FrontPage
+Frontier client API v1.1.2
+
+1. To compile from CVS:
+make
+
+2. To use in C application:
+#include <frontier_client/frontier.h>
+
+Link against -lfrontier_client
+
+3. To use in C++ application:
+#include <frontier_client/frontier-cpp.h>
+
+Link against -lfrontier_client
+
+4. Environment:
+export FRONTIER_SERVER1=frontier_server
+export FRONTIER_PROXY1=local_proxy
+export FRONTIER_LOG_LEVEL=error
+
+
+
+For more details, guides/manuals see http://whcdf03.fnal.gov/ntier-wiki/FrontPage
 
 Sergey Kosyakov, serge@fnal.gov

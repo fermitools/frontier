@@ -8,7 +8,7 @@
  * $Id$
  *
  */
-#include <frontier-cpp.h>
+#include <frontier_client/frontier-cpp.h>
 
 #include <iostream>
 #include <stdexcept>

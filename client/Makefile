@@ -28,13 +28,14 @@ endif
 
 # Common (hopefully) settings
 CC		=	cc
-INC		=	-I./expat/local/include -I.
+INC		=	-I./expat/local/include -I./include -I.
 LIBDIR		=
 LIBS		=
 
 OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
-HDR		=	frontier.h fn-internal.h http/fn-htclient.h
+HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h
+HDRXX		=	include/frontier_client/frontier-cpp.h
 BINAPP		=	fn-maincc fn-maintest fn-pescalib fn-any
 
 
@@ -69,8 +70,7 @@ $(distfile_gz): all dist-prepare
 	(cd dist/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
 	mkdir dist/include
 	mkdir dist/include/frontier_client
-	cp frontier-cpp.h dist/include/frontier_client
-	cp frontier.h dist/include/frontier_client
+	cp -r include dist/
 	mkdir dist/bin
 	cp $(BINAPP) dist/bin/
 	cp RELEASE_NOTES dist/
@@ -140,46 +140,46 @@ main.o: main.c $(HDR)
 main: all main.o
 	$(CXX) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
 
-anydata.o: anydata.cc frontier-cpp.h $(HDR)
+anydata.o: anydata.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
 
-frontier-cpp.o: frontier-cpp.cc frontier-cpp.h $(HDR)
+frontier-cpp.o: frontier-cpp.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c frontier-cpp.cc
 
-maincc.o: maincc.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -I. -c maincc.cc
+maincc.o: maincc.cc $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c maincc.cc
 
-fn-maincc: maincc.o frontier-cpp.h
+fn-maincc: maincc.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. -o fn-maincc maincc.o $(LIBS) -lfrontier_client
 
-maintest.o: maintest.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -I. -c maintest.cc
+maintest.o: maintest.cc $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c maintest.cc
 
-fn-maintest: maintest.o frontier-cpp.h
+fn-maintest: maintest.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. -o fn-maintest maintest.o $(LIBS) -lfrontier_client
 
-getcids.o: getcids.cc frontier-cpp.h
+getcids.o: getcids.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
-getcids: all getcids.o frontier-cpp.h
+getcids: all getcids.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier_client
 
-request_each.o: request_each.cc frontier-cpp.h
+request_each.o: request_each.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
-request_each: all request_each.o frontier-cpp.h
+request_each: all request_each.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier_client
 
-test-pescalib.o: test-pescalib.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -I. -c test-pescalib.cc
+test-pescalib.o: test-pescalib.cc $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c test-pescalib.cc
 
-fn-pescalib: test-pescalib.o frontier-cpp.h
+fn-pescalib: test-pescalib.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. -o fn-pescalib test-pescalib.o $(LIBS) -lfrontier_client
 
-test-any.o: test-any.cc frontier-cpp.h
-	$(CXX) $(CXXOPT_APP) -I. -c test-any.cc
+test-any.o: test-any.cc $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c test-any.cc
 
-fn-any: test-any.o frontier-cpp.h
+fn-any: test-any.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. -o fn-any test-any.o $(LIBS) -lfrontier_client
 
 clean:

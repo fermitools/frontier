@@ -8,10 +8,16 @@
  * $Id$
  *
  */
-#include <frontier-cpp.h>
+#include <frontier_client/frontier-cpp.h>
 
 #include <iostream>
 #include <stdexcept>
+
+#ifndef FNTR_USE_EXCEPTIONS
+#define CHECK_ERROR() do{if(ds.err_code){std::cout<<"ERROR:"<<ds.err_msg<<std::endl; exit(1);}}while(0)
+#else
+#define CHECK_ERROR() 
+#endif //FNTR_USE_EXCEPTIONS
 
 int do_main(int argc, char **argv);
 
@@ -49,6 +55,7 @@ int do_main(int argc, char **argv)
     std::cout<<"Requesting \""<<argv[1]<<"\" key \""<<argv[2]<<"\" : \""<<argv[3]<<"\""<<std::endl;
 
     frontier::CDFDataSource ds;
+    CHECK_ERROR();
     
     //ds.setReload(1);
 
@@ -56,9 +63,11 @@ int do_main(int argc, char **argv)
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);
-    ds.getData(vrq); 
+    ds.getData(vrq);
+    CHECK_ERROR();
 
     ds.setCurrentLoad(1);
+    CHECK_ERROR();
     
     int field_num=0;
     
@@ -69,21 +78,25 @@ int do_main(int argc, char **argv)
     while(1)
      {
       ds.getAnyData(&ad);
+      CHECK_ERROR();
       if(ad.isEOR()) break;
       std::cout<<++field_num<<" "<<frontier::getFieldTypeName(ad.type())<<std::endl;
       ad.clean();
      }
     
     int nrec=ds.getRecNum();
+    CHECK_ERROR();
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
     ds.setCurrentLoad(1);
+    CHECK_ERROR();
 
     for(int n=0;n<nrec;n++)
      {
       for(int k=0;k<field_num;k++)
        {
         ds.getAnyData(&ad);
+	CHECK_ERROR();
         switch(ad.type())
          {
           //case frontier::BLOB_TYPE_BYTE:       vc=ds.getByte(); break;
@@ -99,6 +112,7 @@ int do_main(int argc, char **argv)
 	ad.clean();
        }
       ds.getAnyData(&ad);
+      CHECK_ERROR();
       if(!ad.isEOR())
        {
         std::cout<<"Error: must be EOR here\n";
@@ -107,8 +121,11 @@ int do_main(int argc, char **argv)
       ad.clean();
       std::cout<<std::endl;
      }
-    
-        
+    if(!ds.isEOF())
+     {
+      std::cout<<"Error: must be EOF here\n";
+      exit(1);
+     }
 #ifdef FNTR_USE_EXCEPTIONS   
    }
   catch(std::exception& e)

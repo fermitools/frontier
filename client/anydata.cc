@@ -9,7 +9,7 @@
  *
  */
 
-#include <frontier-cpp.h>
+#include <frontier_client/frontier-cpp.h>
 #include <sstream>
 
 using namespace frontier;
