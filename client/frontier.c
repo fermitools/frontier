@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pwd.h>
 #include <fcntl.h>
 
 
@@ -29,6 +30,8 @@ char *frontier_log_file;
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
 static int initialized=0;
+
+static char frontier_id[FRONTIER_ID_SIZE];
 
 static void channel_delete(Channel *chn);
 
@@ -62,6 +65,9 @@ char *frontier_str_copy(const char *str)
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
  {
   char *env;
+  uid_t uid;
+  struct passwd *pwent;
+  pid_t pid;
   
   if(initialized) return FRONTIER_OK;
 
@@ -105,7 +111,13 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
        }
      }
    }
+   
+  uid=getuid();
+  pwent=getpwuid(uid);
+  pid=getpid();
 
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%d %s(%d) %s",pid,pwent->pw_name,uid,pwent->pw_gecos);
+  
   initialized=1;
   
   return FRONTIER_OK;
@@ -256,6 +268,7 @@ static int get_data(Channel *chn,const char *uri)
   if(ret) return ret;
   
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,chn->reload);
+  frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
   
   ret=frontierHttpClnt_open(chn->ht_clnt,uri);
   if(ret) goto end;

@@ -52,6 +52,7 @@ struct s_FrontierHttpClnt
   int total_proxy;
   int total_server;
   int is_refresh;
+  char *frontier_id;
   
   int socket;
     
@@ -67,6 +68,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec);
 int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url);
 int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url);
 void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh);
+void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id);
 int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url);
 int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len);
 void frontierHttpClnt_close(FrontierHttpClnt *c);

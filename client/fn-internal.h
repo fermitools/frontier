@@ -14,6 +14,8 @@
 
 #include <http/fn-htclient.h>
 
+#define FRONTIER_ID_SIZE 128
+
 struct s_FrontierMemData
  {
   size_t size;

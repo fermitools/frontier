@@ -208,7 +208,7 @@ int do_main(int argc, char **argv)
     if(proxy_url){delete proxy_url; proxy_url=NULL;}
     //frontier::CDFDataSource ds;
     
-    //ds.setReload(1);
+    ds.setReload(1);
 
     frontier::Request req1("SvxBeamPosition","1",frontier::BLOB,"cid","316011");
     frontier::Request req2("CALTrigWeights","1",frontier::BLOB,"cid","14319");

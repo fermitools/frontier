@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -41,6 +42,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
    }
   bzero(c,sizeof(FrontierHttpClnt));
   c->socket=-1;
+  c->frontier_id=(char*)0;
   
   *ec=FRONTIER_OK;
   return c;
@@ -102,6 +104,27 @@ void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh)
   c->is_refresh=is_refresh;
  }
  
+ 
+void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id)
+ {
+  int i;
+  int len;
+  char *p;
+  
+  len=strlen(frontier_id);
+  if(len>MAX_NAME_LEN) len=MAX_NAME_LEN;
+  
+  c->frontier_id=frontier_mem_alloc(len+1);
+  p=c->frontier_id;
+  
+  for(i=0;i<len;i++)  
+   {
+    if(isalnum(frontier_id[i]) || strchr(" ;:,.<>/?=+-_{}[]()|",frontier_id[i]))
+    *p=frontier_id[i];
+    ++p;
+   }
+  *p=0;
+ } 
  
  
 static int http_read(FrontierHttpClnt *c)
@@ -257,6 +280,14 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
     return FRONTIER_EIARG;
    }
    
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\n",c->frontier_id);
+  if(ret>=FN_REQ_BUF-len)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
+    return FRONTIER_EIARG;
+   }
+  len+=ret;
+   
   if(c->is_refresh)
    {
     ret=snprintf(buf+len,FN_REQ_BUF-len,"Pragma: no-cache\r\n\r\n");
@@ -341,6 +372,8 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   for(i=0;i<FRONTIER_SRV_MAX_NUM; i++) frontier_DeleteUrlInfo(c->proxy[i]);
   
   if(c->socket>=0) frontierHttpClnt_close(c);
+  
+  if(c->frontier_id) frontier_mem_free(c->frontier_id);
   
   frontier_mem_free(c);
  }
