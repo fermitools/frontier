@@ -13,86 +13,64 @@
     <display-name>froNtier Database Web Application</display-name>
 
     <description>
-
         Da project description goes here I think.
-
     </description>
-
-
 
     <servlet>
 
-        <servlet-name>Frontier</servlet-name>
+      <servlet-name>Frontier</servlet-name>
 
-        <servlet-class>gov.fnal.frontier.Frontier</servlet-class>
+      <servlet-class>gov.fnal.frontier.Frontier</servlet-class>
 
-        <init-param>
+      <init-param>
+        <param-name>ServerName</param-name>
+        <param-value>Frontier</param-value>
+      </init-param>
 
-         <param-name>ServerName</param-name>
+      <init-param>
+        <param-name>DataSourceName</param-name>
+        <param-value>jdbc/frontier</param-value>
+      </init-param>
 
-          <param-value>Frontier</param-value>
+      <init-param>
+        <param-name>XsdTableName</param-name>
+        <param-value>frontier_descriptors</param-value>
+      </init-param>
 
-         </init-param>
+      <init-param>
+        <param-name>MonitorNode</param-name>
+        <param-value>lynx.fnal.gov:8884 password</param-value>
+      </init-param>
 
-        <init-param>
+      <init-param>
+        <param-name>MonitorMillisDelay</param-name>
+        <param-value>300000</param-value>     <!-- 5 minutes -->
+      </init-param>
 
-         <param-name>DataSourceName</param-name>
-
-          <param-value>jdbc/frontier</param-value>
-
-         </init-param>
-
-        <init-param>
-
-         <param-name>XsdTableName</param-name>
-
-          <param-value>frontier_descriptors</param-value>
-
-         </init-param>
-
-        <load-on-startup/>
+      <load-on-startup/>
 
     </servlet>
 
-
-
     <servlet-mapping>
-
-        <servlet-name>Frontier</servlet-name>
-
-        <url-pattern>/Frontier</url-pattern>
-
+      <servlet-name>Frontier</servlet-name>
+      <url-pattern>/Frontier</url-pattern>
     </servlet-mapping>
 
-
-
     <session-config>
-
-        <session-timeout>300</session-timeout>    <!-- 300 minutes -->
-
+      <session-timeout>300</session-timeout>    <!-- 300 minutes -->
     </session-config>
 
-
-
     <resource-ref>
-
         <description>
-
             This is the refererence to the Oracle data source we
-
             use to talk to the database configured in server.xml.
-
         </description>
 
         <res-ref-name>jdbc/frontiercms</res-ref-name>
-
         <res-type>javax.sql.DataSource</res-type>
-
         <res-auth>Container</res-auth>
 
     </resource-ref>
-
-
 
 </web-app>
 
