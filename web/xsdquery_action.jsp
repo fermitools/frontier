@@ -6,12 +6,35 @@
    String version = request.getParameter("version");
 %>
 <html>
-<body bgcolor="yellow">
+<body bgcolor="#cc6600">
 <head>
 <title>xsdquery_action.jpg</title>
 </head>
 <body>
-<H1 align="center"><font color="red">X</font>ML <font color="red">S</font>ervice<font color="red">D</font>escriptor Detail</h1>
+    <TABLE WIDTH="100%">
+      <TR>
+        <TD WIDTH="90">
+          <IMG SRC="frontier_left.png" ALT="{Cowboy}" BORDER="0" height="100">
+          </TD>
+        <TD WIDTH="100%" ALIGN="CENTER" VALIGN="CENTER">
+          <B><font SIZE="+3"><font color="#oo66cc">F</font>rontier</font></B>
+            </TD>
+        <TD WIDTH="100">
+          <IMG SRC="frontier_right.png" ALT="{Cowboy}" BORDER="0" height="100">
+        </TD>
+      </TR>
+    </TABLE>
+<hr />
+<table WIDTH="100%">
+    <tr>
+            <td WIDTH="100%" ALIGN="CENTER" VALIGN="CENTER">
+                    <B><font SIZE="+3"><font color="#oo66cc">X</font>ML
+                                     <font color="#oo66cc">S</font>ervice
+                                   <font color="#oo66cc">D</font>escriptor Details
+                  </font></B>
+            </td>
+    </tr>
+</table>
 <table align="center">
     <tr>
         <td>Table: <b><%= type %></b> Version: <b><%= version %></b></td>
