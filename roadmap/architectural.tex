@@ -63,7 +63,7 @@ to a table or tables.
 
 \begin{verbatim}
 
-<descriptor type="calibrunlist" version="1" xmlversion="1">
+<descriptor type="calibrunlist" version="1" xsdversion="1">
   <attribute position="1" type="int" field ="calib_run"/>
   <attribute position="3" type="float" field="calc_value"/>
   <attribute position="2" type="long" field="calib_version"/>
@@ -88,7 +88,8 @@ to a table or tables.
 \begin{itemize}
 \item \emph{type} - Name of the specific object this descriptor is for.
 \item \emph{version} - Version number of the object.
-\item \emph{xmlversion} - The version of XML which is being used to process the descriptor.
+\item \emph{xsdversion} - The version of XML servicer descriptor protocol which is being used 
+to process the descriptor.
 \end{itemize}
 \item \emph{attribute} - Describles a datum which is being returned. The datum will be marshed 
 according to the order of the \emph{attribute} tags.
@@ -122,6 +123,7 @@ in the query.  Parameters may be passed in by useing the keyword ``@param''.
 \item \emph{int}
 \item \emph{long}
 \item \emph{double}
+\item \emph{float}
 \item \emph{string}
 \item \emph{date}
 \end{itemize}
@@ -138,7 +140,7 @@ effort required versus the amount of expected use.
 
 Consideration was also given for adding a second descriptor which defines how to convert the data
 from the result set to the user object.  This has been put off to keep the initial implemention
-fairly straight forward.  It may be added in the future.  The tag \emph{xmlversion} was added to 
+fairly straight forward.  It may be added in the future.  The tag \emph{xsdversion} was added to 
 make these changes possible.
 
 
@@ -286,7 +288,7 @@ type=SiChipPed:0 & CID=17443
   all attributes of the table SiChipPed in the order described in 
   the SiChipPed type definition)
 
-  <frontier version="1.9" xmlVersion="1.3">
+  <frontier version="1.9" xsdversion="1.3">
   <transaction payloads="1" crc="42427">
   <payload type="SiChipPed" version="0" CID="17443" encoding="BLOB">
   <data count="4">
@@ -303,7 +305,7 @@ type=SiChipPed:0 & CID=17443 & encoding=CSV
   all attributes of the table SiChipPed in the order described in the 
   type definition)
 
-  <frontier version="1.9" xmlVersion="1.3">
+  <frontier version="1.9" xsdversion="1.3">
   <transaction payloads="1" crc="43847">
   <payload type="SiChipPed" version="0" CID="17442" encoding="CSV">
   <data count="4">
@@ -320,7 +322,7 @@ type=SiChipPed:0 & CID=17443 & encoding=CSV
 type=Description:0 & encoding=XML & name=SiChipPed
   (get the description of the SiChipPed class in XML format)
 
-  <frontier version="1.9" xmlVersion="1.3">
+  <frontier version="1.9" xsdversion="1.3">
   <transaction payloads="1" crc="5453">
   <payload type="SiChipPed" version="0" CID="17442" encoding="XML">
   <data count="1">
@@ -407,7 +409,7 @@ datagram is provided below and a description of each tag follows. The indentatio
 for readability of this document and will next exist in the production version.
 
 \begin{verbatim}
-<frontier version="1.9" xmlVersion="1.3">
+<frontier version="1.9" xsdversion="1.3">
   <transaction payloads="2">
     <payload type="thing1" version="1" encoding="blob">
       <data>
@@ -430,7 +432,7 @@ for readability of this document and will next exist in the production version.
 \item \emph{frontier} - Provides identifying data about the product.
 \begin{itemize}
 \item \emph{version} - Current version of the product.
-\item \emph{xmlVersion} - Current version of the XML protocol in use.
+\item \emph{xsdversion} - Current version of the XML protocol in use.
 \end{itemize}
 \item \emph{transaction} - General wrapper around data being returned.
 \begin{itemize}

@@ -53,16 +53,8 @@ public class XmlServicer implements Servicer {
             ResultSet rs = stmt.executeQuery(sqlStatement);
             while(rs.next()) {
                 recordCnt++;
-                for(int columnCnt=0;columnCnt<descriptor.getAttributeCount();columnCnt++){
-                    try {
-                        if(descriptor.getAttributeType(columnCnt) == "int")
-                            encoder.writeInt(rs.getInt(columnCnt));
-                        else
-                            throw new ServicerException("xmlServicer.process - unknown attribute - "
-                                                        + descriptor.getAttributeType(columnCnt));
-                    } catch(Exception e) {
-                        throw new ServicerException("XmlServicer.process - " + e.getMessage());
-                    }
+                for(int columnCnt=1;columnCnt<descriptor.getAttributeCount()+1;++columnCnt){
+                    write(encoder, rs, columnCnt);
                 }
             }
             stmt.close();
@@ -70,6 +62,32 @@ public class XmlServicer implements Servicer {
             throw new ServicerException(e.getMessage());
        }
         return recordCnt;
+    }
+
+    private void write(Encoder encoder, ResultSet rs, int columnCnt) throws ServicerException {
+        try {
+            String columnType = descriptor.getAttributeType(columnCnt);
+            System.out.println("columnType: " + columnType + "  columnCnt: " + columnCnt);
+            if (columnType.compareToIgnoreCase("int")==0)
+                encoder.writeInt(rs.getInt(columnCnt));
+            else if (columnType.compareToIgnoreCase("long")==0)
+                encoder.writeLong(rs.getLong(columnCnt));
+            else if (columnType.compareToIgnoreCase("double")==0)
+                encoder.writeDouble(rs.getDouble(columnCnt));
+            else if (columnType.compareToIgnoreCase("float")==0)
+                encoder.writeFloat(rs.getFloat(columnCnt));
+            else if (columnType.compareToIgnoreCase("string")==0)
+                    encoder.writeString(rs.getString(columnCnt));
+            else if (columnType.compareToIgnoreCase("bytes")==0)
+                encoder.writeBytes(rs.getBytes(columnCnt));
+            else if (columnType.compareToIgnoreCase("date")==0)
+                encoder.writeDate(rs.getDate(columnCnt));
+            else
+                throw new ServicerException("xmlServicer.process - unknown attribute - "
+                                            + descriptor.getAttributeType(columnCnt));
+        } catch(Exception e) {
+            throw new ServicerException("XmlServicer.write - " + e.getMessage());
+        }
     }
 
 }

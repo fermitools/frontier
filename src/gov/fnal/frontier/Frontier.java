@@ -22,13 +22,12 @@ public final class Frontier extends CacheHttpServlet {
     private static Boolean mutex = new Boolean(true);
 
     private static final String frontierVersion = "1.0";
-    private static final String xmlVersion = "1.0";
+    private static final String xsdVersion = "1.0";
 
     /**
      * Respond to a GET request for the content produced by this
      * servlet.  This function handles call-outs to the different
      * interfaces supported by this servlet
-     *
      * @param request HttpServletRequest The servlet request we are processing
      * @param response HttpServletResponse The servlet response we are producing
      * @throws IOException if an input/output error occurs
@@ -68,7 +67,7 @@ public final class Frontier extends CacheHttpServlet {
         writer = response.getOutputStream();
 
         writer.println("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
-        writer.println("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion
+        writer.println("<frontier version=\"" + frontierVersion + "\" xsdVersion=\"" + xsdVersion
                        + "\">");
         try {
             commandList = parser.parse(queryString);

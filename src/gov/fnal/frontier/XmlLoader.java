@@ -38,15 +38,21 @@ public class XmlLoader extends Loader {
 
             Element root = doc.getRootElement();
             String type = root.getAttributeValue("type");
+            if (type == null)
+                throw new LoaderException("The XSD is missing the tag type or it is null.");
             String version = root.getAttributeValue("version");
-            String xsdVersion = root.getAttributeValue("xmlversion");
+            if (version == null)
+                throw new LoaderException("The XSD is missing the tag version or it is null.");
+            String xsdVersion = root.getAttributeValue("xsdversion");
+            if (xsdVersion == null)
+                throw new LoaderException("The XSD is missing the tag xsdversion or it is null.");
             Parser parser = null;
             if(!type.equals(name)) {
-                String msg = "XSD type tag does not match type supplied on URL. ";
+                String msg = "The XSD's type tag does not match type supplied on URL. ";
                 msg += type + " != " + name;
                 throw new LoaderException(msg);
             } else if(!version.equals(aVersion)) {
-                String msg = "XSD version tag does not match version supplied on URL. ";
+                String msg = "The XSD's xsdversion tag does not match version supplied on URL. ";
                 msg += version + " != " + aVersion;
                 throw new LoaderException(msg);
             } else if(xsdVersion.equals("1.0"))

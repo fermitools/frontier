@@ -20,7 +20,7 @@ public class BlobTypedEncoder implements Encoder
   public static final byte TYPE_DOUBLE=4;
   public static final byte TYPE_TIME=5;
   public static final byte TYPE_ARRAY_BYTE=6;
-  
+
   private static final int BUFFER_SIZE=16384;
 
   private DataOutputStream os;
@@ -66,13 +66,21 @@ public class BlobTypedEncoder implements Encoder
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
-  public void writeDouble(double v) throws Exception
-   {
-    os.writeByte(TYPE_DOUBLE);
-    os.writeDouble(v);
-    out_size+=9;
-    if(baos.size()>=BUFFER_SIZE) dump();
-   }
+   public void writeDouble(double v) throws Exception
+    {
+     os.writeByte(TYPE_DOUBLE);
+     os.writeDouble(v);
+     out_size+=9;
+     if(baos.size()>=BUFFER_SIZE) dump();
+    }
+
+    public void writeFloat(float v) throws Exception
+     {
+      os.writeByte(TYPE_FLOAT);
+      os.writeFloat(v);
+      out_size+=5;
+      if(baos.size()>=BUFFER_SIZE) dump();
+     }
 
   public void writeString(String v) throws Exception
    {

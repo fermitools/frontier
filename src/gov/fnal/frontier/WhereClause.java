@@ -27,9 +27,6 @@ public class WhereClause {
 
     public void addClause(String clause) {
         phrases = clause.split("@param");
-        System.out.println("**phrases...");
-        for(int i = 0; i < phrases.length; i++)
-            System.out.println("phrase: " + phrases[i]);
     }
 
     public void addParam(String type, String key) {

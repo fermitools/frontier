@@ -56,12 +56,19 @@ public class BlobEncoder implements Encoder
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
-  public void writeDouble(double v) throws Exception
-   {
-    os.writeDouble(v);
-    out_size+=8;
-    if(baos.size()>=BUFFER_SIZE) dump();
-   }
+   public void writeDouble(double v) throws Exception
+    {
+     os.writeDouble(v);
+     out_size+=8;
+     if(baos.size()>=BUFFER_SIZE) dump();
+    }
+
+    public void writeFloat(float v) throws Exception
+     {
+      os.writeFloat(v);
+      out_size+=4;
+      if(baos.size()>=BUFFER_SIZE) dump();
+     }
 
   public void writeString(String v) throws Exception
    {
