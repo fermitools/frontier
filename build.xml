@@ -117,13 +117,16 @@
                        commands via the "/manager" web application)
 
 -->
-  <property name="app.path"      value="/${app.name}"/>
-  <property name="build.home"    value="${basedir}/build"/>
-  <property name="dist.home"     value="${basedir}/dist"/>
-  <property name="docs.home"     value="${basedir}/docs"/>
-  <property name="src.home"      value="${basedir}/src"/>
-  <property name="web.home"      value="${basedir}/web"/>
+  <property name="app.path"          value="/${app.name}"/>
+  <property name="build.home"        value="${basedir}/build"/>
+  <property name="dist.home"         value="${basedir}/dist"/>
+  <property name="docs.home"         value="${basedir}/docs"/>
+  <property name="src.home"          value="${basedir}/src"/>
+  <property name="web.home"          value="${basedir}/web"/>
 
+  <property name="test.home"         value="${build.home}/test"/>
+  <property name="test.data.home"    value="${test.home}/data"/>
+  <property name="test.reports.home" value="${test.home}/reports"/>
 
 <!-- ================== Custom Ant Task Definitions ======================= -->
 
@@ -238,6 +241,13 @@
 
   </path>
 
+  <path id="test.classpath">
+    <path refid="compile.classpath"/>
+    <pathelement location="${junit.jar}"/>
+    <pathelement location="${build.home}/classes"/>
+    <pathelement location="${build.home}/test"/>
+  </path>
+
 
 
 <!-- ==================== All Target ====================================== -->
@@ -264,9 +274,11 @@
 -->
 
   <target name="clean"
-   description="Delete old build and dist directories">
+   description="Delete old build test/reports, test/data and dist directories">
     <delete dir="${build.home}"/>
     <delete dir="${dist.home}"/>
+    <delete dir="${test.reports.home}"/>
+    <delete dir="${test.data.home}"/>
   </target>
 
 
@@ -301,7 +313,60 @@
     </copy>
   </target>
 
+<!-- ==================== Test Init Target ================================== -->
 
+<target name="testinit">
+  <delete dir="${test.data.home}"/>
+  <delete dir="${test.reports.home}"/>
+
+  <mkdir dir="${test.data.home}"/>
+  <mkdir dir="${test.reports.home}"/>
+</target>
+
+<!-- ==================== Compile Test Target ================================== -->
+
+<target name="testcompile" depends="compile,testinit">
+  <javac destdir="${test.home}"
+         debug="${compile.debug}"
+         includeAntRuntime="true"
+         srcdir="test">
+    <classpath refid="test.classpath"/>
+  </javac>
+
+  <copy todir="${test.home}">
+    <fileset dir="test" excludes="**/*.java"/>
+  </copy>
+</target>
+
+<!-- ==================== Test Target ================================== -->
+
+<target name="test" depends="testcompile"
+  description="Run tests over Java sources">
+
+  <junit printsummary="false"
+         errorProperty="test.failed"
+         failureProperty="test.failed">
+    <classpath refid="test.classpath"/>
+    <formatter type="brief" usefile="false"/>
+    <formatter type="xml"/>
+    <test name="${testcase}" todir="${test.data.home}" if="testcase"/>
+    <batchtest todir="${test.data.home}" unless="testcase">
+      <fileset dir="${test.home}" includes="**/*Test.class"/>
+    </batchtest>
+  </junit>
+
+  <junitreport todir="${test.data.home}">
+     <fileset dir="${test.data.home}">
+       <include name="TEST-*.xml"/>
+     </fileset>
+     <report format="frames"
+        todir="${test.reports.home}"/>
+  </junitreport>
+
+  <fail message="Tests failed!! Check log and/or reports."
+      if="test.failed"/>
+
+</target>
 
 <!-- ==================== Dist Target ===================================== -->
 
