@@ -56,6 +56,8 @@ public class Servicer {
 			encoder.writeLong(resultSet.getLong(cnt));
 		    else
 			encoder.writeDouble(resultSet.getDouble(cnt));
+		else if (columnType == "VARCHAR2")
+		    encoder.writeString(resultSet.getString(cnt));
 		else
 		    throw new Exception("Unknown columnType: " + columnType);
 	    }

@@ -24,7 +24,10 @@ public final class Frontier extends CacheHttpServlet {
     private AdministrationRequestHandler adminHandler = null;
     private ServletOutputStream writer                = null;
 
-    public void init() throws ServletException {
+    /**
+     * Initilizes the servlet.
+     */
+    public void init() {
 	connMgr      = DbConnectionMgr.getDbConnectionMgr();
 	parser       = new CommandParser();
     }
@@ -67,7 +70,15 @@ public final class Frontier extends CacheHttpServlet {
 	writer.close();
     }
 
-    void handleRequest(ArrayList commandList, ServletOutputStream writer) throws ServletException {
+    /**
+     * Accepts a list Commands and distribues each command to the appropriate handler.
+     *
+     * @param commandList An ArrayList of Command objects which are to be handled.
+     * @param writer      The output stream to respond to the Command on.
+     *
+     * @exception ServletException if a servlet error occurs
+     */
+    private void handleRequest(ArrayList commandList, ServletOutputStream writer) throws ServletException {
 	RequestHandler handler = null;
 	int numCommands = commandList.size();
 	stream("<transaction payloads=\"" + numCommands + "\">");
@@ -88,7 +99,14 @@ public final class Frontier extends CacheHttpServlet {
 	stream("</transaction>");
     }
 
-    void stream(String line) throws ServletException {
+    /**
+     * Outputs a line of text.
+     *
+     * @param line Data to be output.
+     *
+     * @exception ServletException if a servlet error occurs
+     */
+    private void stream(String line) throws ServletException {
 	try {
 	    writer.println(line);
 
@@ -97,7 +115,14 @@ public final class Frontier extends CacheHttpServlet {
 	}
     }
 
-    void generateBadQualityTag(String message) throws ServletException {
+    /**
+    * Outputs an XML tag to the stream indicating an error condtion
+    *
+    * @param message Text message to place into stream.
+    *
+    * @exception ServletException if a servlet error occurs
+    */
+    private void generateBadQualityTag(String message) throws ServletException {
 	stream("<quality error=\"1\" code=\"???\" message=\"" + message + "\"/>");
     }
 
