@@ -78,8 +78,9 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
   
   // Proxy settings
 set_proxy:  
-  if(proxy_url && *proxy_url) 
+  if(proxy_url) 
    {
+    if(!*proxy_url) return cfg; // When proxy_url is "" do not use any proxy
     cfg->proxy[0]=str_dup(proxy_url);
     cfg->proxy_num=1;
     return cfg;
