@@ -32,7 +32,9 @@ INC		=	-I./expat/local/include -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
 
-HDR	=	frontier.h fn-internal.h
+OBJ		=	anydata.o fn-base64.o fn-md5.o frontier.o payload.o rs-bin.o error.o fn-config.o frontier-cpp.o memdata.o response.o
+
+HDR		=	frontier.h fn-internal.h
 
 all: libcurl libexpat libfrontier.so distrib
 
@@ -42,7 +44,7 @@ libcurl:
 libexpat:
 	(cd expat; make all)	
 
-libfrontier.so: fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
+libfrontier.so: $(OBJ)
 	rm -f libfrontier.so
 	rm -f libfrontier.so.$(FN_VER_MAJOR)
 	rm -f libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR)
@@ -50,7 +52,7 @@ libfrontier.so: fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o me
 	mkdir .libs
 	cp ./curl/curl-7.11.1/lib/.libs/*.o .libs
 	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
-	cp *.o .libs
+	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
 	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR)
 	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so

@@ -75,6 +75,7 @@ char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec); // Returns next byte 
 int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec);
 long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec);
 double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);
+float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec);
 void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec);
 
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr));

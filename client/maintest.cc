@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
     frontier::CDFDataSource ds(argv[1]);
     
-    //ds.setReload(1);
+    ds.setReload(1);
     
     std::vector<const frontier::Request*> vrq;
     for(int i=2;i+2<argc;i+=3)
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     ds.getData(vrq);
     print_time("finish: ");
     
-    for(int i=1;i<=vrq.size();i++)
+    for(unsigned int i=1;i<=vrq.size();i++)	// XXX
      {
       ds.setCurrentLoad(i);
       int nrec=ds.getRecNum();

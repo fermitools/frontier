@@ -184,13 +184,16 @@ int DataSource::getAnyData(AnyData* buf)
   do
    {
     dt=frontierRSBlob_getByte(rs,&ec);
+    //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
     if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
    }while(dt==BLOB_TYPE_EOR);
    
   last_field_type=dt;
+  //std::cout<<"Extracted type prefix "<<(int)dt<<'\n';
   
   if(dt&BLOB_BIT_NULL)
    {
+    //std::cout<<"The field is NULL\n";
     buf->isNull=1;
     buf->t=dt&(~BLOB_BIT_NULL);
     return 0;
@@ -204,7 +207,7 @@ int DataSource::getAnyData(AnyData* buf)
     case BLOB_TYPE_BYTE: buf->set(frontierRSBlob_getByte(rs,&ec)); break;
     case BLOB_TYPE_INT4: buf->set(frontierRSBlob_getInt(rs,&ec)); break;
     case BLOB_TYPE_INT8: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
-    case BLOB_TYPE_FLOAT: buf->set((float)frontierRSBlob_getDouble(rs,&ec)); break;
+    case BLOB_TYPE_FLOAT: buf->set((float)frontierRSBlob_getFloat(rs,&ec)); break;
     case BLOB_TYPE_DOUBLE: buf->set(frontierRSBlob_getDouble(rs,&ec)); break;
     case BLOB_TYPE_TIME: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
     case BLOB_TYPE_ARRAY_BYTE:
@@ -216,7 +219,9 @@ int DataSource::getAnyData(AnyData* buf)
        p[len]=0; // To emulate C string
        buf->set(len,p);
        break;
-    default: LOGIC_ERROR(this,"unknown type prefix",FRONTIER_EIARG,-1);
+    default: 
+         //std::cout<<"Unknown type prefix "<<(int)dt<<'\n';
+         LOGIC_ERROR(this,"unknown type prefix",FRONTIER_EIARG,-1);
    }
   if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"can not get AnyData value",ec,-1);
   return 0;
