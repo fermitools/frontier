@@ -33,7 +33,7 @@ long long print_time(const char *msg)
 
 static void usage(char **argv)
  {
-  printf("Usage: %s [-r] [-n repeat] server_url -o object key valu [{key value}] [{-o object key value [{key value}] }]\n",argv[0]);
+  printf("Usage: %s [-r] [-n repeat] server_url -o object key value [{key value}] [{-o object key value [{key value}] }]\n",argv[0]);
   exit(1);
  }
  
