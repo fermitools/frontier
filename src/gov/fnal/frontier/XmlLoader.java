@@ -1,9 +1,9 @@
 package gov.fnal.frontier;
 
 import java.io.*;
-import javax.xml.parsers.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import org.jdom.*;
+import org.jdom.input.*;
+import org.jdom.output.*;
 
 /**
  * $Id$
@@ -18,17 +18,18 @@ public class XmlLoader extends Loader {
 
     public Descriptor load(String name, String aVersion, InputStream data) 
 	throws LoaderException {
-	DocumentBuilder builder = null;
-	Document            doc = null;
 	Descriptor   descriptor = null;
 	try {
-	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-	    builder = factory.newDocumentBuilder();
-	    doc = builder.parse(data);
-	    Element root      = doc.getDocumentElement();
-	    String type       = root.getAttribute("type");
-	    String version    = root.getAttribute("version");
-	    String xsdVersion = root.getAttribute("xmlversion");
+            // Build the document with SAX and Xerces, no validation
+            SAXBuilder builder = new SAXBuilder();
+            // Create the document
+            Document doc = builder.build(data);
+
+
+	    Element root      = doc.getRootElement();
+	    String type       = root.getAttributeValue("type");
+	    String version    = root.getAttributeValue("version");
+	    String xsdVersion = root.getAttributeValue("xmlversion");
 	    Parser parser     = null;
 	    if (! type.equals(name)) {
 		String msg = "XSD type tag does not match type supplied on URL. ";
@@ -47,9 +48,7 @@ public class XmlLoader extends Loader {
 	    descriptor = parser.parse(root);
 	} catch (IOException e) {
 	    throw new LoaderException(e.getMessage());
-	} catch (ParserConfigurationException e) {
-	    throw new LoaderException(e.getMessage());
-	} catch (SAXException e) {
+	} catch (JDOMException e) {
 	    throw new LoaderException(e.getMessage());
 	}
 
