@@ -43,7 +43,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     +"<!ATTLIST descriptor "
     +" type CDATA #REQUIRED "
     +" version CDATA #REQUIRED "
-    +" xsdversion CDATA #REQUIRED> "
+    +" xsdversion (1) #REQUIRED> "
     +"<!ELEMENT attribute EMPTY> "
     +"<!ATTLIST attribute "
     +" position CDATA #REQUIRED "
@@ -129,19 +129,25 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     InputSource is=new InputSource(sr);
     parser.parse(is);
    }
- 
-  
-  public long fdo_get_expiration_time()
+   
+   
+   
+  public MethodDesc fdo_getMethodDesc(String method) throws Exception
    {
-    return (1000 * 60 * 60 * 24 * 7); // 7 days, in milliseconds
+    MethodDesc ret=new MethodDesc();
+    ret.name="";
+    ret.domain="get";
+    ret.noCache=false;
+    ret.expire=(1000 * 60 * 60 * 24 * 7); // 7 days, in milliseconds
+    ret.transaction="";
+    ret.access="";
+    ret.sql_str="";
+    ret.sql_type="query";
+    ret.aParams=null;
+    return ret;
    }
    
-   
-  public boolean fdo_is_no_cache()
-   {
-    return false;
-   }
-   
+     
    
   public int fdo_get(Encoder enc,String method,FrontierDataStream fds) throws Exception
    {
@@ -151,7 +157,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     // XSD v1 does not define "method", method is ignored here
     
     WhereClause wc=find_wehere_clause(fds);
-    if(wc==null) throw new Exception("Can not find auitable where clause for object "+obj_name+" in domain GET");
+    if(wc==null) throw new Exception("Can not find suitable where clause for object "+obj_name+" in domain GET");
     
     StringBuffer sql=new StringBuffer("");
     sql.append(main_sql);

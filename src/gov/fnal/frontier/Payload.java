@@ -46,8 +46,9 @@ public class Payload
     if(fdo!=null)
      {
       System.out.println("Got "+key+" from cache");
-      time_expire=fdo.fdo_get_expiration_time();
-      noCache=fdo.fdo_is_no_cache();
+      MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
+      time_expire=md.getExpire();
+      noCache=md.isNoCache();
       return;      
      }
     
@@ -66,15 +67,16 @@ public class Payload
       Blob blob=rs.getBlob("xsd_data");
       int len=(int)blob.length();
       byte[] b=blob.getBytes((long)1,len);
-      if(xsd_type.equals("xml"))
-       {
-        fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version);
-        fdo.fdo_init(b);
-        time_expire=fdo.fdo_get_expiration_time();
-        noCache=fdo.fdo_is_no_cache();
-        htFdo.put(key,fdo);
-       }
-      else throw new Exception("Unsupported xsd_type "+xsd_type+".");
+      
+      if(xsd_type.equals("xml"))       fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version);
+      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version);       
+      else                             throw new Exception("Unsupported xsd_type "+xsd_type+".");
+      
+      fdo.fdo_init(b);
+      MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
+      time_expire=md.getExpire();
+      noCache=md.isNoCache();
+      htFdo.put(key,fdo);      
      }
     finally
      {

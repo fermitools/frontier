@@ -1,0 +1,31 @@
+<!ELEMENT descriptor (attribute+,method+)> 
+<!ATTLIST descriptor  
+  type CDATA #REQUIRED  
+  version CDATA #REQUIRED  
+  xsdversion (2) #REQUIRED> 
+  
+<!ELEMENT attribute EMPTY> 
+<!ATTLIST attribute  
+  position CDATA #REQUIRED  
+  type (int|long|double|float|string|bytes|date) #REQUIRED  
+  field CDATA #REQUIRED> 
+  
+<!ELEMENT method (sql,param*)> 
+<!ATTLIST method  
+  name CDATA "DEFAULT"  
+  domain (get|insert|update) #REQUIRED  
+  cache-control (cache|no-cache) "cache"  
+  expire CDATA "604800000"  
+  transaction (free|required) #REQUIRED  
+  access (public|certificate) #REQUIRED> 
+  
+<!ELEMENT sql (#PCDATA)> 
+<!ATTLIST sql  
+  type (query|call|update) #REQUIRED> 
+  
+<!ELEMENT param EMPTY> 
+<!ATTLIST param  
+  position CDATA #REQUIRED  
+  type (int|long|double|float|string|date) #REQUIRED  
+  key CDATA #REQUIRED>
+ 

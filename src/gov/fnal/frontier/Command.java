@@ -15,7 +15,6 @@ public class Command
   public int cmd_domain;
   public String obj_name;
   public String obj_version;
-  public String command;
   public String method;
   public String encoder;
   public FrontierDataStream fds;
@@ -66,7 +65,6 @@ public class Command
         c.cmd_domain=CMD_GET;
         c.obj_name=param[1];
         c.obj_version=param[2];
-        c.command="get";
         c.method=param[3];
         if(c.method==null) c.method="DEFAULT";
        }
@@ -75,8 +73,7 @@ public class Command
         c.cmd_domain=CMD_META;
         c.obj_name=param[1];
         c.obj_version=param[2];
-        c.command=""; // Does not matter
-        c.method="";  // Does not matter
+        c.method="DEFAULT";  // Does not matter
        }
       else
        {
@@ -143,8 +140,8 @@ public class Command
    
   public String toString()
    {
-    String ret="d="+domain_name[cmd_domain]+",on="+obj_name+",ov="+obj_version+",c="+command;
-    ret+=",m="+method+",e="+encoder+",pl=["+fds+"]";
+    String ret="d="+domain_name[cmd_domain]+",on="+obj_name+",ov="+obj_version;
+    ret+=",m="+method+",e="+encoder;
     return ret;
    }
  }
