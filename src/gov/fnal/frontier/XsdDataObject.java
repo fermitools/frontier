@@ -82,9 +82,11 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }// end of WhereClause
    
 
-  protected XsdDataObject(DbConnectionMgr dbm) throws Exception
+  protected XsdDataObject(DbConnectionMgr dbm,String requested_name,String requested_version) throws Exception
    {
     this.dbm=dbm;
+    obj_name=requested_name;
+    obj_version=requested_version;
    }
 
    
@@ -274,14 +276,16 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   
   public void startElement(String uri,String local,String raw, Attributes attrs) throws SAXException 
    {
-    System.out.println("startElem u="+uri+",l="+local+",r="+raw+".");
+    //System.out.println("startElem u="+uri+",l="+local+",r="+raw+".");
 
     // print_attrs(attrs);
         
     if(local.equals("descriptor"))
      {
-      obj_name=attrs.getValue("type");
-      obj_version=attrs.getValue("version");
+      String tmp=attrs.getValue("type");
+      if(!obj_name.equals(tmp)) throw new SAXException("Object name mismatch: expected ["+obj_name+"], got "+tmp+"]");
+      tmp=attrs.getValue("version");
+      if(!obj_version.equals(tmp)) throw new SAXException("Object version mismatch: expected ["+obj_version+"], got "+tmp+"]");
       xsd_version=attrs.getValue("xsdversion");
       System.out.println("xsd_version="+xsd_version+".");
       if(Integer.parseInt(xsd_version)!=1) throw new SAXException("XSD version mismatch - expected 1, got "+xsd_version);

@@ -68,7 +68,7 @@ public class Payload
       byte[] b=blob.getBytes((long)1,len);
       if(xsd_type.equals("xml"))
        {
-        fdo=new XsdDataObject(dbm);
+        fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version);
         fdo.fdo_init(b);
         time_expire=fdo.fdo_get_expiration_time();
         noCache=fdo.fdo_is_no_cache();
