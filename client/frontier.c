@@ -319,6 +319,33 @@ static void clean_headers(Channel *chn)
  }
 
 
+static int prepare_channel(Channel *chn)
+ {
+  CURLcode res;
+  
+  if(chn->resp) frontierResponse_delete(chn->resp);
+  chn->resp=frontierResponse_create();  
+  if(!chn->resp) return FRONTIER_EMEM;
+  
+  clean_headers(chn);
+  
+  chn->status=FRONTIER_SEMPTY; 
+  
+  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEFUNCTION,write_data);
+  if(res) return FRONTIER_EEND-res;
+
+  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEDATA,chn->resp);
+  if(res) return FRONTIER_EEND-res;
+
+  res=curl_easy_setopt(chn->curl,CURLOPT_HEADERFUNCTION,write_header);
+  if(res) return FRONTIER_EEND-res;
+
+  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEHEADER,chn);
+  if(res) return FRONTIER_EEND-res;
+  
+  return FRONTIER_OK;
+ }
+ 
 
 int frontier_getRawData(FrontierChannel u_channel,const char *url)
  {
@@ -330,33 +357,16 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
 
   if(!chn) {ret=FRONTIER_EIARG; goto err;}
 
-  if(chn->resp) frontierResponse_delete(chn->resp);
-
-  chn->resp=frontierResponse_create();
-  if(!chn->resp) { ret=FRONTIER_EMEM; goto err; }
-
-  clean_headers(chn);
-  chn->status=FRONTIER_SEMPTY;
+  ret=prepare_channel(chn);
+  if(ret) goto err;
 
   res=curl_easy_setopt(chn->curl,CURLOPT_URL,url);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
-
-  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEFUNCTION,write_data);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
-
-  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEDATA,chn->resp);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
-
-  res=curl_easy_setopt(chn->curl,CURLOPT_HEADERFUNCTION,write_header);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
-
-  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEHEADER,chn);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
-
+  if(res) {ret=FRONTIER_EEND-res; goto err;}  
+    
   if(chn->reload) headers=curl_slist_append(headers, "pragma: no-cache");
   else headers=curl_slist_append(headers, "pragma:");
   res=curl_easy_setopt(chn->curl,CURLOPT_HTTPHEADER,headers);
-  if(res) {ret=FRONTIER_EEND-res; goto err;}
+  if(res) {ret=FRONTIER_EEND-res; goto err;}  
 
   if(chn->proxy_url)
    {
@@ -373,8 +383,13 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
      res==CURLE_WRITE_ERROR)
    {
     printf("Trying one more time with proxy disabled\n");
+    
+    ret=prepare_channel(chn);
+    if(ret) goto err;
+    
     res=curl_easy_setopt(chn->curl,CURLOPT_PROXY,"");
-    if(res) {ret=FRONTIER_EEND-res; goto err;}    
+    if(res) {ret=FRONTIER_EEND-res; goto err;}
+  
     res=curl_easy_perform(chn->curl);
     //printf("Res2=%d\n",res);
    }
