@@ -16,7 +16,7 @@
         <TD WIDTH="90">
           <IMG SRC="frontier_left.png" ALT="{Cowboy}" BORDER="0" height="100">
           </TD>
-        <TD WIDTH="100%" ALIGN="CENTER" VALIGN="CENTER">
+        <TD WIDTH="100%" ALIGN="CENTER">
           <B><font SIZE="+3"><font color="#oo66cc">F</font>rontier</font></B>
             </TD>
         <TD WIDTH="100">
@@ -27,7 +27,7 @@
 <hr />
 <table WIDTH="100%">
     <tr>
-            <td WIDTH="100%" ALIGN="CENTER" VALIGN="CENTER">
+            <td WIDTH="100%" ALIGN="CENTER">
                     <B><font SIZE="+3"><font color="#oo66cc">X</font>ML
                                      <font color="#oo66cc">S</font>ervice
                                    <font color="#oo66cc">D</font>escriptor Details
