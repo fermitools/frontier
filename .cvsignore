@@ -3,3 +3,4 @@ build
 classes
 dist
 Tomcat
+XmlLoader.class
