@@ -27,7 +27,7 @@ class DataSource;
 
 class Request
  {
-  private:
+  protected:
    friend class DataSource;
    std::string obj_name;
    std::string v;
@@ -36,6 +36,7 @@ class Request
    std::string val1;
    std::vector<std::string> *v_key;
    std::vector<std::string> *v_val;
+   int is_meta;
 
   public:
    explicit 
@@ -44,12 +45,24 @@ class Request
            const encoding_t& encoding,
            const std::string& key,
            const std::string& value):
-          obj_name(name),v(version),enc(encoding),key1(key),val1(value),v_key(NULL),v_val(NULL){};
-   void addKey(const std::string& key,const std::string& value);
+          obj_name(name),v(version),enc(encoding),key1(key),val1(value),v_key(NULL),v_val(NULL),is_meta(0){};
+   virtual void addKey(const std::string& key,const std::string& value);   
    virtual ~Request();
  };
 
+ 
+class MetaRequest : public Request
+ {
+  public:
+   explicit 
+   MetaRequest(const std::string& name,
+               const std::string& version,
+               const encoding_t& encoding):Request(name,version,encoding,"","") {is_meta=1;}
+   virtual void addKey(const std::string& key,const std::string& value){}
+   virtual ~MetaRequest(){}
+ };
 
+ 
 int init();
 
 // Enum sucks

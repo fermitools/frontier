@@ -117,6 +117,7 @@ public class XmlDescriptor extends Descriptor {
      *
      */
     public String findAndBuildWhereClause(Command command) {
+        if(command.isMetaQueryCommand()) return "";
         WhereClause matchingWhere = null;
         String whereClause = null;
         int numKeys = command.size();

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.util.StringTokenizer;
 import java.util.Calendar;
+import java.util.ListIterator;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 
@@ -21,6 +22,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 
     private static boolean LF = true;
     private static boolean noLF = false;
+    private boolean isMetaQuery=false;
 
     private String encoding = null;
     private String objectName = null;
@@ -53,10 +55,18 @@ public class UniversalQueryRequestHandler extends RequestHandler {
             ServicerFactory sf = new ServicerFactory();
             Servicer servicer = sf.load(objectName, objectVersion);
             servicer.validateAndLoad(command);
-            stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion
-                   + "\" encoding=\"" + encoding + "\">", LF);
-            connection = connMgr.acquire();
-            produceData(servicer, connection, encoder);
+	    
+	    if(command.isMetaQueryCommand())
+	     {
+              stream("<payload meta=\"" + objectName + "\" version=\""+objectVersion+"\" encoding=\""+encoding + "\">", LF);
+	      produceMetaData(servicer,encoder);
+	     }
+	    else
+	     {
+              stream("<payload type=\"" + objectName + "\" version=\""+objectVersion+"\" encoding=\""+encoding + "\">", LF);
+              connection = connMgr.acquire();
+              produceData(servicer, connection, encoder);
+	     }
         } catch(ServicerFactoryException e) {
             generateExceptionXML(e);
         } catch(RequestHandlerException e) {
@@ -103,6 +113,32 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         }
     }
 
+    
+    private void produceMetaData(Servicer servicer, Encoder encoder) throws ServletException 
+     {
+      try 
+       {
+        stream("<data>", noLF);
+	for(ListIterator lit=servicer.getAttributes();lit.hasNext();)
+	 {
+	  Attribute attr=(Attribute)lit.next();
+	  encoder.writeString(attr.getField());
+	  encoder.writeString(attr.getType());
+	 }
+	encoder.writeEOR();
+	encoder.flush();
+        stream("</data>", LF);
+        stream("<quality error=\"0\" md5=\""+ md5Digest(encoder)+ "\" records=\"1\"/>", LF);
+        stream("</payload>", LF);
+        } catch(Exception e) {
+            recordError(e);
+            stream("</data>", LF);
+            stream("<quality error=\"1\" message=\"" + e.getMessage() + "\"/>", LF);
+            stream("</payload>", LF);
+        }
+    }
+    
+    
     /**
      * Produces md5 digest.
      * @param encoder Encoder
@@ -139,8 +175,9 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         if(encoding == null)
             throw new RequestHandlerException("Missing the tag 'encoding'");
         String type = command.remove("type");
-        if(type == null)
-            throw new RequestHandlerException("Missing the tag 'type'");
+        if(type == null) type = command.remove("meta");
+	if(type == null)
+            throw new RequestHandlerException("Missing one of the tag 'type' or 'meta'");
         else {
             StringTokenizer typeComponets = new StringTokenizer(type, ":");
             if(typeComponets.countTokens() != 2)
@@ -198,7 +235,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      */
     private void recordError(Exception e) {
         Calendar timestamp = Calendar.getInstance();
-        System.out.println("<frontierLog " + timestamp.getTime()
+        System.out.println("<frontierCMSLog " + timestamp.getTime()
                            + " ID: " + id.getIdentifier() + "> error: " + e.getMessage());
         e.printStackTrace();
     }

@@ -24,6 +24,7 @@ public class CommandParser {
            relates to a set method in the Command class.
          */
         majorKeys.put("type", "query");
+	majorKeys.put("meta", "metainfo");
         majorKeys.put("junk", "admin"); // just to test, replace with real command
     }
 
@@ -75,7 +76,9 @@ public class CommandParser {
     private void setCommandType(Command command, String keyType) throws CommandParserException {
         if(keyType == "query")
             command.setUniversalQueryCommand();
-        else if(keyType == "admin")
+        else if(keyType == "metainfo")
+            command.setMetaQueryCommand();        
+	else if(keyType == "admin")
             command.setAdminCommand();
         else
             throw new CommandParserException("Internal Error, Unknown command type: " + keyType);

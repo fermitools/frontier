@@ -55,7 +55,7 @@ public final class Frontier extends CacheHttpServlet {
 
         try {
             String queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
-            System.out.println("<frontierLog " + timestamp.getTime()
+            System.out.println("<frontierCMSLog " + timestamp.getTime()
                                + " ID: " + id.getIdentifier() + ">  "
                                + " start "
                                + " threads: " + local_current
@@ -102,7 +102,7 @@ public final class Frontier extends CacheHttpServlet {
             }
 
             Calendar timestamp2 = Calendar.getInstance();
-            System.out.println("<frontierLog " + timestamp2.getTime()
+            System.out.println("<frontierCMSLog " + timestamp2.getTime()
                                + " ID: " + id.getIdentifier() + ">  "
                                + " stop "
                                + " threads: " + local_current + " elapsedTime: "
@@ -125,7 +125,7 @@ public final class Frontier extends CacheHttpServlet {
         writer.println("<transaction payloads=\"" + numCommands + "\">");
         for (int i = 0;i < numCommands;i++) {
             Command command = (Command) commandList.get(i);
-            if (command.isUniversalQueryCommand())
+            if (command.isUniversalQueryCommand() || command.isMetaQueryCommand())
                 handler = new UniversalQueryRequestHandler(id, writer);
             else if (command.isAdminCommand())
                 handler = new AdministrationRequestHandler(id, writer);
@@ -158,7 +158,7 @@ public final class Frontier extends CacheHttpServlet {
      */
     private void recordError(Identifier id, Exception e) {
         Calendar timestamp = Calendar.getInstance();
-        System.out.println("<frontierLog " + timestamp.getTime()
+        System.out.println("<frontierCMSLog " + timestamp.getTime()
                            + "ID: " + id.getIdentifier() + "> error: " + e.getMessage());
         e.printStackTrace();
     }

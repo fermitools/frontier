@@ -59,15 +59,10 @@ int do_main(int argc, char **argv)
     
     //ds.setReload(1);
 
-    frontier::Request req(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
+    frontier::MetaRequest metareq(argv[1],"1",frontier::BLOB);
 
     std::vector<const frontier::Request*> vrq;
-    for(int i=4;i+1<argc;i+=2)
-     {
-      req.addKey(argv[i],argv[i+1]);     
-     }
-    
-    vrq.insert(vrq.end(),&req);
+    vrq.insert(vrq.end(),&metareq);
     ds.getData(vrq);
     CHECK_ERROR();
 
@@ -76,26 +71,39 @@ int do_main(int argc, char **argv)
     
     int field_num=0;
     
-    std::cout<<"\nObject field types:\n";
+    std::cout<<"\nObject fields:\n";
     
     frontier::AnyData ad;
     
-    while(1)
+    while(!ds.isEOR())
      {
-      ds.getAnyData(&ad);
+      std::string *name=ds.getString();
       CHECK_ERROR();
-      if(ad.isEOR()) break;
-      std::cout<<++field_num<<" "<<frontier::getFieldTypeName(ad.type())<<std::endl;
-      ad.clean();
+      std::string *type=ds.getString();
+      CHECK_ERROR();
+      std::cout<<++field_num<<" "<<(*name)<<" "<<(*type)<<std::endl;
+      delete type;
+      delete name;
+     }
+
+    frontier::Request req(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
+
+    for(int i=4;i+1<argc;i+=2)
+     {
+      req.addKey(argv[i],argv[i+1]);     
      }
     
+    vrq[0]=&req;
+    ds.getData(vrq);
+    CHECK_ERROR();
+
+    ds.setCurrentLoad(1);
+    CHECK_ERROR();     
+         
     int nrec=ds.getRecNum();
     CHECK_ERROR();
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
-    ds.setCurrentLoad(1);
-    CHECK_ERROR();
-
     for(int n=0;n<nrec;n++)
      {
       for(int k=0;k<field_num;k++)

@@ -13,11 +13,11 @@ import java.util.Enumeration;
 public class Command {
 
     private Hashtable commandDict = new Hashtable();
-    private static String[] commandList = {"type"};
 
     private int commandType = 0; // Invalid command
-    private int univQueryCom = 1;
-    private int adminCom = 2;
+    private final static int univQueryCom = 1;
+    private final static int adminCom = 2;
+    private final static int metaQueryCom = 3;
 
     /**
      * Constructor.
@@ -44,6 +44,9 @@ public class Command {
     public void setUniversalQueryCommand() {
         commandType = univQueryCom;
     }
+    
+   public void setMetaQueryCommand(){commandType=metaQueryCom;}
+   public boolean isMetaQueryCommand(){return commandType==metaQueryCom;}
 
     /**
      * Sets the instance to be an administration command.
