@@ -69,7 +69,8 @@ public class Payload
       byte[] b=blob.getBytes((long)1,len);
       
       if(xsd_type.equals("xml"))       fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version);
-      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version);       
+      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version);
+      else if(xsd_type.equals("plugin")) fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version);
       else                             throw new Exception("Unsupported xsd_type "+xsd_type+".");
       
       fdo.fdo_init(b);
