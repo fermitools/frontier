@@ -60,17 +60,27 @@ public class BlobEncoder implements Encoder
 
   public void writeString(String v) throws Exception
    {
-    throw new Exception("Not implemented yet");
+    os.writeInt(v.length());
+    out_size+=4;
+    os.writeBytes(v);
+    out_size+=v.length();
+    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeBytes(byte[] v) throws Exception
    {
-    throw new Exception("Not implemented yet");
+    os.writeInt(v.length);
+    out_size+=4;
+    os.write(v,0,v.length);
+    out_size+=v.length;
+    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
-  public void writeDate(java.sql.Date v) throws Exception
+  public void writeDate(java.util.Date v) throws Exception
    {
-    throw new Exception("Not implemented yet");
+    os.writeLong(v.getTime());
+    out_size+=8;
+    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public long getOutputSize()
