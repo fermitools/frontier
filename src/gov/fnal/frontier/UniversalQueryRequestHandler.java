@@ -3,6 +3,8 @@ package gov.fnal.frontier;
 import gov.fnal.frontier.codec.*;
 import java.util.*;
 import java.io.*;
+import java.sql.*;
+import javax.sql.*;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 
@@ -15,37 +17,86 @@ import javax.servlet.ServletOutputStream;
 
 public class UniversalQueryRequestHandler extends RequestHandler {
 
+    private static boolean LF       = true;
+    private static boolean noLF     = false;
+
     private String  encoding        = null;
     private String  objectName      = null;
     private String  objectVersion   = null;
     private Encoder encoder         = null;
     private ClassLoader classLoader = new ClassLoader();
+    private DbConnectionMgr connMgr = DbConnectionMgr.getDbConnectionMgr();
 
 
     UniversalQueryRequestHandler(ServletOutputStream writer) {
 	super(writer);
     }
     
-    public void process(Command command) 
-	throws RequestHandlerException, ServletException {
-
-	validate(command);
-	encoder = getEncoder(writer);
-	Servicer servicer = classLoader.load(objectName,objectVersion);
+    public void process(Command command) throws ServletException {
 
 	try {
+	    validate(command);
+	    encoder = getEncoder(writer);
+	    Servicer servicer = classLoader.load(objectName,objectVersion);
 	    servicer.validate(command);
-	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion + " encoding=\"" + encoding + "\">");
-	    stream(servicer.getSql());
-	    stream("<data>");
-	
-	    stream("data data data");
-	    
-	    stream("</data>");
-	    stream("<quality stuff here/>");
-	    stream("</payload>");
-	} catch (ServicerValidationException e) {
-	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>");
+	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion,noLF);
+	    stream(" encoding=\"" + encoding + "\">",LF);
+	    produceData(servicer);
+	} catch (RequestHandlerException e) {
+	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion,noLF);
+	    stream(" encoding=\"" + encoding + "\">",LF);
+	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
+	    stream("</payload>",LF);
+	}
+    }
+
+    private void produceData(Servicer servicer) throws ServletException {
+
+	Connection connection = null;
+	try {
+	    connection = connMgr.acquire();
+	    queryData(servicer,connection);
+	} catch (DbConnectionMgrException e) {
+	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
+	    stream("</payload>",LF);
+	}finally {
+	    try {
+		connMgr.release(connection);
+	    } catch (DbConnectionMgrException e) {}
+	}
+    }
+
+    private void queryData(Servicer servicer, Connection connection) 
+	throws ServletException {
+	Statement stmt = null;
+	String sql = servicer.getSql();
+	try {
+	    stmt = connection.createStatement();
+	    ResultSet resultSet = stmt.executeQuery(sql);
+	    marshal(servicer,resultSet);
+	} catch (SQLException e) {
+	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
+	    stream("</payload>",LF);
+	} finally {
+	    try {
+		stmt.close();
+	    } catch (SQLException e) {}
+	}
+    }
+
+    private void marshal(Servicer servicer, ResultSet resultSet) 
+	throws SQLException, ServletException {
+	try {
+	    stream("<data>",noLF);
+	    long recordCnt = servicer.marshal(encoder,resultSet);
+	    stream("</data>",LF);
+	    stream("</quality error=\"0\" records=\"" + recordCnt + "\">",LF);
+	    stream("</payload>",LF);
+	} catch (SQLException e) {
+	    stream("</data>",LF);
+	    throw e;
+	} catch (Exception e) {
+	    throw new ServletException(e);
 	}
     }
 
@@ -99,9 +150,12 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	return encoder;
     }
 
-    private void stream(String line) throws ServletException {
+    private void stream(String line,boolean lineFeed) throws ServletException {
 	try {
-	    writer.println(line);
+	    if (lineFeed)
+		writer.println(line);
+	    else
+		writer.print(line);
 
 	} catch (IOException e) {
 	    throw new ServletException(e.getMessage());

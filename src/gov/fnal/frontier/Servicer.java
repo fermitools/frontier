@@ -41,8 +41,18 @@ public class Servicer {
 	return sql;
     }
 
-    public void marshal(Encoder encoder,ResultSet sqlResults) throws ServicerException {
-
+    public long marshal(Encoder encoder,ResultSet resultSet) throws SQLException, Exception {
+	ResultSetMetaData rsmd = resultSet.getMetaData();
+	int    columnCnt = rsmd.getColumnCount();
+	long recordCnt = 0;
+	while (resultSet.next()) {
+	    recordCnt += 1;
+	    for (int cnt=1;cnt<=columnCnt;cnt++) {
+		encoder.writeLong(recordCnt);
+	    }
+	}
+	encoder.flush();
+	return recordCnt;
     }
 }
 

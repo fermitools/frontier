@@ -7,7 +7,7 @@ package gov.fnal.frontier;
  * $Revision$
  */
 
-public class ServicerException extends Exception {
+public class ServicerException extends RequestHandlerException {
 
     ServicerException() {}
     
