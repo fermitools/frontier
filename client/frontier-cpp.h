@@ -84,8 +84,8 @@ class AnyData
      char b;
     } v;
    int isNull;   // I do not use "bool" here because of compatibility problems [SSK]   
+   int type_error;   
    BLOB_TYPE t;  // The data type
-   int type_error;
 
    int castToInt();
    long long castToLongLong();
@@ -94,7 +94,7 @@ class AnyData
    std::string* castToString();
      
   public:
-   explicit AnyData(): isNull(0),t(BLOB_TYPE_NONE),type_error(FRONTIER_OK){}
+   explicit AnyData(): isNull(0),type_error(FRONTIER_OK),t(BLOB_TYPE_NONE){}
    inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
    inline void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;type_error=FRONTIER_OK;}
@@ -149,6 +149,7 @@ class DataSource
    
    // Data fields extractors
    // These methods change DS position to the next field
+   // Benchmarking had shown that inlining functions below does not improve performance
    int getInt();
    long getLong();
    long long getLongLong();
@@ -162,7 +163,7 @@ class DataSource
    unsigned int getRecNum();
    BLOB_TYPE lastFieldType(){return last_field_type;} // Original type of the last extracted field
    BLOB_TYPE nextFieldType(); // Next field type. THIS METHOD DOES NOT CHANGE DS POSITION !!!
-   int isEOR();  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
+   inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    
    virtual ~DataSource();
  };

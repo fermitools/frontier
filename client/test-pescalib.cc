@@ -83,7 +83,7 @@ int do_main(int argc, char **argv);
 
 int main(int argc, char **argv)
  { 
-  for(int i=0;i<1000;i++)
+  for(int i=0;i<2;i++)
    {
     //std::cout<<i<<'\n';
     do_main(argc,argv);
@@ -117,13 +117,13 @@ int do_main(int argc, char **argv)
     ds.setCurrentLoad(1);
     
     int nrec=ds.getRecNum();
-    //std::cout<<"CID <"<<cid<<"> nrec "<< nrec<<'\n';
+    std::cout<<"CID <"<<cid<<"> nrec "<< nrec<<'\n';
     
     std::vector<PESCalib*> v_sbp(nrec);
     for(int i=0;i<nrec;i++)
      {
       v_sbp[i]=new PESCalib(ds);
-      //v_sbp[i]->print();
+      v_sbp[i]->print();
      }
     
     // Do some usefull things here ...

@@ -70,10 +70,6 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
 
   frontier_mem_alloc=f_mem_alloc;
   frontier_mem_free=f_mem_free;
-
-  //frontier_mem_alloc=frontier_malloc;
-  //frontier_mem_free=frontier_free;
-  
     
   env=getenv(FRONTIER_ENV_LOG_LEVEL);
   if(!env) 
@@ -85,6 +81,7 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
    {
     if(strcasecmp(env,"warning")==0 || strcasecmp(env,"info")==0) frontier_log_level=FRONTIER_LOGLEVEL_WARNING;
     else if(strcasecmp(env,"error")==0) frontier_log_level=FRONTIER_LOGLEVEL_ERROR;
+    else if(strcasecmp(env,"nolog")==0) frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
     else frontier_log_level=FRONTIER_LOGLEVEL_DEBUG;
     
     env=getenv(FRONTIER_ENV_LOG_FILE);

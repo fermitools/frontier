@@ -246,12 +246,6 @@ BLOB_TYPE DataSource::nextFieldType()
  }
  
  
-int DataSource::isEOR() 
- {
-  return (nextFieldType()==BLOB_TYPE_EOR);
- }
- 
-
 int DataSource::getInt()
  {
   AnyData ad;
@@ -270,6 +264,7 @@ long DataSource::getLong()
   if(sizeof(long)==8) return ad.getLongLong();  
   return ad.getInt();
  }
+ 
 
 long long DataSource::getLongLong()
  {
@@ -323,7 +318,6 @@ std::string* DataSource::getBlob()
   return getString();
  }
 
- 
 
 DataSource::~DataSource()
  {
