@@ -45,7 +45,7 @@ public class Servicer {
 	    sql=sql_pescalib;
 	else if(tableName.compareToIgnoreCase("frontier_get_cid_list")==0)
 	    {
-	     sql="select cid from "+cmd.get("table_name");
+	     sql="select distinct cid from "+cmd.get("table_name")+" order by cid";
 	     System.out.println("Get cid sql <"+sql+">");
 	     param_num=0;
 	    }
