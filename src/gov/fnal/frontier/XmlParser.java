@@ -71,6 +71,10 @@ public class XmlParser extends Parser {
     private void processAttribute(Element element) throws LoaderException {
         String type = element.getAttributeValue("type");
         String field = element.getAttributeValue("field");
+        if (type == null)
+            throw new LoaderException("An XSD 'attribute' is missing the 'type' tag.");
+        else if (field == null)
+            throw new LoaderException("An XSD 'attribute' is missing the 'field' tag.");
         descriptor.addAttribute(type, field);
     }
 
