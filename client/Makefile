@@ -6,7 +6,6 @@
 # $Header$
 # 
 # $Id$
-# $Name$
 #
 
 FN_VER_MAJOR	=	1
