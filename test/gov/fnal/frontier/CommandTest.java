@@ -1,5 +1,6 @@
 package gov.fnal.frontier;
 
+import java.util.*;
 import junit.framework.TestCase;
 
 public class CommandTest extends TestCase {
@@ -46,6 +47,22 @@ public class CommandTest extends TestCase {
 	}
     }   
 	
+    public void testKeys() {
+	try {
+	    Command command = new Command("type","bah!");
+	    command.put("aKey","avalue");
+	    command.put("aKey2","aValue");
+	    Enumeration enum = command.keys();
+	    enum.nextElement();
+	    enum.nextElement();
+	    enum.nextElement();
+	} catch (NoSuchElementException e) {
+	    fail("Enumeration did not contain 3 objects!");
+	} catch (NullPointerException e) {
+	    fail("Internal test error.");
+	}
+    }   
+
     public void testPut() {
 	try {
 	    Command command = new Command("type","bah!");

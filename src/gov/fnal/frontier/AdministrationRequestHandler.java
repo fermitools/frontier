@@ -22,11 +22,7 @@ public class AdministrationRequestHandler extends RequestHandler {
     public void process(Command command, ServletOutputStream writer)
 	throws RequestHandlerException, ServletException {
 
-	try {
-	    writer.println("\n\nCommand dump: ");
-	    writer.println(command.dump());
-	} catch (IOException e) {
-	}
+	throw new RequestHandlerException("Admin commands are not yet supported.");
     }
 
 }

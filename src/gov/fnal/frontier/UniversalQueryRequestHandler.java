@@ -27,23 +27,23 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	throws RequestHandlerException, ServletException {
 
 	validate(command);
-	encoder = getEncoder();
+	encoder = getEncoder(writer);
 
+	Servicer servicer = new Servicer();
 	try {
-	    writer.println("<payload type=\"" + objectName + " version=\"" + objectVersion + " encoding=\"" + encoding + "\">");
-	    writer.println("<data>");
-
-	    writer.println("data data data");
-
-	    writer.println("</data>");
-	    writer.println("<quality stuff here/>");
-	    writer.println("</payload>");
-	} catch (IOException e) {
-	    throw new ServletException(e.getMessage());
+	    servicer.validate(Command,command);
+	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion + " encoding=\"" + encoding + "\">");
+	    stream("<data>");
+	
+	    stream("data data data");
+	    
+	    stream("</data>");
+	    stream("<quality stuff here/>");
+	    stream("</payload>");
+	} catch (ServicerValidationException e) {
+	    stream("<quality error=\"1\: code=\"???\" message=\"" + e.getMessage() + "\"/>");
 	}
     }
-
-
 
     /**
      * Insures required keys common to all requests exist and are valid. As a 
@@ -78,17 +78,30 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      * @except RequestHandlerExcepiton thrown if the command is invalid.
      *
      */
-    private Encoder getEncoder() throws RequestHandlerException {
+    private Encoder getEncoder(ServletOutputStream writer) throws RequestHandlerException {
 	Encoder encoder = null;
-	if (encoding.compareTo("blob")==0)
-	    encoder = null;
-	else if (encoding.compareTo("xml")==0)
-	    throw new RequestHandlerException("XML encoding is not yet supported.");
-	else if (encoding.compareTo("csv")==0)
-	    throw new RequestHandlerException("CSV encoding is not yet supported.");
-	else
-	    throw new RequestHandlerException("Received unknown encoding type of " + encoding);
+	try {
+	    if (encoding.compareToIgnoreCase("blob")==0)
+		encoder = new BlobEncoder(writer);
+	    else if (encoding.compareToIgnoreCase("xml")==0)
+		throw new RequestHandlerException("XML encoding is not yet supported.");
+	    else if (encoding.compareToIgnoreCase("csv")==0)
+		throw new RequestHandlerException("CSV encoding is not yet supported.");
+	    else
+		throw new RequestHandlerException("Received unknown encoding type of " + encoding);
+	} catch (Exception e) {
+	    throw new RequestHandlerException(e.getMessage());
+	}
 	return encoder;
+    }
+
+    void stream(String line) throws ServletException {
+	try {
+	    writer.println(line);
+
+	} catch (IOException e) {
+	    throw new ServletException(e.getMessage());
+	}
     }
 
 }

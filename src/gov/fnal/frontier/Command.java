@@ -53,6 +53,10 @@ public class Command {
 	return (String) commandDict.get(key);
     }
 
+    public Enumeration keys() {
+	return commandDict.keys();
+    }
+
     public void put(String key, String value) throws NullPointerException {
 	commandDict.put(key,value);
     }

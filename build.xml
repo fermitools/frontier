@@ -382,9 +382,11 @@
 
   * "javadoc" so that the application Javadocs will have been created
 
+  * orig dist target.
+  <target name="dist" depends="compile,javadoc"
 -->
 
-  <target name="dist" depends="compile,javadoc"
+  <target name="dist" depends="compile"
    description="Create binary distribution">
 
     <!-- Copy documentation subdirectories -->

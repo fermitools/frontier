@@ -56,9 +56,13 @@ public final class Frontier extends CacheHttpServlet {
 	stream("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion + "\">");
 	try {
 	    commandList = parser.parse(queryString);
+	    connMgr.initialize();
 	    handleRequest(commandList,writer);
 	} catch (CommandParserException e) {
 	    stream("<transaction payloads=\"0\">");
+	    generateBadQualityTag(e.getMessage());
+	} catch (DbConnectionMgrException e) {
+	    System.out.println("Unable to obtain connection: " + e.getMessage());
 	    generateBadQualityTag(e.getMessage());
 	}
 	stream("</frontier>");
