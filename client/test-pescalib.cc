@@ -48,18 +48,18 @@ class PESCalib
 
   PESCalib(frontier::CDFDataSource& ds)
    {
-    address=ds.getLongLong();
-    gain=ds.getFloat();
-    sourcemean=ds.getFloat();
-    sourcerms=ds.getFloat();
-    sourcenorm=ds.getFloat();
-    lasernorm=ds.getFloat();
-    linearity1=ds.getFloat();
-    linearity2=ds.getFloat();
-    linearity3=ds.getFloat();
-    attenuation1=ds.getFloat();
-    attenuation2=ds.getFloat();
-    attenuation3=ds.getFloat();
+    address=ds.getInt();
+    gain=ds.getDouble();
+    sourcemean=ds.getDouble();
+    sourcerms=ds.getDouble();
+    sourcenorm=ds.getDouble();
+    lasernorm=ds.getDouble();
+    linearity1=ds.getDouble();
+    linearity2=ds.getDouble();
+    linearity3=ds.getDouble();
+    attenuation1=ds.getDouble();
+    attenuation2=ds.getDouble();
+    attenuation3=ds.getDouble();
    }
    
   void print()
@@ -70,7 +70,7 @@ class PESCalib
     std::cout<<sourcerms<<' ';
     std::cout<<sourcenorm<<' ';
     std::cout<<lasernorm<<' ';
-    std::cout<<linearity1<<' ';
+    std::cout<<linearity1<<' ';                   
     std::cout<<linearity2<<' ';
     std::cout<<linearity3<<' ';
     std::cout<<attenuation1<<' ';

@@ -144,8 +144,15 @@ test-pescalib.o: test-pescalib.cc frontier-cpp.h
 test-pescalib: all test-pescalib.o frontier-cpp.h
 	$(CXX) $(CXXOPT_APP) -Ldist/lib -o test-pescalib test-pescalib.o $(LIBS) -lfrontier
 
+test-any.o: test-any.cc frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -Idist/include -c test-any.cc
+
+test-any: all test-any.o frontier-cpp.h
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o test-any test-any.o $(LIBS) -lfrontier
+
 clean:
-	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each test-pescalib
+	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each \
+              test-pescalib test-any
 	(cd expat && make clean)
 	(cd http && make clean)
 	rm -fr dist
