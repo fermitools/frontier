@@ -30,7 +30,7 @@ public class Payload
    {
     dbm=a_dbm;
     cmd=a_cmd;        
-    System.out.println("New payload for cmd="+cmd);
+    //System.out.println("New payload for cmd="+cmd);
     type=cmd.obj_name;
     version=cmd.obj_version;
     encoder=cmd.encoder;
@@ -44,7 +44,7 @@ public class Payload
     fdo=(FrontierDataObject)htFdo.get(key);
     if(fdo!=null)
      {
-      System.out.println("Got "+key+" from cache");
+      //System.out.println("Got "+key+" from cache");
       MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
       time_expire=md.getExpire();
       noCache=md.isNoCache();

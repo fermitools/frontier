@@ -62,7 +62,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     
     public InputSource resolveEntity(String publicId,String systemId)
      {
-      System.out.println("["+publicId+"]["+systemId+"]");
+      //System.out.println("["+publicId+"]["+systemId+"]");
       if(systemId.equals("http://frontier.fnal.gov/descriptor.dtd"))
        {
         StringReader sr=new StringReader(dtd);
@@ -142,7 +142,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    
   public int fdo_get(Encoder enc,String method,FrontierDataStream fds) throws Exception
    {
-    System.out.println("XsdDataObject.fdo_get()");
+    //System.out.println("XsdDataObject.fdo_get()");
     int rec_num=0;
     
     // XSD v1 does not define "method", so chech it was not defined
@@ -157,7 +157,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     sql.append(wc.clause);
     sql.append(" ");
     sql.append(tail_sql);
-    System.out.println("sql ["+sql.toString()+"]");
+    //System.out.println("sql ["+sql.toString()+"]");
     
     Connection con=null;
     PreparedStatement stmt=null;
@@ -171,7 +171,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
        {
         FieldDesc param=(FieldDesc)wc.aParams.get(i);
         String val=fds.getString(param.n);
-        System.out.println("Param "+i+" ["+param.n+":"+val+"]");
+        //System.out.println("Param "+i+" ["+param.n+":"+val+"]");
         stmt.setString(i+1,val);
        }
       rs=stmt.executeQuery();
@@ -215,7 +215,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   public int fdo_meta(Encoder enc,String method) throws Exception
    {
     // Method is ignored for XSD v1
-    System.out.println("XsdDataObject.fdo_meta()");
+    //System.out.println("XsdDataObject.fdo_meta()");
     for(int i=0;i<aFields.size();i++)
      {
       FieldDesc field=(FieldDesc)aFields.get(i);
@@ -268,14 +268,14 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    {
     for(int i=0;attrs!=null && i<attrs.getLength();i++) 
      {
-      System.out.println("attr "+attrs.getQName(i)+":"+attrs.getValue(i)+".");
+      //System.out.println("attr "+attrs.getQName(i)+":"+attrs.getValue(i)+".");
      }
    }
    
    
   public void startDocument() throws SAXException 
    {
-    System.out.println("Start document");
+    //System.out.println("Start document");
    }
    
   
@@ -292,7 +292,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
       tmp=attrs.getValue("version");
       if(!obj_version.equals(tmp)) throw new SAXException("Object version mismatch: expected ["+obj_version+"], got "+tmp+"]");
       xsd_version=attrs.getValue("xsdversion");
-      System.out.println("xsd_version="+xsd_version+".");
+      //System.out.println("xsd_version="+xsd_version+".");
       if(Integer.parseInt(xsd_version)!=1) throw new SAXException("XSD version mismatch - expected 1, got "+xsd_version);
       return;
      }
@@ -350,7 +350,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
         if(pos<0) break;
         wc.clause.replace(pos,pos+6,"?");
        }
-      System.out.println("New clause ["+wc.clause.toString()+"]");      
+      //System.out.println("New clause ["+wc.clause.toString()+"]");      
       // XSD v1 does not define "method", so here is no map_by_method
      }
    }

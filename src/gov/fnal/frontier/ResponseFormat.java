@@ -9,7 +9,7 @@ public class ResponseFormat
  {
   static void handleError(String where, Exception e)
    {
-    System.out.println("Error is ignored in ResponseFormat."+where+":"+e);
+    Frontier.Log("Error is ignored in ResponseFormat."+where+": ",e);
    }
 
   

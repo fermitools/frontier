@@ -24,7 +24,7 @@ public class FrontierDataStream
     if(mapParam.containsKey(name)) throw new Exception ("Parameter "+name+" is already defined");
     mapParam.put(name,val);
     ++count;
-    System.out.println("Added: "+name+":"+val);
+    //System.out.println("Added: "+name+":"+val);
    }
    
    

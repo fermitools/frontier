@@ -48,7 +48,7 @@ public class Command
    
   private static void set_get_command(ArrayList cmd_list,String query_str) throws Exception
    {
-    System.out.println("Query string ["+query_str+"]");
+    //System.out.println("Query string ["+query_str+"]");
     String[] param=new String[4];
     Object[] env=new Object[2];
         
@@ -58,7 +58,7 @@ public class Command
      {
       Command c=new Command();
       
-      System.out.println("p0=["+param[0]+"]");
+      //System.out.println("p0=["+param[0]+"]");
       
       if(param[0].equals("type"))       c.cmd_domain=CMD_GET;
       else if(param[0].equals("write")) c.cmd_domain=CMD_WRITE;
