@@ -4,6 +4,10 @@
  * $Id$
  *
  * @author Sergey Kosyakov
+ * 
+ *
+ * Changes log
+ * 08/18/2004 - if String, byte[] or Date is null, set the NULL bit in the type info
  */
 package gov.fnal.frontier.codec;
 
@@ -13,6 +17,7 @@ import java.security.*;
 
 public class BlobTypedEncoder implements Encoder
  {
+  public static final byte BIT_NULL=(byte)(1<<7);	// Signals that the value is NULL
   public static final byte TYPE_BYTE=0;
   public static final byte TYPE_INT4=1;
   public static final byte TYPE_INT8=2;
@@ -20,6 +25,7 @@ public class BlobTypedEncoder implements Encoder
   public static final byte TYPE_DOUBLE=4;
   public static final byte TYPE_TIME=5;
   public static final byte TYPE_ARRAY_BYTE=6;
+  public static final byte TYPE_EOR=7;			// End Of Record
 
   private static final int BUFFER_SIZE=16384;
 
@@ -48,6 +54,14 @@ public class BlobTypedEncoder implements Encoder
     baos.writeTo(channel);
     baos.reset();
    }
+   
+   
+  public void writeEOR() throws Exception
+   {
+    os.writeByte(TYPE_EOR);
+    out_size+=1;
+    if(baos.size()>=BUFFER_SIZE) dump();
+   }
 
 
   public void writeInt(int v) throws Exception
@@ -66,48 +80,72 @@ public class BlobTypedEncoder implements Encoder
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
-   public void writeDouble(double v) throws Exception
-    {
-     os.writeByte(TYPE_DOUBLE);
-     os.writeDouble(v);
-     out_size+=9;
-     if(baos.size()>=BUFFER_SIZE) dump();
-    }
+  public void writeDouble(double v) throws Exception
+   {
+    os.writeByte(TYPE_DOUBLE);
+    os.writeDouble(v);
+    out_size+=9;
+    if(baos.size()>=BUFFER_SIZE) dump();
+   }
 
-    public void writeFloat(float v) throws Exception
-     {
-      os.writeByte(TYPE_FLOAT);
-      os.writeFloat(v);
-      out_size+=5;
-      if(baos.size()>=BUFFER_SIZE) dump();
-     }
+  public void writeFloat(float v) throws Exception
+   {
+    os.writeByte(TYPE_FLOAT);
+    os.writeFloat(v);
+    out_size+=5;
+    if(baos.size()>=BUFFER_SIZE) dump();
+   }
 
   public void writeString(String v) throws Exception
    {
-    os.writeByte(TYPE_ARRAY_BYTE);
-    os.writeInt(v.length());
-    out_size+=5;
-    os.writeBytes(v);
-    out_size+=v.length();
+    if(v==null)
+     {
+      os.writeByte(TYPE_ARRAY_BYTE & BIT_NULL);
+      out_size+=1;
+     }
+    else
+     {
+      os.writeByte(TYPE_ARRAY_BYTE);
+      os.writeInt(v.length());
+      out_size+=5;
+      os.writeBytes(v);
+      out_size+=v.length();
+     }
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeBytes(byte[] v) throws Exception
    {
-    //System.out.println("writeBytes(): length "+v.length);
-    os.writeByte(TYPE_ARRAY_BYTE);
-    os.writeInt(v.length);
-    out_size+=5;
-    os.write(v,0,v.length);
-    out_size+=v.length;
+    if(v==null)
+     {
+      os.writeByte(TYPE_ARRAY_BYTE & BIT_NULL);
+      out_size+=1;
+     }
+    else
+     {
+      //System.out.println("writeBytes(): length "+v.length);
+      os.writeByte(TYPE_ARRAY_BYTE);
+      os.writeInt(v.length);
+      out_size+=5;
+      os.write(v,0,v.length);
+      out_size+=v.length;
+     }
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeDate(java.util.Date v) throws Exception
    {
-    os.writeByte(TYPE_TIME);
-    os.writeLong(v.getTime());
-    out_size+=9;
+    if(v==null)
+     {
+      os.writeByte(TYPE_TIME & BIT_NULL);
+      out_size+=1;
+     }
+    else
+     {
+      os.writeByte(TYPE_TIME);
+      os.writeLong(v.getTime());
+      out_size+=9;
+     }
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
