@@ -58,9 +58,25 @@ static inline double n2h_d64(const char *p)
  }
 #else
 #warning Big endian order
-#define n2h_i32(p) (*((int*)(p)))
-#define n2h_i64(p) (*((long long*)(p)))
-#define n2h_d64(p) (*((double*)(p)))
+#include <strings.h>
+static inline int n2h_i32(const char *p) 
+ {
+  union u_Buf32 u;
+  bcopy(p,u.b,4);
+  return u.v;
+ }
+static inline long long n2h_i64(const char *p) 
+ {
+  union u_Buf64 u; 
+  bcopy(p,u.b,8);
+  return u.v;
+ }
+static inline double n2h_d64(const char *p) 
+ {
+  union u_Buf64 u; 
+  bcopy(p,u.b,8);
+  return u.d;
+ }
 #endif /*__BYTE_ORDER*/
 
 int frontier_n2h_i32(const void* p){return n2h_i32(p);}
