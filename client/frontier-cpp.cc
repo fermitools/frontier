@@ -155,6 +155,32 @@ double DataSource::getDouble()
   return ret;
  }
 
+ 
+std::string* DataSource::getString()
+ {
+  if(!internal_data) throw std::logic_error("Current load is not set");
+  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
+  int ec=FRONTIER_OK;
+  int len=frontierRSBlob_getInt(rs,&ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR("getInt() failed",ec);
+  char *s=new char[len];
+  for(int i=0;i<len;i++)
+   {
+    s[i]=frontierRSBlob_getByte(rs,&ec);
+    if(ec!=FRONTIER_OK) {delete[] s; LOGIC_ERROR("getInt() failed",ec);}
+   }
+  std::string *ret=new std::string(s,len);
+  delete[] s;
+  return ret;
+ }
+ 
+ 
+std::string* DataSource::getBlob()
+ {
+  return getString();
+ }
+
+ 
 
 DataSource::~DataSource()
  {
@@ -164,4 +190,68 @@ DataSource::~DataSource()
   if(url) delete url;
  }
 
+
+
+std::vector<int>* CDFDataSource::getRawAsArrayInt()
+ {
+  std::string *blob=getBlob();
+  if(blob->size()%4) {delete blob; throw std::logic_error("Blob size is not multiple of 4 - can not convert to int[]");}
+  int len=blob->size()/4;
+  std::vector<int> *ret=new std::vector<int>(len);
+  const char *s=blob->c_str();
+  for(int i=0;i<len;i++)
+   {
+    ret->operator[](i)=frontier_n2h_i32(s+i*4);
+   }
+  delete blob;
+  return ret;
+ }
+ 
+   
+std::vector<float>* CDFDataSource::getRawAsArrayFloat()
+ {
+  std::string *blob=getBlob();
+  if(blob->size()%4) {delete blob; throw std::logic_error("Blob size is not multiple of 4 - can not convert to float[]");}
+  int len=blob->size()/4;
+  std::vector<float> *ret=new std::vector<float>(len);
+  const char *s=blob->c_str();
+  for(int i=0;i<len;i++)
+   {
+    ret->operator[](i)=frontier_n2h_f32(s+i*4);
+   }
+  delete blob;
+  return ret;
+ }
+
+
+std::vector<double>* CDFDataSource::getRawAsArrayDouble()
+ {
+  std::string *blob=getBlob();
+  if(blob->size()%8) {delete blob; throw std::logic_error("Blob size is not multiple of 8 - can not convert to double[]");}
+  int len=blob->size()/8;
+  std::vector<double> *ret=new std::vector<double>(len);
+  const char *s=blob->c_str();
+  for(int i=0;i<len;i++)
+   {
+    ret->operator[](i)=frontier_n2h_d64(s+i*8);
+   }
+  delete blob;
+  return ret; 
+ }
+
+
+std::vector<long long>* CDFDataSource::getRawAsArrayLong()
+ {
+  std::string *blob=getBlob();
+  if(blob->size()%8) {delete blob; throw std::logic_error("Blob size is not multiple of 8 - can not convert to int64[]");}
+  int len=blob->size()/8;
+  std::vector<long long> *ret=new std::vector<long long>(len);
+  const char *s=blob->c_str();
+  for(int i=0;i<len;i++)
+   {
+    ret->operator[](i)=frontier_n2h_i64(s+i*8);
+   }
+  delete blob;
+  return ret; 
+ }
 

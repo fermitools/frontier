@@ -63,6 +63,11 @@ static inline double n2h_d64(const char *p)
 #define n2h_d64(p) (*((double*)(p)))
 #endif /*__BYTE_ORDER*/
 
+int frontier_n2h_i32(const void* p){return n2h_i32(p);}
+float frontier_n2h_f32(const void* p){return (float)n2h_i32(p);}
+long long frontier_n2h_i64(const void* p){return n2h_i64(p);}
+double frontier_n2h_d64(const void* p){return n2h_d64(p);}
+
 FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec)
  {
   Channel *chn=(Channel*)u_channel;

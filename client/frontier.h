@@ -78,5 +78,11 @@ const char *frontier_getHttpHeaderName(FrontierChannel c,int num);
 const char *frontier_getHttpHeaderValue(FrontierChannel c,int num);
 const char *frontier_error_desc(int err);
 
+int frontier_n2h_i32(const void* p);
+float frontier_n2h_f32(const void* p);
+long long frontier_n2h_i64(const void* p);
+double frontier_n2h_d64(const void* p);
+
+
 #endif /*__HEADER_H_FRONTIER_H*/
 

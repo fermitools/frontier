@@ -75,7 +75,7 @@ class SvxBeamPosition
   double SPARE2;
   double SPARE3;
 
-  SvxBeamPosition(frontier::DataSource& ds)
+  SvxBeamPosition(frontier::CDFDataSource& ds)
    {
     CID=ds.getLong();
     CHANNELID=ds.getLong();
@@ -139,18 +139,58 @@ class SvxBeamPosition
  };
 
 
+class CalTrigWeights
+ {
+  public:
+  long long CID;
+  long long ID;
+  double TRIGSCL;
+  std::vector<float> *ET_WEIGHT_CENT;
+  std::vector<float> *ET_WEIGHT_WALL;
+  std::vector<float> *ET_WEIGHT_PLUG;
+  std::vector<int> *ET_FACTOR_CENT;
+  std::vector<int> *ET_FACTOR_WALL;
+  std::vector<int> *ET_FACTOR_PLUG;
+  
+  CalTrigWeights(frontier::CDFDataSource& ds)
+   {
+    CID=ds.getLong();
+    ID=ds.getLong();
+    TRIGSCL=ds.getDouble();
+    ET_WEIGHT_CENT=ds.getRawAsArrayFloat();
+    ET_WEIGHT_WALL=ds.getRawAsArrayFloat();
+    ET_WEIGHT_PLUG=ds.getRawAsArrayFloat();
+    ET_FACTOR_CENT=ds.getRawAsArrayInt();
+    ET_FACTOR_WALL=ds.getRawAsArrayInt();
+    ET_FACTOR_PLUG=ds.getRawAsArrayInt();    
+   }
+   
+  virtual ~CalTrigWeights()
+   {
+    delete ET_WEIGHT_CENT;
+    delete ET_WEIGHT_WALL;
+    delete ET_WEIGHT_PLUG;
+    delete ET_FACTOR_CENT;
+    delete ET_FACTOR_WALL;
+    delete ET_FACTOR_PLUG;    
+   }
+ };
+ 
+
 int main(int argc, char **argv)
  {
   try
    {
     frontier::init();
 
-    frontier::DataSource ds("lynx.fnal.gov",8080,"/Frontier/","");
+    frontier::CDFDataSource ds("lynx.fnal.gov",8080,"/Frontier/","");
 
     frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
+    frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);
+    vrq.insert(vrq.end(),&req2);
     ds.getData(vrq); 
 
     ds.setCurrentLoad(1);
@@ -167,6 +207,25 @@ int main(int argc, char **argv)
 
     // Clean
     for(int i=0;i<nrec;i++) delete v_sbp[i]; 
+    
+    ds.setCurrentLoad(2);
+
+    nrec=ds.getRecNum();
+    std::vector<CalTrigWeights*> v_ctw(nrec);
+    for(int i=0;i<nrec;i++)
+     {
+      v_ctw[i]=new CalTrigWeights(ds);
+      std::cout <<v_ctw[i]->CID<<','<<v_ctw[i]->ID<<'\n';
+     }        
+    // Do some usefull things here ...
+    
+    for(int i=0;i<5;i++)
+     {
+      std::cout<<'\t'<<v_ctw[0]->ET_WEIGHT_CENT->operator[](i)<<'\n';
+     }
+    
+    // Clean
+    for(int i=0;i<nrec;i++) delete v_ctw[i];    
    }
   catch(std::exception& e)
    {

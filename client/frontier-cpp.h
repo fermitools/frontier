@@ -77,6 +77,21 @@ class DataSource
  };
 
 
+class CDFDataSource:public virtual DataSource
+ {
+  public:
+   explicit
+   CDFDataSource(const std::string& host_name,
+                 int port_number,
+                 const std::string& application_path,
+                 const std::string& proxy_url):DataSource(host_name,port_number,application_path,proxy_url){}
+   std::vector<int> *getRawAsArrayInt();
+   std::vector<float> *getRawAsArrayFloat();
+   std::vector<double> *getRawAsArrayDouble();
+   std::vector<long long> *getRawAsArrayLong();
+ };
+ 
+ 
 
 }; // namespace frontier
 
