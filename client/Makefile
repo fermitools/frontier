@@ -13,12 +13,14 @@ FN_VER_MINOR	=	1.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
+CC		=	gcc
 CXXOPT_LIB	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
 CXXOPT_APP	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	KCC -shared --no_exceptions -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier_client.so.$(FN_VER_MAJOR)
 else
 # GCC settings
+CC		=	gcc
 CXX		=	c++
 CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
@@ -27,7 +29,6 @@ LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) 
 endif
 
 # Common (hopefully) settings
-CC		=	cc
 INC		=	-I./expat/local/include -I./include -I.
 LIBDIR		=
 LIBS		=
@@ -88,7 +89,7 @@ htclient:
 	(cd http && CC=$(CC) COPT="$(COPT)" make all)
 
 libexpat:
-	(cd expat && make all)	
+	(cd expat && CC=$(CC) make all)	
 
 libfrontier_client.so: $(OBJ) http/.libs
 	rm -f libfrontier_client.so
