@@ -94,7 +94,7 @@ public final class Frontier
       local_id=count_total;
      }        
     Thread.currentThread().setName("id="+local_id);
-    if(monitor!=null) monitor.set_count(count_total);
+    if(monitor!=null) monitor.increment();
 
     try 
      {

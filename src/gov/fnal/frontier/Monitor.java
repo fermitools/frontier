@@ -44,11 +44,11 @@ public class Monitor extends Thread
    }
 
   /**
-   * Set number of hits
+   * Increments number of hits
    */
-  protected void set_count(int count_total)
+  protected void increment()
    {
-    hits=count_total;
+    ++hits;
    }
 
   /**
