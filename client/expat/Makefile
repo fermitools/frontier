@@ -24,7 +24,7 @@ srcdir = .
 top_srcdir = .
 
 
-prefix = /home/ks/work/prog/cvs/ntier/client/client/expat/../local
+prefix = /home/serge/work/prog/cvs/frontier/client/expat/../local
 exec_prefix = ${prefix}
 
 bindir = ${exec_prefix}/bin
@@ -35,7 +35,7 @@ mandir = ${prefix}/man/man1
 top_builddir = .
 
 
-INSTALL = /usr/bin/install -c
+INSTALL = /bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
 mkinstalldirs = $(SHELL) $(top_srcdir)/conftools/mkinstalldirs
@@ -96,7 +96,7 @@ mkdir-init:
 		(mkdir $$d 2> /dev/null || test 1) ; \
 	done
 
-CC = gcc
+CC = cc
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 
 INCLUDES = -I$(srcdir)/lib -I.
