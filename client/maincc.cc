@@ -180,16 +180,17 @@ class CalTrigWeights
 int main(int argc, char **argv)
  {
   std::string server_url="";
-  std::string proxy_url="";
+  std::string *proxy_url=NULL;
  
   try
    {
     frontier::init();    
 
     if(argc>1) server_url=argv[1];
-    if(argc>2) proxy_url=argv[2];
+    if(argc>2) proxy_url=new std::string(argv[2]);
     
-    frontier::CDFDataSource ds(server_url,&proxy_url);
+    frontier::CDFDataSource ds(server_url,proxy_url);
+    if(proxy_url){delete proxy_url; proxy_url=NULL;}
     //frontier::CDFDataSource ds;
     
     //ds.setReload(1);

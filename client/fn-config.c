@@ -128,14 +128,18 @@ const char *frontierConfig_getRequestUrl(FrontierConfig *cfg,const char *uri,int
     *ec=FRONTIER_EREQTOOBIG;
     return (char*)0;
    }
-  printf("URL <%s>\n",cfg->buf);
+  //printf("URL <%s>\n",cfg->buf);
   return cfg->buf;
  }
 
 
 const char *frontierConfig_getProxyUrl(FrontierConfig *cfg)
  {
-  char *url=cfg->proxy[cfg->proxy_cur];
+  char *url;
+  
+  if(cfg->proxy_cur>=cfg->proxy_num) return ""; // One implicit which is always ""
+  
+  url=cfg->proxy[cfg->proxy_cur];
   if(url) return url;
   return "";
  } 
@@ -145,13 +149,14 @@ int frontierConfig_nextServer(FrontierConfig *cfg)
  {
   if(cfg->server_cur+1>=cfg->server_num) return -1;
   ++cfg->server_cur;
+  //printf("Next server %d\n",cfg->server_cur);
   return 0;
  } 
 
  
 int frontierConfig_nextProxy(FrontierConfig *cfg)
  {
-  if(cfg->proxy_cur+1>=cfg->proxy_num) return -1;
+  if(cfg->proxy_cur>=cfg->proxy_num) return -1; // One implicit which is always ""
   ++cfg->proxy_cur;
   return 0;
  } 

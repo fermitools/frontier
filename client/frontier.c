@@ -414,7 +414,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
        res==CURLE_COULDNT_CONNECT || 
        res==CURLE_WRITE_ERROR)
      {
-      frontierConfig_nextProxy(chn->cfg);
+      frontierConfig_nextProxy(chn->cfg); // If it runs out of list it returns ""
       proxy_url=frontierConfig_getProxyUrl(chn->cfg);
       //printf("Proxy url [%s]\n",proxy_url);
       if((!*proxy_url) && is_direct) // ""
