@@ -44,7 +44,7 @@ public final class Frontier extends CacheHttpServlet {
         ArrayList commandList = null;
         ServletOutputStream writer = null;
 
-        synchronized(mutex) {
+        synchronized (mutex) {
             id = count_total;
             ++count_total;
             ++count_current;
@@ -67,19 +67,19 @@ public final class Frontier extends CacheHttpServlet {
         writer = response.getOutputStream();
 
         writer.println("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
-        writer.println("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion
+        writer.println("<frontier version=\"" + frontierVersion + "\" xmlversion=\"" + xmlVersion
                        + "\">");
         try {
             commandList = parser.parse(queryString);
             connMgr.initialize();
             handleRequest(commandList, writer);
-        } catch(CommandParserException e) {
+        } catch (CommandParserException e) {
             writer.println("<transaction payloads=\"0\">");
             writer.println(generateBadQualityTag(e.getMessage()));
-        } catch(DbConnectionMgrException e) {
+        } catch (DbConnectionMgrException e) {
             System.out.println("Unable to obtain connection: " + e.getMessage());
             writer.println(generateBadQualityTag(e.getMessage()));
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.out.println("Error: " + e);
             e.printStackTrace();
             writer.println(generateBadQualityTag(e.getMessage()));
@@ -88,7 +88,7 @@ public final class Frontier extends CacheHttpServlet {
 
         writer.close();
 
-        synchronized(mutex) {
+        synchronized (mutex) {
             --count_current;
             local_current = count_current;
         }
@@ -109,17 +109,17 @@ public final class Frontier extends CacheHttpServlet {
         RequestHandler handler = null;
         int numCommands = commandList.size();
         writer.println("<transaction payloads=\"" + numCommands + "\">");
-        for(int i = 0; i < numCommands; i++) {
+        for (int i = 0;i < numCommands;i++) {
             Command command = (Command) commandList.get(i);
-            if(command.isUniversalQueryCommand())
+            if (command.isUniversalQueryCommand())
                 handler = new UniversalQueryRequestHandler(writer);
-            else if(command.isAdminCommand())
+            else if (command.isAdminCommand())
                 handler = new AdministrationRequestHandler(writer);
             else
                 throw new ServletException("Internal error, unknown type of Command.");
             try {
                 handler.process(command);
-            } catch(RequestHandlerException e) {
+            } catch (RequestHandlerException e) {
                 generateBadQualityTag(e.getMessage());
             }
         }
