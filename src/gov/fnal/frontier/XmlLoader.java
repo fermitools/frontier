@@ -47,15 +47,15 @@ public class XmlLoader extends Loader {
             if (xsdVersion == null)
                 throw new LoaderException("The XSD is missing the tag xsdversion or it is null.");
             Parser parser = null;
-            if(!type.equals(name)) {
+            if (!type.equals(name)) {
                 String msg = "The XSD's type tag does not match type supplied on URL. ";
                 msg += type + " != " + name;
                 throw new LoaderException(msg);
-            } else if(!version.equals(aVersion)) {
+            } else if (!version.equals(aVersion)) {
                 String msg = "The XSD's xsdversion tag does not match version supplied on URL. ";
                 msg += version + " != " + aVersion;
                 throw new LoaderException(msg);
-            } else if(xsdVersion.equals("1.0"))
+            } else if (xsdVersion.equals("1.0") || xsdVersion.equals("1"))
                 parser = new XmlParser(type, version, xsdVersion);
             else
                 throw new LoaderException("XSD version " + xsdVersion + " is not supported.");
