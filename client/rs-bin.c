@@ -20,7 +20,7 @@
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
 
-union u_Buf32 { int v; char b[4]; };
+union u_Buf32 { int v; float f; char b[4]; };
 union u_Buf64 { long long v; double d; char b[8]; };
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -32,6 +32,15 @@ static inline int n2h_i32(const char *p)
   u.b[1]=p[2]; 
   u.b[0]=p[3];  
   return u.v;
+ }
+static inline int n2h_f32(const char *p) 
+ {
+  union u_Buf32 u; 
+  u.b[3]=p[0]; 
+  u.b[2]=p[1]; 
+  u.b[1]=p[2]; 
+  u.b[0]=p[3];  
+  return u.f;
  }
 static inline long long n2h_i64(const char *p) 
  {
@@ -147,7 +156,7 @@ void frontierRSBlob_start(FrontierRSBlob *rs,int *ec)
  }
 
  
-
+ 
 char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
  {
   char ret;
@@ -159,6 +168,21 @@ char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
    }
   ret=rs->buf[rs->pos];
   rs->pos++;
+  *ec=FRONTIER_OK;
+  return ret;
+ }
+ 
+ 
+char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec)
+ {
+  char ret;
+
+  if(rs->pos>=rs->size)
+   {
+    *ec=FRONTIER_ENOROW;
+    return (char)-1;
+   }
+  ret=rs->buf[rs->pos];
   *ec=FRONTIER_OK;
   return ret;
  }
@@ -227,6 +251,23 @@ double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec)
   *ec=FRONTIER_OK;
   return ret;
  }
+ 
+
+float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec)
+ {
+  float ret;
+
+  if(rs->pos>=rs->size-3)
+   {
+    *ec=FRONTIER_ENOROW;
+    return -1;
+   }
+  ret=n2h_f32(rs->buf+rs->pos);
+  rs->pos+=4;
+  *ec=FRONTIER_OK;
+  return ret;
+ }
+ 
 
 
 

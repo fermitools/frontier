@@ -27,6 +27,7 @@ static const char *blob_type_name[]={"byte","int4","int8","float","double","time
  
 int AnyData::getInt()
  {
+  if(isNull) return 0;
   if(t==BLOB_TYPE_INT4) return v.i4;
 #ifdef FRONTIER_DEBUG
   std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to int\n";
@@ -47,6 +48,7 @@ int AnyData::getInt()
  
 long long AnyData::getLongLong()
  {
+  if(isNull) return 0;
   if(t==BLOB_TYPE_INT8 || t==BLOB_TYPE_TIME) return v.i8;
 #ifdef FRONTIER_DEBUG
   std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to long long\n";
@@ -66,6 +68,7 @@ long long AnyData::getLongLong()
    
 float AnyData::getFloat()
  {
+  if(isNull) return 0.0;
   if(t==BLOB_TYPE_FLOAT) return v.f;
 #ifdef FRONTIER_DEBUG
   std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to float\n";
@@ -86,6 +89,7 @@ float AnyData::getFloat()
    
 double AnyData::getDouble()
  {
+  if(isNull) return 0.0;
   if(t==BLOB_TYPE_DOUBLE) return v.d;
 #ifdef FRONTIER_DEBUG
   std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to double\n";
@@ -106,6 +110,7 @@ double AnyData::getDouble()
  
 std::string* AnyData::getString()
  {
+  if(isNull) return NULL;
   if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s);
 #ifdef FRONTIER_DEBUG
   std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to string\n";

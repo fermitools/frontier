@@ -8,6 +8,9 @@
 # $Id$
 #
 
+FN_VER_MAJOR	=	1
+FN_VER_MINOR	=	0.0
+
 ifeq ($(CXX),KCC)
 # KCC settings
 CXXOPT		=	--no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE
@@ -16,37 +19,47 @@ else
 # GCC settings
 CXX		=	c++
 CXXOPT		=	-DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
-COPT		=	-pthread -Wall -g -O2 -DFRONTIER_DEBUG
+COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 endif
 
 CC		=	cc
-INC		=	-Iexpat/lib -I./curl/local/include -I.
+INC		=	-I./expat/local/include -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
 
+LINK		=	cc -shared -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier.so.$(FN_VER_MAJOR)
+
 HDR	=	frontier.h fn-internal.h
 
-all: libcurl libfrontier.a distrib
+all: libcurl libexpat libfrontier.so distrib
 
 libcurl:
 	(cd curl; make all)
 
-libfrontier.a: expat/lib/xmltok.o fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
-	rm -f libfrontier.a
-	ar qcv libfrontier.a frontier.o response.o payload.o rs-bin.o memdata.o error.o expat/lib/xmlparse.o expat/lib/xmlrole.o expat/lib/xmltok.o fn-base64.o fn-md5.o fn-config.o anydata.o frontier-cpp.o
-	ranlib libfrontier.a
+libexpat:
+	(cd expat; make all)	
+
+libfrontier.so: fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
+	rm -f libfrontier.so
+	rm -f libfrontier.so.$(FN_VER_MAJOR)
+	rm -f libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR)
+	rm -rf .libs
+	mkdir .libs
+	cp ./curl/curl-7.11.1/lib/.libs/*.o .libs
+	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
+	cp *.o .libs
+	$(LINK) .libs/*.o
+	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR)
+	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so
 
 distrib:
 	rm -fr dist/lib dist/include
 	mkdir dist/lib
-	cp libfrontier.a dist/lib/
-	cp curl/local/lib/libcurl.a dist/lib/libfn-curl.a
+	cp libfrontier.* dist/lib/
 	mkdir dist/include
 	cp frontier-cpp.h dist/include
 	cp frontier.h dist/include
 
-expat/lib/xmltok.o:
-	(cd expat; /bin/sh configure --prefix=`pwd`/../local --disable-shared --without-pic && make buildlib)
 
 fn-base64.o: fn-base64.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-base64.c
@@ -82,7 +95,7 @@ main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
 main: all main.o
-	$(CC) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier -lfn-curl
+	$(CC) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
 
 anydata.o: anydata.cc frontier-cpp.h $(HDR)
 	$(CXX) $(COPT) $(CXXOPT) $(INC) -c anydata.cc
@@ -94,31 +107,33 @@ maincc.o: maincc.cc frontier-cpp.h
 	$(CXX) -g -Idist/include -c maincc.cc
 
 maincc: all maincc.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier -lfn-curl
+	$(CXX) -g -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier
 
 maintest.o: maintest.cc frontier-cpp.h
 	$(CXX) -g -Idist/include -c maintest.cc
 
 maintest: all maintest.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier -lfn-curl
+	$(CXX) -g -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier
 
 getcids.o: getcids.cc frontier-cpp.h
 	$(CXX) -g -Idist/include -c getcids.cc
 
 getcids: all getcids.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier -lfn-curl
+	$(CXX) -g -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier
 
 request_each.o: request_each.cc frontier-cpp.h
 	$(CXX) -g -Idist/include -c request_each.cc
 
 request_each: all request_each.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier -lfn-curl
+	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier
 
 clean:
-	rm -f *.o *.core libfrontier.a frontier main maincc maintest getcids request_each
-	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
-	(cd expat; rm -f libtool Makefile config.log config.status)
+	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each
+	(cd expat; make clean)
 	(cd curl; make clean)
 	rm -fr dist/lib dist/include
+	rm -rf .libs
 
+#	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
+#	(cd expat; rm -f libtool Makefile config.log config.status)
 

@@ -1,0 +1,19 @@
+*** expat.h.orig	Thu Aug 19 13:48:59 2004
+--- expat.h	Thu Aug 19 13:49:24 2004
+***************
+*** 45,51 ****
+  #ifndef XMLCALL
+  #if defined(XML_USE_MSC_EXTENSIONS)
+  #define XMLCALL __cdecl
+! #elif defined(__GNUC__)
+  #define XMLCALL __attribute__((cdecl))
+  #else
+  /* For any platform which uses this definition and supports more than
+--- 45,51 ----
+  #ifndef XMLCALL
+  #if defined(XML_USE_MSC_EXTENSIONS)
+  #define XMLCALL __cdecl
+! #elif defined(__i386__) && defined(__GNUC__)
+  #define XMLCALL __attribute__((cdecl))
+  #else
+  /* For any platform which uses this definition and supports more than

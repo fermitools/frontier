@@ -71,6 +71,7 @@ void frontierRSBlob_close(FrontierRSBlob *rs,int *ec);
 void frontierRSBlob_rsctl(FrontierRSBlob *rs,int ctl_fn,void *data,int size,int *ec);
 void frontierRSBlob_start(FrontierRSBlob *rs,int *ec);
 char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec);
+char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec); // Returns next byte but do not change RS pointer
 int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec);
 long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec);
 double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);

@@ -159,8 +159,25 @@ int DataSource::getAnyData(AnyData* buf)
   if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
-  int dt=(int)frontierRSBlob_getByte(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
+  BLOB_TYPE dt;
+  
+  /* Ignore EOR markers 
+   * NOTE: EOR must never have BLOB_BIT_NULL
+   */
+  do
+   {
+    dt=frontierRSBlob_getByte(rs,&ec);
+    if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
+   }while(dt==BLOB_TYPE_EOR);
+   
+  last_field_type=dt;
+  
+  if(dt&BLOB_BIT_NULL)
+   {
+    buf->isNull=1;
+    buf->t=dt&(~BLOB_BIT_NULL);
+    return 0;
+   }
   
   char *p;
   int len;  
@@ -188,6 +205,24 @@ int DataSource::getAnyData(AnyData* buf)
   return 0;
  }
  
+ 
+BLOB_TYPE DataSource::nextFieldType()
+ {
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
+  int ec=FRONTIER_OK;
+  BLOB_TYPE dt=frontierRSBlob_checkByte(rs,&ec);
+  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while checking type",ec,-1);
+  
+  return dt;
+ }
+ 
+ 
+int DataSource::isEOR() 
+ {
+  return (nextFieldType()==BLOB_TYPE_EOR);
+ }
+ 
 
 int DataSource::getInt()
  {
@@ -208,7 +243,6 @@ long DataSource::getLong()
   return ad.getInt();
  }
 
-#ifndef KCC_COMPILE
 long long DataSource::getLongLong()
  {
   AnyData ad;
@@ -217,7 +251,6 @@ long long DataSource::getLongLong()
   
   return ad.getLongLong();  
  }
-#endif //KCC_COMPILE
 
 
 double DataSource::getDouble()
@@ -227,13 +260,32 @@ double DataSource::getDouble()
   if(getAnyData(&ad)) return -1;  
   return ad.getDouble();
  }
+ 
+ 
+float DataSource::getFloat()
+ {
+  AnyData ad;
+  
+  if(getAnyData(&ad)) return -1;  
+  return ad.getFloat();
+ } 
 
+ 
+long long DataSource::getDate()
+ {
+  AnyData ad;
+  
+  if(getAnyData(&ad)) return -1;
+  
+  return ad.getLongLong();   
+ }
+ 
  
 std::string* DataSource::getString()
  {
   AnyData ad;
   
-  if(getAnyData(&ad)) return NULL;  
+  if(getAnyData(&ad)) return NULL;
   return ad.getString();
  }
  

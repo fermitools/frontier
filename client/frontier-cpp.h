@@ -47,34 +47,42 @@ class Request
 
 int init();
 
-enum BLOB_TYPE
- {
-  BLOB_TYPE_NONE=-1,
-  BLOB_TYPE_BYTE=0,
-  BLOB_TYPE_INT4=1,
-  BLOB_TYPE_INT8=2,
-  BLOB_TYPE_FLOAT=3,
-  BLOB_TYPE_DOUBLE=4,
-  BLOB_TYPE_TIME=5,
-  BLOB_TYPE_ARRAY_BYTE=6
- };
+// Enum sucks
+typedef unsigned char BLOB_TYPE;
+const BLOB_TYPE BLOB_BIT_NULL=(1<<7);
 
+const BLOB_TYPE BLOB_TYPE_NONE=BLOB_BIT_NULL;
+const BLOB_TYPE BLOB_TYPE_BYTE=0;
+const BLOB_TYPE BLOB_TYPE_INT4=1;
+const BLOB_TYPE BLOB_TYPE_INT8=2;
+const BLOB_TYPE BLOB_TYPE_FLOAT=3;
+const BLOB_TYPE BLOB_TYPE_DOUBLE=4;
+const BLOB_TYPE BLOB_TYPE_TIME=5;
+const BLOB_TYPE BLOB_TYPE_ARRAY_BYTE=6;
+const BLOB_TYPE BLOB_TYPE_EOR=7;
+  
+
+class DataSource;
+ 
+// You are not going to use this class directly
 class AnyData
  {
   private:
+  friend class DataSource;	// I love C++ :-)
    union
     {
      long long i8;
      double d;
-     struct{unsigned int s;char *p;}str;    
+     struct{char *p;unsigned int s;}str;    
      int i4;
      float f;    
      char b;
     } v;
-   BLOB_TYPE t;  // The data type   
+   int isNull;   // I do not use "bool" here because of compatibility problems [SSK]   
+   BLOB_TYPE t;  // The data type
   
   public:
-   explicit AnyData(): t(BLOB_TYPE_NONE){}
+   explicit AnyData(): isNull(0),t(BLOB_TYPE_NONE){}
    void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;}
    void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;}
    void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;}
@@ -82,6 +90,7 @@ class AnyData
    void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;}
    void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;}
    const BLOB_TYPE type(){return t;}
+   
    ~AnyData(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
    
    int getInt();
@@ -92,12 +101,14 @@ class AnyData
  };
  
 
+ 
 class DataSource
  {
   private:
    unsigned long channel;
    std::string *uri;
    void *internal_data;
+   BLOB_TYPE last_field_type;
 
    int getAnyData(AnyData* buf);
    
@@ -107,21 +118,39 @@ class DataSource
    
    explicit DataSource(const std::string& server_url="",const std::string* proxy_url=NULL);
    
+   // If reload!=0 then all requested objects will be refreshed at all caches
+   // New object copy will be obtained directly from server
    void setReload(int reload);
+   
+   // Get data for Requests
    void getData(const std::vector<const Request*>& v_req);
+   
+   // Each Request generates a payload. Payload numbers started with 1.
+   // So, to get data for the first Request call setCurrentLoad(1)
    void setCurrentLoad(int n);
+   
+   // Check error for this particular payload.
+   // If error happes for any payload that payload and all subsequent payloads (if any) are empty
    int getCurrentLoadError() const;
+   // More detailed (hopefully) error explanation.
    const char* getCurrentLoadErrorMessage() const;
-   unsigned int getRecNum();
+   
+   // Data fields extractors
+   // These methods change DS position to the next field
    int getInt();
    long getLong();
-#ifndef KCC_COMPILE
-   // Any better idea?
    long long getLongLong();
-#endif //KCC_COMPILE
    double getDouble();
+   float getFloat();
+   long long getDate();
    std::string *getString();
    std::string *getBlob();
+   
+   // Meta info
+   unsigned int getRecNum();
+   BLOB_TYPE lastFieldType(){return last_field_type;} // Original type of the last extracted field
+   BLOB_TYPE nextFieldType(); // Next field type. THIS METHOD DOES NOT CHANGE DS POSITION !!!
+   int isEOR();  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    
    virtual ~DataSource();
  };
