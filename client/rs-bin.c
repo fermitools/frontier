@@ -33,7 +33,7 @@ static inline int n2h_i32(const char *p)
   u.b[0]=p[3];  
   return u.v;
  }
-static inline int n2h_f32(const char *p) 
+static inline float n2h_f32(const char *p) 
  {
   union u_Buf32 u; 
   u.b[3]=p[0]; 
