@@ -13,21 +13,24 @@ FN_VER_MINOR	=	0.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
-CXXOPT		=	--no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE
-COPT		=	-DFRONTIER_DEBUG
+CXXOPT_LIB	=	-g -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
+CXXOPT_APP	=	-g -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
+COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
+LINK_SO		=	KCC -shared --no_exceptions -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier.so.$(FN_VER_MAJOR)
 else
 # GCC settings
 CXX		=	c++
-CXXOPT		=	-DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
+CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
+CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
+LINK_SO		=	cc -shared -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier.so.$(FN_VER_MAJOR)
 endif
 
+# Common (hopefully) settings
 CC		=	cc
 INC		=	-I./expat/local/include -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
-
-LINK		=	cc -shared -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier.so.$(FN_VER_MAJOR)
 
 HDR	=	frontier.h fn-internal.h
 
@@ -48,7 +51,7 @@ libfrontier.so: fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o me
 	cp ./curl/curl-7.11.1/lib/.libs/*.o .libs
 	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
 	cp *.o .libs
-	$(LINK) .libs/*.o
+	$(LINK_SO) .libs/*.o
 	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR)
 	ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so
 
@@ -100,48 +103,47 @@ main: all main.o
 	$(CC) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
 
 anydata.o: anydata.cc frontier-cpp.h $(HDR)
-	$(CXX) $(COPT) $(CXXOPT) $(INC) -c anydata.cc
+	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
 
 frontier-cpp.o: frontier-cpp.cc frontier-cpp.h $(HDR)
-	$(CXX) $(COPT) $(CXXOPT) $(INC) -c frontier-cpp.cc
+	$(CXX) $(CXXOPT_LIB) $(INC) -c frontier-cpp.cc
 
 maincc.o: maincc.cc frontier-cpp.h
-	$(CXX) -g -Idist/include -c maincc.cc
+	$(CXX) $(CXXOPT_APP) -Idist/include -c maincc.cc
 
 maincc: all maincc.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o maincc maincc.o $(LIBS) -lfrontier
 
 maintest.o: maintest.cc frontier-cpp.h
-	$(CXX) -g -Idist/include -c maintest.cc
+	$(CXX) $(CXXOPT_APP) -Idist/include -c maintest.cc
 
 maintest: all maintest.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier
 
 getcids.o: getcids.cc frontier-cpp.h
-	$(CXX) -g -Idist/include -c getcids.cc
+	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
 getcids: all getcids.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier
 
 request_each.o: request_each.cc frontier-cpp.h
-	$(CXX) -g -Idist/include -c request_each.cc
+	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
 request_each: all request_each.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier
 
 test-pescalib.o: test-pescalib.cc frontier-cpp.h
-	$(CXX) -g -Idist/include -c test-pescalib.cc
+	$(CXX) $(CXXOPT_APP) -Idist/include -c test-pescalib.cc
 
 test-pescalib: all test-pescalib.o frontier-cpp.h
-	$(CXX) -g -Ldist/lib -o test-pescalib test-pescalib.o $(LIBS) -lfrontier
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o test-pescalib test-pescalib.o $(LIBS) -lfrontier
 
 clean:
-	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each
+	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each test-pescalib
 	(cd expat; make clean)
 	(cd curl; make clean)
 	rm -fr dist/lib dist/include
 	rm -rf .libs
+	rm -rf ti_files
 
-#	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
-#	(cd expat; rm -f libtool Makefile config.log config.status)
 

@@ -182,8 +182,10 @@ int main(int argc, char **argv)
   std::string server_url="";
   std::string *proxy_url=NULL;
  
+#ifdef FNTR_USE_EXCEPTIONS
   try
    {
+#endif //FNTR_USE_EXCEPTIONS
     frontier::init();    
 
     if(argc>1) server_url=argv[1];
@@ -236,6 +238,7 @@ int main(int argc, char **argv)
     
     // Clean
     for(int i=0;i<nrec;i++) delete v_ctw[i];    
+#ifdef  FNTR_USE_EXCEPTIONS   
    }
   catch(std::exception& e)
    {
@@ -247,6 +250,7 @@ int main(int argc, char **argv)
     std::cout << "Unknown exception\n";
     exit(1);
    }
+#endif //FNTR_USE_EXCEPTIONS   
  }
 
 

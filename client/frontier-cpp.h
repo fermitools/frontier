@@ -89,7 +89,7 @@ class AnyData
    void set(double d){t=BLOB_TYPE_DOUBLE;v.d=d;}
    void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;}
    void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;}
-   const BLOB_TYPE type(){return t;}
+   BLOB_TYPE type() const{return t;}
    
    ~AnyData(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
    

@@ -14,6 +14,16 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef KCC_COMPILE
+template class std::vector<double>;
+template class std::vector<std::string>;
+template class std::vector<unsigned char>;
+template class std::vector<float>;
+template class std::vector<int>;
+template class std::vector<long>;
+#endif //KCC_COMPILE
+
+
 // This chunk of code below is ugly, but this is the way things 
 // were done historically (C++/KCC and other junk); 
 // here is C++ in all its glory (incompatibility on binary objects level). 
@@ -25,10 +35,17 @@
 #define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::runtime_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
 #define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::logic_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
 #else
+/*
 #define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; return;}while(0)
 #define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m;return;}while(0)
 #define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m; return r;}while(0)
 #define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m;return r;}while(0)
+*/
+#define FN_ABORT(c,m) do{std::cout<<"Error #"<<(c)<<": "<<(m)<<". Abort.\n"; exit(c);}while(0)
+#define RUNTIME_ERROR_NR(o,m,e) FN_ABORT(e,m)
+#define LOGIC_ERROR_NR(o,m,e) FN_ABORT(e,m)
+#define RUNTIME_ERROR(o,m,e,r) FN_ABORT(e,m)
+#define LOGIC_ERROR(o,m,e,r) FN_ABORT(e,m)
 #endif //USE_EXCEPTIONS
 
 extern "C"

@@ -84,8 +84,10 @@ class PESCalib
 int main(int argc, char **argv)
  {
  
+#ifdef FNTR_USE_EXCEPTIONS 
   try
    {
+#endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
     if(argc!=2)
@@ -121,6 +123,7 @@ int main(int argc, char **argv)
     // Clean
     for(int i=0;i<nrec;i++) delete v_sbp[i]; 
     
+#ifdef FNTR_USE_EXCEPTIONS   
    }
   catch(std::exception& e)
    {
@@ -132,6 +135,7 @@ int main(int argc, char **argv)
     std::cout << "Unknown exception\n";
     exit(1);
    }
+#endif //FNTR_USE_EXCEPTIONS   
  }
 
 
