@@ -1,6 +1,9 @@
 /**
  * Frontier encoder interface
+ * $Id$
+ *
  * @author: Sergey Kosyakov
+ *
  */
 package gov.fnal.frontier.codec;
 

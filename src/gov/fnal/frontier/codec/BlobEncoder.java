@@ -1,4 +1,6 @@
 /**
+ * THIS ENCODER IS OBSOLETE - DO NOT USE IT !!!
+ *
  * Implementation of BLOB encoder (Base64 encoded binary stream)
  * as in 3.2.2.1 with updates (see ntier mail list)
  * $Id$
@@ -41,6 +43,12 @@ public class BlobEncoder implements Encoder
     baos.reset();
    }
 
+   
+  public void writeEOR() throws Exception
+   {
+    // Nothing
+   }
+   
 
   public void writeInt(int v) throws Exception
    {
@@ -72,6 +80,9 @@ public class BlobEncoder implements Encoder
 
   public void writeString(String v) throws Exception
    {
+    // here is not much could be done to support NULLs
+    if(v==null) v="";
+    
     os.writeInt(v.length());
     out_size+=4;
     os.writeBytes(v);
@@ -81,6 +92,9 @@ public class BlobEncoder implements Encoder
 
   public void writeBytes(byte[] v) throws Exception
    {
+    // here is not much could be done to support NULLs
+    if(v==null) v=new byte[0];
+    
     //System.out.println("writeBytes(): length "+v.length);
     os.writeInt(v.length);
     out_size+=4;
@@ -91,7 +105,9 @@ public class BlobEncoder implements Encoder
 
   public void writeDate(java.util.Date v) throws Exception
    {
-    os.writeLong(v.getTime());
+    // here is not much could be done to support NULLs
+    if(v==null) os.writeLong((long)0);
+    else os.writeLong(v.getTime());
     out_size+=8;
     if(baos.size()>=BUFFER_SIZE) dump();
    }

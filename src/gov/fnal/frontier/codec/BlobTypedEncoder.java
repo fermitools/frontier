@@ -7,7 +7,9 @@
  * 
  *
  * Changes log
- * 08/18/2004 - if String, byte[] or Date is null, set the NULL bit in the type info
+ * 08/18/2004 
+ *   if String, byte[] or Date is null, set the NULL bit in the type info
+ *   writeEOR() added, makes demarshalling more flexible
  */
 package gov.fnal.frontier.codec;
 
