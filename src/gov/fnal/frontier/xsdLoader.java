@@ -107,10 +107,11 @@ public class xsdLoader {
     public int validFileList(File[] fileList) {
         int retValue = 0;
         XmlLoader loader = new XmlLoader();
+        System.out.println("Validating XSD files.....");
         for(int i=0; i < fileList.length; i++) {
             try {
                 loader.load(new FileInputStream(fileList[i]));
-                System.out.println(fileList[i].getName() + " -- " + "Syntax is valid.");
+                // System.out.println(fileList[i].getName() + " -- " + "Syntax is valid.");
             } catch(LoaderException ex) {
                 retValue += 1;
                 System.out.println(fileList[i].getName() + " -- " + ex.getMessage());
@@ -132,20 +133,21 @@ public class xsdLoader {
             File[] files = file.listFiles();
             xsdLoader loader = new xsdLoader();
             int badSyntaxCnt = loader.validFileList(files);
-            if (badSyntaxCnt > 0 && false ) {
+            if (badSyntaxCnt == 0) {
                 loader.connect();
                 int dataLength = 0;
                 int i = 0;
                 int gCnt = 0;
                 int eCnt = 0;
+                System.out.println("Storing XSD files into db.....");
                 for (i = 0;i < files.length;i++) {
                     try {
                         xmlObject obj = loader.load(new FileInputStream(files[i]));
                         byte[] xsd = loader.readFile(new FileInputStream(files[i]));
                         loader.blobInsert(obj.type, obj.version, "xml", xsd);
                         gCnt += 1;
-                        System.out.println(files[i].getName() + " was stored,  xsd data length: "
-                                           + xsd.length);
+                        //System.out.println(files[i].getName() + " was stored,  xsd data length: "
+                        //                   + xsd.length);
                         dataLength += xsd.length;
                     } catch (Exception ex) {
                         eCnt += 1;
