@@ -96,8 +96,20 @@ maintest.o: maintest.cc frontier-cpp.h
 maintest: all maintest.o frontier-cpp.h
 	$(CXX) -g -Ldist/lib -o maintest maintest.o $(LIBS) -lfrontier -lfn-curl
 
+getcids.o: getcids.cc frontier-cpp.h
+	$(CXX) -g -Idist/include -c getcids.cc
+
+getcids: all getcids.o frontier-cpp.h
+	$(CXX) -g -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier -lfn-curl
+
+request_each.o: request_each.cc frontier-cpp.h
+	$(CXX) -g -Idist/include -c request_each.cc
+
+request_each: all request_each.o frontier-cpp.h
+	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier -lfn-curl
+
 clean:
-	rm -f *.o *.core libfrontier.a frontier maincc maintest
+	rm -f *.o *.core libfrontier.a frontier maincc maintest getcids
 	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
 	(cd expat; rm -f libtool Makefile config.log config.status)
 	(cd curl; make clean)

@@ -35,7 +35,7 @@ xml_startElement(void *userData,const char *name,const char **atts)
   int i;
   FrontierResponse *fr=(FrontierResponse*)userData;
 
-  printf("xml_start %s\n",name);
+  //printf("xml_start %s\n",name);
 
   if(strcmp(name,"data")==0)
    {
@@ -76,7 +76,7 @@ xml_endElement(void *userData,const char *name)
  {
   FrontierResponse *fr=(FrontierResponse*)userData;
 
-  printf("xml_end %s\n",name);
+  //printf("xml_end %s\n",name);
 
   if(strcmp(name,"data")==0)
    {
@@ -179,7 +179,7 @@ int frontierResponse_finalize(FrontierResponse *fr)
   
   for(i=0;i<fr->payload_num;i++)
    {
-    printf("%d r:[%s] l:[%s]\n",i,fr->payload[i]->srv_md5_str,fr->payload[i]->md5_str);
+    //printf("%d r:[%s] l:[%s]\n",i,fr->payload[i]->srv_md5_str,fr->payload[i]->md5_str);
     if(strncmp(fr->payload[i]->srv_md5_str,fr->payload[i]->md5_str,32)) return FRONTIER_EMD5;
    }
 

@@ -16,9 +16,9 @@
 
 int main(int argc, char **argv)
  {
-  if(argc!=6)
+  if(argc!=4)
    {
-    std::cout<<"Usage: "<<argv[0]<<" host port object_name key_name key_value"<<'\n';
+    std::cout<<"Usage: "<<argv[0]<<" host port object_name"<<'\n';
     exit(1);
    }
       
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     
     //ds.setReload(1);
 
-    frontier::Request req(argv[3],"1",frontier::BLOB,argv[4],argv[5]);
+    frontier::Request req("frontier_get_cid_list","1",frontier::BLOB,"table_name",argv[3]);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req);
@@ -39,6 +39,12 @@ int main(int argc, char **argv)
     ds.setCurrentLoad(1);
     int nrec=ds.getRecNum();
     std::cout<<"Got "<<nrec<<" records back."<<'\n';
+    
+    for(int i=0;i<nrec;i++)
+     {
+      long cid=ds.getLong();
+      std::cout<<cid<<'\n';
+     }
    }
   catch(std::exception& e)
    {

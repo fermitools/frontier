@@ -179,13 +179,19 @@ class CalTrigWeights
 
 int main(int argc, char **argv)
  {
+  if(argc!=3)
+   {
+    std::cout<<"Usage: "<<argv[0]<<" host port"<<'\n';
+    exit(1);
+   }
+ 
   try
    {
-    frontier::init();
+    frontier::init();    
 
-    frontier::CDFDataSource ds("pox.fnal.gov",8000,"/Frontier/","");
+    frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
     
-    //ds.setReload(1);
+    ds.setReload(1);
 
     frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
     frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");

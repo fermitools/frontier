@@ -121,7 +121,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
    }
 
   url=new std::string(oss.str());
-  std::cout << "URL <" << *url << ">\n";
+  //std::cout << "URL <" << *url << ">\n";
 
   ec=frontier_getRawData(channel,url->c_str());
   if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not get data",ec);

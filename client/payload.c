@@ -86,7 +86,7 @@ int frontierPayload_finalize(FrontierPayload *fp)
     snprintf(((char*)(fp->md5_str))+(i*2),3,"%02x",fp->md5[i]);
    }
 
-  printf("Blob size %d md5 %s\n",fp->blob_size,fp->md5_str);
+  //printf("Blob size %d md5 %s\n",fp->blob_size,fp->md5_str);
 
   return FRONTIER_OK;
  }
