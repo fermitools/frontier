@@ -53,10 +53,10 @@ public class CommandTest extends TestCase {
             Command command = new Command("type", "bah!");
             command.put("aKey", "avalue");
             command.put("aKey2", "aValue");
-            Enumeration enum = command.keys();
-            enum.nextElement();
-            enum.nextElement();
-            enum.nextElement();
+            Enumeration aEnum = command.keys();
+            aEnum.nextElement();
+            aEnum.nextElement();
+            aEnum.nextElement();
         } catch(NoSuchElementException e) {
             fail("Enumeration did not contain 3 objects!");
         } catch(NullPointerException e) {
