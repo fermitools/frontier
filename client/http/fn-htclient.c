@@ -352,7 +352,7 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
   do
    {   
     ret=read_line(c,buf,FN_REQ_BUF);
-    printf("Buf <%s>\n",buf);
+    //printf("Buf <%s>\n",buf);
     if(ret<0)
      {
       set_err_msg(c,-1,"Read error");

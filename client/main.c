@@ -32,7 +32,18 @@ static void my_free(void *ptr)
   free(ptr);
  }
 
+
+int do_main(int argc, char **argv);
+
 int main(int argc, char **argv)
+ {
+  while(1)
+   {
+    do_main(argc,argv);
+   }
+ }
+ 
+int do_main(int argc, char **argv)
  {
   int ret;
   FrontierChannel chnl;
@@ -57,26 +68,11 @@ int main(int argc, char **argv)
   chnl=frontier_createChannel(argv[1],NULL,&ec);
   CHECK()
 
-  ret=frontier_getRawData(chnl,"?type=svxbeamposition:1&encoding=BLOB&cid=316011&type=caltrigweights:1&encoding=BLOB&cid=14319");
-
-  frontier_getRespStat(chnl,&stat);
-
+  ret=frontier_getRawData(chnl,"Frontier?type=SvxBeamPosition:1&encoding=BLOB&cid=316011&type=CALTrigWeights:1&encoding=BLOB&cid=14319");
   if(ret)
    {
-    printf("error %d: %s\n",ret,frontier_error_desc(ret));
-    printf("HRC %d\n",stat.http_resp_code);
+    printf("Error %d\n",ret);
     exit(1);
-   }
-
-  printf("HRC=%d size=%d\n",stat.http_resp_code,(int)stat.raw_data_size);
-  printf("data %s\n",stat.raw_data_buf);
-
-  for(i=0;;i++)
-   {
-    const char *n=frontier_getHttpHeaderName(chnl,i);
-    if(!n) break;
-    const char *v=frontier_getHttpHeaderValue(chnl,i);
-    printf("\"%s: %s\"\n",n,v);
    }
 
   rs=frontierRSBlob_get(chnl,1,&ec);
@@ -91,7 +87,7 @@ int main(int argc, char **argv)
 
   frontier_closeChannel(chnl);
 
-  exit(0);
+  return(0);
  }
 
 

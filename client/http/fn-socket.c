@@ -51,7 +51,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
   ret=connect(s,serv_addr,addrlen);
   if(ret<0 && errno==EINPROGRESS)
    {
-    printf("Connect in process. Will select.\n");
+    //printf("Connect in process. Will select.\n");
     FD_ZERO(&wfds);
     FD_SET(s,&wfds);
     tv.tv_sec=30;

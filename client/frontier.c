@@ -238,7 +238,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
   while(1)
    {
     ret=get_data(chn,uri);
-    printf("ret=%d\n",ret);
+    //printf("ret=%d\n",ret);
     if(ret==FRONTIER_OK) break;
     
     if(clnt->cur_proxy<clnt->total_proxy)
@@ -261,7 +261,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *uri)
 
   ret=frontierResponse_finalize(chn->resp);
   if(ret!=FRONTIER_OK) goto err;
-
+ 
   chn->status=FRONTIER_SRAW_DATA;
   goto Ok;
 

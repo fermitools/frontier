@@ -102,7 +102,7 @@ main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
 main: all main.o
-	$(CC) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
+	$(CXX) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
 
 anydata.o: anydata.cc frontier-cpp.h $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc

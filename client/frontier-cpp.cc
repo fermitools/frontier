@@ -15,6 +15,7 @@
 #include <sstream>
 
 #ifdef KCC_COMPILE
+// I love C++!
 template class std::vector<double>;
 template class std::vector<std::string>;
 template class std::vector<unsigned char>;
@@ -62,12 +63,94 @@ Request::~Request()
   if(v_key) {delete v_key; v_key=NULL;}
  }
 
+#ifdef FN_MEMORY_DEBUG
+struct mem_chunk
+ {
+  void *ptr;
+  int size;  
+ };
+ 
+static struct mem_chunk a_mem[1024];
+static int max_mem=0;
+static int mem_count=0;
 
+static void *my_malloc(size_t size)
+ {
+  void *ret;
+  int i;
+  
+  ret=malloc(size);
+  ++mem_count;
+  
+  for(i=0;i<=max_mem;i++)
+   {
+    if(!a_mem[i].ptr)
+     {
+      a_mem[i].ptr=ret;
+      a_mem[i].size=size;
+      break;
+     }
+   }
+  
+  if(i>max_mem)
+   {
+    max_mem++;
+    a_mem[max_mem].ptr=ret;
+    a_mem[max_mem].size=size;  
+   }
+  printf("malloc 0x%016lX, count %d, id %d, size %ld\n",(unsigned long)ret,mem_count,i,size);
+  return ret;
+ }
+
+static void my_free(void *ptr)
+ {
+  int i;
+  int size=-1;
+  
+  --mem_count;  
+  for(i=0;i<=max_mem;i++)
+   {
+    if(a_mem[i].ptr==ptr)
+     {
+      size=a_mem[i].size;
+      a_mem[i].size=-1;
+      a_mem[i].ptr=(long)0;
+      break;
+     }
+   }
+   
+  if(size==-1)
+   {
+    printf("Memory corrupted 0x%016lX, count %d, id %d\n",(unsigned long)ptr,mem_count,i);
+    exit(1);
+   }
+  
+  printf("free 0x%016lX, count %d, id %d, size %d\n",(unsigned long)ptr,mem_count,i,size);
+  
+  if(mem_count<2)
+   {
+    for(i=0;i<=max_mem;i++)
+     {
+      if(a_mem[i].ptr)
+       {
+        printf("left 0x%016lX, id %d, size %d\n",(unsigned long)a_mem[i].ptr,i,a_mem[i].size);
+       }
+     }
+   }
+  
+  free(ptr);
+ }
+#endif //FN_MEMORY_DEBUG
+ 
 int frontier::init()
  {
   int ret;
 
+#ifdef FN_MEMORY_DEBUG
+  ret=frontier_init(my_malloc,my_free);
+#else  
   ret=frontier_init(malloc,free);
+#endif //FN_MEMORY_DEBUG
   //if(ret) RUNTIME_ERROR("Frontier initialization failed",ret);
   return ret;
  }
@@ -145,6 +228,9 @@ void DataSource::setCurrentLoad(int n)
   int ec=FRONTIER_OK;
   FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
   if(ec!=FRONTIER_OK) LOGIC_ERROR_NR(this,"Can not set current load",ec);
+  
+  if(internal_data) frontierRSBlob_close(static_cast<FrontierRSBlob*>(internal_data),&ec); //Doesn't it look UGLY?
+  
   internal_data=rsb;
   if(getCurrentLoadError()!=FRONTIER_OK) LOGIC_ERROR_NR(this,getCurrentLoadErrorMessage(),FRONTIER_EPAYLOAD);
  }
