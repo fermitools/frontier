@@ -28,7 +28,7 @@ endif
 
 # Common (hopefully) settings
 CC		=	cc
-INC		=	-I./expat/local/include -I./curl/local/include -I.
+INC		=	-I./expat/local/include -I.
 LIBDIR		=
 LIBS		=
 

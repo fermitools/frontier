@@ -17,7 +17,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include <curl/curl.h>
 #include <frontier.h>
 #include "fn-internal.h"
 
