@@ -113,12 +113,12 @@ std::string* AnyData::getString()
   std::ostringstream oss;
   switch(t)
    {
-    case BLOB_TYPE_BYTE: oss<<v.b; break;
-    case BLOB_TYPE_INT4: oss<<v.i4; break;
+    case BLOB_TYPE_BYTE: oss<<v.b; return new std::string(oss.str());
+    case BLOB_TYPE_INT4: oss<<v.i4; return new std::string(oss.str());
     case BLOB_TYPE_TIME:
-    case BLOB_TYPE_INT8: oss<<v.i8; break;
-    case BLOB_TYPE_FLOAT: oss<<v.f; break;
-    case BLOB_TYPE_DOUBLE: oss<<v.d; break;
+    case BLOB_TYPE_INT8: oss<<v.i8; return new std::string(oss.str());
+    case BLOB_TYPE_FLOAT: oss<<v.f; return new std::string(oss.str());
+    case BLOB_TYPE_DOUBLE: oss<<v.d; return new std::string(oss.str());
     default: break; // Just to make this geek gcc happy
    }
   std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
