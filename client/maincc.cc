@@ -77,8 +77,8 @@ class SvxBeamPosition
 
   SvxBeamPosition(frontier::CDFDataSource& ds)
    {
-    CID=ds.getLong();
-    CHANNELID=ds.getLong();
+    CID=ds.getLongLong();
+    CHANNELID=ds.getLongLong();
     BEAMX=ds.getDouble();
     BEAMY=ds.getDouble();
     SLOPEX=ds.getDouble();
@@ -129,8 +129,8 @@ class SvxBeamPosition
     FITCOV33=ds.getDouble();
     STATISTICS0=ds.getDouble();
     STATISTICS1=ds.getDouble();
-    FLAG0=ds.getLong();
-    FLAG1=ds.getLong();
+    FLAG0=ds.getLongLong();
+    FLAG1=ds.getLongLong();
     SPARE0=ds.getDouble();
     SPARE1=ds.getDouble();
     SPARE2=ds.getDouble();
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
     if(proxy_url){delete proxy_url; proxy_url=NULL;}
     //frontier::CDFDataSource ds;
     
-    //ds.setReload(1);
+    ds.setReload(1);
 
     frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
     frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
     for(int i=0;i<nrec;i++)
      {
       v_ctw[i]=new CalTrigWeights(ds);
-      std::cout <<v_ctw[i]->CID<<','<<v_ctw[i]->ID<<'\n';
+      std::cout <<v_ctw[i]->CID<<','<<v_ctw[i]->ID<<std::endl;
      }        
     // Do some usefull things here ...
     
