@@ -214,24 +214,25 @@ unsigned int DataSource::getRSBinaryPos()
  
 int DataSource::getAnyData(AnyData* buf)
  {
+  buf->isNull=0;
   if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   BLOB_TYPE dt;
   
   dt=frontierRSBlob_getByte(rs,&ec);
-  //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
+  //printf("Intermediate type prefix %d\n",dt);
   if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
   last_field_type=dt;
    
   if(dt&BLOB_BIT_NULL)
    {
-    //std::cout<<"The field is NULL\n";
+    //printf("The field is NULL\n");
     buf->isNull=1;
     buf->t=dt&(~BLOB_BIT_NULL);
     return 0;
    }
-  //std::cout<<"Extracted type prefix "<<(int)dt<<'\n';  
+  //printf("Extracted type prefix %d\n",dt);  
   
   char *p;
   int len;  
@@ -246,11 +247,13 @@ int DataSource::getAnyData(AnyData* buf)
     case BLOB_TYPE_TIME: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
     case BLOB_TYPE_ARRAY_BYTE:
        len=frontierRSBlob_getInt(rs,&ec);
+       //printf("len=%d\n",len);
        if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"can not get byte array length",ec,-1);
        if(len<0) LOGIC_ERROR(this,"negative byte array length",ec,-1);
        p=new char[len+1];
        frontierRSBlob_getArea(rs,p,len,&ec); 
        p[len]=0; // To emulate C string
+       //printf("string [%s]\n",p);
        buf->set(len,p);
        break;
     case BLOB_TYPE_EOR: buf->setEOR(); break;

@@ -118,7 +118,7 @@ int do_main(int argc, char **argv)
           case frontier::BLOB_TYPE_FLOAT:      vf=ad.getFloat(); std::cout<<vf; break;
           case frontier::BLOB_TYPE_DOUBLE:     vd=ad.getDouble(); std::cout<<vd; break;
           case frontier::BLOB_TYPE_TIME:       vl=ad.getLongLong(); std::cout<<vl; break;
-          case frontier::BLOB_TYPE_ARRAY_BYTE: vs=ad.getString(); std::cout<<(*vs); delete vs; break;	  
+	  case frontier::BLOB_TYPE_ARRAY_BYTE: vs=ad.getString(); if(!vs) vs=new std::string("(NULL)"); std::cout<<(*vs); delete vs; break;	  
 	  default: std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; exit(1);
 	 }
 	if(k+1<field_num) std::cout<<" ";
