@@ -12,6 +12,7 @@
     <servlet>
       <servlet-name>Frontier</servlet-name>
       <servlet-class>gov.fnal.frontier.FrontierServlet</servlet-class>
+      <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>

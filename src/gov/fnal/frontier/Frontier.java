@@ -29,20 +29,35 @@ public final class Frontier
   public ArrayList aPayloads=null;
   
   
-  private static synchronized void init() throws Exception
+  
+  private static String getPropertyString(ResourceBundle rb,String name) throws Exception
+   {
+    try
+     {
+      String p=rb.getString(name);
+      return p;
+     }
+    catch(MissingResourceException e)
+     {          
+      return null;
+     }
+   }
+  
+  
+  protected static synchronized void init() throws Exception
    {
     if(initialized) return;
     ResourceBundle prb=PropertyResourceBundle.getBundle("config");
     conf_server_name=prb.getString("ServerName");
     conf_ds_name=prb.getString("DataSourceName");
     conf_xsd_table=prb.getString("XsdTableName");
-    conf_monitor_node=prb.getString("MonitorNode");
-    conf_monitor_delay=prb.getString("MonitorMillisDelay");
-    
+        
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
+    conf_monitor_node=getPropertyString(prb,"MonitorNode");
+    conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");    
     if(conf_monitor_node!=null && conf_monitor_delay!=null) 
      {
       try

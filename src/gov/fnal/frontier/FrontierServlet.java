@@ -10,6 +10,20 @@ public final class FrontierServlet extends HttpServlet
  {
   private static final String frontierVersion="3.0";
   private static final String xmlVersion="1.0";
+  
+  
+  public void init()
+   {
+    try
+     {
+      Frontier.init();
+     }
+    catch(Exception e)
+     {
+      Frontier.Log("Frontier.init() failes:",e);
+     }
+   }
+   
  
   public void service(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
    {
