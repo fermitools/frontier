@@ -1,13 +1,19 @@
+/*
+ * Implementation of BLOB encoder (Base64 encoded binary stream)
+ * as in 3.2.2.1 with updates (see ntier mail list)
+ *
+ * @author Sergey Kosyakov
+ */
 package gov.fnal.frontier.codec;
 
 import java.io.*;
 
-public class DataEncBlobStream implements DataEncStream
+public class BlobEncoder implements Encoder
  {
   protected DataOutputStream os;
   private long out_size=0;
 
-  public DataEncBlobStream(OutputStream out) throws Exception
+  public BlobEncoder(OutputStream out) throws Exception
    {
     OutputStream b64os=new Base64.OutputStream(out);
     os=new DataOutputStream(b64os);

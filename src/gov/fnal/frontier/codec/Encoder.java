@@ -1,10 +1,10 @@
-//
-// Frontier encoder interface
-// Author: Sergey Kosyakov
-//
+/*
+ * Frontier encoder interface
+ * @author: Sergey Kosyakov
+ */
 package gov.fnal.frontier.codec;
 
-public interface DataEncStream
+public interface Encoder
  {
   public void writeInt(int v) throws Exception;
   public void writeLong(long v) throws Exception;
