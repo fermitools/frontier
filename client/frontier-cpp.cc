@@ -24,36 +24,38 @@ template class std::vector<int>;
 template class std::vector<long>;
 #endif //KCC_COMPILE
 
-
-// This chunk of code below is ugly, but this is the way things 
-// were done historically (C++/KCC and other junk); 
-// here is C++ in all its glory (incompatibility on binary objects level). 
-// So here is no even a tiny possibility to write a good code. I tried :-(
-#ifdef FNTR_USE_EXCEPTIONS
-#include <stdexcept>
-#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m; throw std::runtime_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
-#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m; throw std::logic_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
-#define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::runtime_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
-#define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; throw std::logic_error(std::string(m)+std::string(": ")+frontier_error_desc(e));}while(0)
-#else
-/*
-#define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m; return;}while(0)
-#define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=m;return;}while(0)
-#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m; return r;}while(0)
-#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=m;return r;}while(0)
-*/
-#define FN_ABORT(c,m) do{std::cout<<"Error #"<<(c)<<": "<<(m)<<". Abort.\n"; exit(c);}while(0)
-#define RUNTIME_ERROR_NR(o,m,e) FN_ABORT(e,m)
-#define LOGIC_ERROR_NR(o,m,e) FN_ABORT(e,m)
-#define RUNTIME_ERROR(o,m,e,r) FN_ABORT(e,m)
-#define LOGIC_ERROR(o,m,e,r) FN_ABORT(e,m)
-#endif //USE_EXCEPTIONS
-
 extern "C"
  {
 #include <frontier.h>
 #include <stdlib.h>
  };
+
+
+// This chunk of code below is ugly, but this is the way things 
+// were done historically (C++/KCC and other junk); 
+// here is C++ in all its glory (incompatibility on binary objects level). 
+// So here is no even a tiny possibility to write a good code. I tried :-(
+
+static std::string create_err_msg(const char *m)
+ {
+  return std::string(m)+std::string(": ")+std::string(frontier_getErrorMsg());
+ }
+
+// The crap below supports two schemas of error reporting (for junk KCC and GCC) 
+#ifdef FNTR_USE_EXCEPTIONS
+// Exceptions
+#include <stdexcept>
+#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::runtime_error(o->err_msg);}while(0)
+#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::logic_error(o->err_msg);}while(0)
+#define RUNTIME_ERROR_NR(o,m,e) RUNTIME_ERROR(o,m,e,-1)
+#define LOGIC_ERROR_NR(o,m,e) LOGIC_ERROR(o,m,e,-1)
+#else
+// No exceptions, mostly for KCC
+#define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=create_err_msg(m); return;}while(0)
+#define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=create_err_msg(m);return;}while(0)
+#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); return r;}while(0)
+#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m);return r;}while(0)
+#endif //USE_EXCEPTIONS
 
 using namespace frontier;
 
@@ -154,7 +156,7 @@ void DataSource::setCurrentLoad(int n)
   if(internal_data) frontierRSBlob_close(static_cast<FrontierRSBlob*>(internal_data),&ec); //Doesn't it look UGLY?
   
   internal_data=rsb;
-  if(getCurrentLoadError()!=FRONTIER_OK) LOGIC_ERROR_NR(this,getCurrentLoadErrorMessage(),FRONTIER_EPAYLOAD);
+  if(getCurrentLoadError()!=FRONTIER_OK) LOGIC_ERROR_NR(this,getCurrentLoadErrorMessage(),FRONTIER_EPROTO);
  }
 
  

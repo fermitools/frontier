@@ -30,7 +30,6 @@ FrontierMemData *frontierMemData_create()
 
   ms->size=MEMDATA_INISIZE;
   ms->len=0;
-  ms->status=FRONTIER_SEMPTY;
   ms->buf=frontier_mem_alloc(ms->size);
   if(!ms->buf)
    {

@@ -25,33 +25,24 @@
 #define URL_FMT_SRV	"http://%127[^/]/%127s"
 #define URL_FMT_PROXY	"http://%s"
 
-
-static void set_err_msg(FrontierHttpClnt *c,int err,const char *msg)
- {
-  c->err_code=err;
-  if(c->err_msg) free(c->err_msg);
-  c->err_msg=strdup(msg);
- }
+extern void *(*frontier_mem_alloc)(size_t size);
+extern void (*frontier_mem_free)(void *p);
  
- 
-static void set_err_errno(FrontierHttpClnt *c,int err)
- {
-  char *msg;
-  
-  msg=strerror(err);
-  set_err_msg(c,err,msg);
- }
- 
-
-FrontierHttpClnt *frontierHttpClnt_create()
+FrontierHttpClnt *frontierHttpClnt_create(int *ec)
  {
   FrontierHttpClnt *c;
   
-  c=malloc(sizeof(FrontierHttpClnt));
-  if(!c) return c;
+  c=frontier_mem_alloc(sizeof(FrontierHttpClnt));
+  if(!c)
+   {
+    *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    return c;
+   }
   bzero(c,sizeof(FrontierHttpClnt));
   c->socket=-1;
   
+  *ec=FRONTIER_OK;
   return c;
  }
  
@@ -59,69 +50,49 @@ FrontierHttpClnt *frontierHttpClnt_create()
 int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
  {
   FrontierUrlInfo *fui;
+  int ec=FRONTIER_OK;
   
   if(c->total_server+1>=FRONTIER_SRV_MAX_NUM) 
    {
-    set_err_msg(c,EINVAL,"Server list is full");
-    return -1;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server list is too long");
+    return FRONTIER_ECFG;
    }
   
-  fui=frontier_CreateUrlInfo(url);
-  if(!fui) 
-   {
-    set_err_errno(c,ENOMEM);
-    return -1;
-   }
-  
-  if(fui->err_msg) 
-   {
-    set_err_msg(c,EINVAL,fui->err_msg);
-    frontier_DeleteUrlInfo(fui);
-    return -1;
-   }
+  fui=frontier_CreateUrlInfo(url,&ec);
+  if(!fui) return ec;
   
   if(!fui->path)
    {
-    set_err_msg(c,EINVAL,"Server path name is missing");
-    frontier_DeleteUrlInfo(fui);
-    return -1;   
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server %s: path is missing",fui->host);
+    frontier_DeleteUrlInfo(fui);    
+    return FRONTIER_ECFG;
    }
    
   c->server[c->total_server]=fui;
   c->total_server++;
   
-  return 0;
+  return FRONTIER_OK;
  }
 
  
 int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
  {
   FrontierUrlInfo *fui;
+  int ec=FRONTIER_OK;
   
   if(c->total_proxy+1>=FRONTIER_SRV_MAX_NUM)
    {
-    set_err_msg(c,EINVAL,"Proxy list is full");
-    return -1;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server list is too long");
+    return FRONTIER_ECFG;
    }
     
-  fui=frontier_CreateUrlInfo(url);
-  if(!fui) 
-   {
-    set_err_errno(c,ENOMEM);
-    return -1;
-   }
+  fui=frontier_CreateUrlInfo(url,&ec);
+  if(!fui) return ec;
   
-  if(fui->err_msg) 
-   {
-    set_err_msg(c,EINVAL,fui->err_msg);
-    frontier_DeleteUrlInfo(fui);
-    return -1;
-   }
-   
   c->proxy[c->total_proxy]=fui;
   c->total_proxy++;
   
-  return 0;
+  return FRONTIER_OK;
  }
  
  
@@ -137,14 +108,8 @@ static int http_read(FrontierHttpClnt *c)
  {
   //printf("\nhttp_read\n");
   //bzero(c->buf,FRONTIER_HTTP_BUF_SIZE);
-  c->data_pos=0;
-  
+  c->data_pos=0;  
   c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE);
-  if(c->data_size<0)
-   {
-    set_err_errno(c,errno);
-   }
-  
   return c->data_size;
  }
 
@@ -208,7 +173,7 @@ static int read_line(FrontierHttpClnt *c,char *buf,int buf_len)
  }
    
   
-#define FN_REQ_BUF 16384
+#define FN_REQ_BUF 8192
  
 int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
  {
@@ -226,20 +191,17 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
   
   if(!fui_server)
    {
-    set_err_msg(c,EINVAL,"No available server");
-    return -1;
-   }
+    frontier_setErrorMsg(__FILE__,__LINE__,"no available server");
+    return FRONTIER_ECFG;
+   }   
   
   if(fui_proxy)
    {
-    printf("Using proxy\n");
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"using proxy %s",fui_proxy->host);
     if(!fui_proxy->addr)
      {
-      if(frontier_resolv_host(fui_proxy))
-       {
-        set_err_msg(c,EINVAL,fui_proxy->err_msg);
-	return -1;
-       }
+      ret=frontier_resolv_host(fui_proxy);
+      if(ret) return ret;
      }
     addr=fui_proxy->addr;
     is_proxy=1;
@@ -248,11 +210,8 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    {
     if(!fui_server->addr)
      {
-      if(frontier_resolv_host(fui_server))
-       {
-        set_err_msg(c,EINVAL,fui_server->err_msg);
-	return -1;
-       }
+      ret=frontier_resolv_host(fui_server);
+      if(ret) return ret;
      }
     addr=fui_server->addr;
     is_proxy=0;
@@ -261,11 +220,7 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
   do
    {
     c->socket=frontier_socket();
-    if(c->socket<0)
-     {
-      set_err_errno(c,errno);
-      return errno;
-     }
+    if(c->socket<0) return c->socket;
     
     sin=(struct sockaddr_in*)(addr->ai_addr);
     if(is_proxy) 
@@ -284,12 +239,8 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
     addr=addr->ai_next;
    }while(addr);
   
-  if(ret)
-   {
-    set_err_errno(c,errno);
-    return errno;
-   }
-   
+  if(ret) return ret;
+
   bzero(buf,FN_REQ_BUF);
   
   if(is_proxy)
@@ -302,8 +253,8 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    }
   if(len>=FN_REQ_BUF)
    {
-    set_err_msg(c,EINVAL,"Request is too big");
-    return EINVAL;
+    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
+    return FRONTIER_EIARG;
    }
    
   if(c->is_refresh)
@@ -316,51 +267,39 @@ int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
    }
   if(ret>=FN_REQ_BUF-len)
    {
-    set_err_msg(c,EINVAL,"Request is too big");
-    return EINVAL;
+    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
+    return FRONTIER_EIARG;
    }
   len+=ret;
    
-  //printf("Request <%s>\n",buf);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"request <%s>",buf);
    
   ret=frontier_write(c->socket,buf,len);
-  if(ret<0)
-   {
-    set_err_errno(c,errno);
-    return errno;
-   }
-  if(ret!=len)
-   {
-    set_err_msg(c,-1,"Write can not send the whole request");
-    return -1;
-   }
+  if(ret<0) return ret;
 
   // Read status line
   ret=read_line(c,buf,FN_REQ_BUF);
-  printf("Status line <%s>\n",buf);
-  if(ret<0)
+  if(ret<0) return ret;
+  if(ret==0)
    {
-    set_err_msg(c,-1,"Read error");
-    return -1;   
+    frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
+    return FRONTIER_ENETWORK;    
    }
-  if(strcmp(buf,"HTTP/1.0 200 OK") && strcmp(buf,"HTTP/1.1 200 OK"))
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"status line <%s>",buf);
+  if(strncmp(buf,"HTTP/1.0 200 ",13) && strncmp(buf,"HTTP/1.1 200 ",13))
    {
-    set_err_msg(c,-1,"Bad server response");
-    return -1;       
+    frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s)",buf);
+    return FRONTIER_ENETWORK;        
    }
       
   do
    {   
     ret=read_line(c,buf,FN_REQ_BUF);
-    //printf("Buf <%s>\n",buf);
-    if(ret<0)
-     {
-      set_err_msg(c,-1,"Read error");
-      return -1;   
-     }
+    if(ret<0) return ret;
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"got line <%s>",buf);
    }while(*buf);
             
-  return 0;
+  return FRONTIER_OK;
  }
  
  
@@ -373,10 +312,6 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
   if(c->data_pos+1>c->data_size)
    {
     ret=http_read(c);
-    if(ret<0)
-     {
-      set_err_errno(c,errno);
-     }    
     if(ret<=0) return ret;
    }
    
@@ -400,12 +335,13 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
  {
   int i;
   
-  for(i=0;i<FRONTIER_SRV_MAX_NUM && c->server[i]; i++) frontier_DeleteUrlInfo(c->server[i]);
-  for(i=0;i<FRONTIER_SRV_MAX_NUM && c->proxy[i]; i++) frontier_DeleteUrlInfo(c->proxy[i]);
+  if(!c) return;
+  
+  for(i=0;i<FRONTIER_SRV_MAX_NUM; i++) frontier_DeleteUrlInfo(c->server[i]);
+  for(i=0;i<FRONTIER_SRV_MAX_NUM; i++) frontier_DeleteUrlInfo(c->proxy[i]);
   
   if(c->socket>=0) frontierHttpClnt_close(c);
-  if(c->err_msg) free(c->err_msg);
   
-  free(c);
+  frontier_mem_free(c);
  }
 

@@ -35,25 +35,21 @@ int main(int argc,char **argv)
   clnt=frontierHttpClnt_create();
   if(!clnt)
    {
-    printf("Can not create client\n");
+    printf("Error %s\n",frontier_getErrorMsg());
     exit(1);
    }
    
   ret=frontierHttpClnt_addServer(clnt,argv[1]);
   if(ret)
    {
-    printf("Error %d\n",ret);
-    printf("System error:   %d\n",clnt->err_code);
-    printf("System message: %s\n",clnt->err_msg);
+    printf("Error %s\n",frontier_getErrorMsg());
     exit(1);
    }
 
   ret=frontierHttpClnt_addProxy(clnt,"http://edge:8128");
   if(ret)
    {
-    printf("Error %d\n",ret);
-    printf("System error:   %d\n",clnt->err_code);
-    printf("System message: %s\n",clnt->err_msg);
+    printf("Error %s\n",frontier_getErrorMsg());
     exit(1);
    }   
 
@@ -66,9 +62,7 @@ int main(int argc,char **argv)
   ret=frontierHttpClnt_open(clnt,buf);
   if(ret)
    {
-    printf("Error %d\n",ret);
-    printf("System error:   %d\n",clnt->err_code);
-    printf("System message: %s\n",clnt->err_msg);
+    printf("Error %s\n",frontier_getErrorMsg());
     exit(1);
    }
    
@@ -79,9 +73,7 @@ int main(int argc,char **argv)
   printf("End.\n");
   if(ret<0)
    {
-    printf("Error %d\n",ret);
-    printf("System error:   %d\n",clnt->err_code);
-    printf("System message: %s\n",clnt->err_msg);
+    printf("Error %s\n",frontier_getErrorMsg());
     exit(1);
    }      
          

@@ -34,7 +34,7 @@ LIBS		=
 
 OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
-HDR		=	frontier.h fn-internal.h
+HDR		=	frontier.h fn-internal.h http/fn-htclient.h
 
 all: htclient libexpat libfrontier.so distrib
 

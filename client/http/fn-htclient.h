@@ -12,6 +12,7 @@
 #ifndef __HEADER_HTTP_H_FN_HTCLIENT_H
 #define __HEADER_HTTP_H_FN_HTCLIENT_H
 
+#include <frontier.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -30,12 +31,11 @@ struct s_FrontierUrlInfo
   char *host;
   int port;
   char *path;
-  char *err_msg;
   struct addrinfo *addr;
  };
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
-FrontierUrlInfo *frontier_CreateUrlInfo(const char *url);
+FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec);
 int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 
@@ -55,7 +55,6 @@ struct s_FrontierHttpClnt
   int socket;
     
   int err_code;
-  char *err_msg;
   int data_size;
   int data_pos;
   char buf[FRONTIER_HTTP_BUF_SIZE];
@@ -63,7 +62,7 @@ struct s_FrontierHttpClnt
 typedef struct s_FrontierHttpClnt FrontierHttpClnt;
 
 
-FrontierHttpClnt *frontierHttpClnt_create();
+FrontierHttpClnt *frontierHttpClnt_create(int *ec);
 int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url);
 int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url);
 void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh);

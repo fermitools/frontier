@@ -22,9 +22,11 @@
 
 #define PARSE_BUF_SIZE	256
 
+extern void *(*frontier_mem_alloc)(size_t size);
+extern void (*frontier_mem_free)(void *p);
 
 
-FrontierUrlInfo *frontier_CreateUrlInfo(const char *url)
+FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
  {
   FrontierUrlInfo *fui;
   const char *p;
@@ -32,17 +34,30 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url)
   int i;
   char buf[PARSE_BUF_SIZE];
   
-  fui=malloc(sizeof(FrontierUrlInfo));
-  if(!fui) return fui;
+  fui=frontier_mem_alloc(sizeof(FrontierUrlInfo));
+  if(!fui)
+   {
+    *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    goto err;
+   }
   bzero(fui,sizeof(FrontierUrlInfo));
-  fui->url=strdup(url);
+  
+  fui->url=frontier_str_copy(url);
+  if(!fui)
+   {
+    *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    goto err;
+   }
   
   if(strncmp(url,"http://",7))
    {
-    fui->err_msg=strdup("Unknown protocol");
-    return fui;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
    }
-  fui->proto=strdup("http"); // No other protocols yet
+  fui->proto=frontier_str_copy("http"); // No other protocols yet
   p=url+7;
   bzero(buf,PARSE_BUF_SIZE);
   i=0;
@@ -51,38 +66,42 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url)
   
   if(!i)
    {
-    fui->err_msg=strdup("Hostname is missing");
-    return fui;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
    }
   
   tmp=strchr(buf,':');
   if(tmp==buf)
    {
-    fui->err_msg=strdup("Hostname is missing");
-    return fui;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
    }
   
   if(tmp)
    {
     if(tmp!=strrchr(buf,':') || !(*(tmp+1)))
      {
-      fui->err_msg=strdup("Wrong port specs");
-      return fui;
+      frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+      *ec=FRONTIER_ECFG;
+      goto err;
      }
     fui->port=atoi(tmp+1);
     *tmp=0;
-    fui->host=strdup(buf);
+    fui->host=frontier_str_copy(buf);
    }   
   else
    {
-    fui->host=strdup(buf);
+    fui->host=frontier_str_copy(buf);
     fui->port=80;
    }
    
   if(fui->port<=0 || fui->port>=65534)
    {
-    fui->err_msg=strdup("Wrong port number");
-    return fui;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad port number in the url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
    }
    
   if(*p) while(*p && *p=='/') ++p;
@@ -92,8 +111,16 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url)
   bzero(buf,PARSE_BUF_SIZE);
   i=0;  
   while(*p) {buf[i]=*p; ++i; ++p;}
-  if(i) fui->path=strdup(buf);
+  if(i) fui->path=frontier_str_copy(buf);
+
+  goto ok;
   
+err:
+  frontier_DeleteUrlInfo(fui);
+  return NULL;
+  
+ok:  
+  *ec=FRONTIER_OK;
   return fui;
  }
  
@@ -102,7 +129,6 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
  {
   struct addrinfo hints;
   int ret;
-  const char *err_msg;
   struct addrinfo *addr;  
   
   bzero(&hints,sizeof(struct addrinfo));
@@ -116,15 +142,13 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
    {
     if(ret==EAI_SYSTEM)
      {
-      ret=errno;
-      fui->err_msg=strdup(strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"host name %s problem: %s",fui->host,strerror(errno));
      }
     else
      {     
-      err_msg=gai_strerror(ret);
-      fui->err_msg=strdup(err_msg);
+      frontier_setErrorMsg(__FILE__,__LINE__,"host name %s problem: %s",fui->host,gai_strerror(ret));
      }
-    return -1;
+    return FRONTIER_ENETWORK;
    }    
   
   addr=fui->addr;
@@ -132,24 +156,24 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
    {
     struct sockaddr_in *sin;
     sin=(struct sockaddr_in*)(addr->ai_addr);
-    printf("Found addr <%s>\n",inet_ntoa(sin->sin_addr));
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found addr <%s>",fui->host,inet_ntoa(sin->sin_addr));
     addr=addr->ai_next;
    }while(addr);   
    
-  return 0; 
+  return FRONTIER_OK; 
  }
  
  
  
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui)
  {
+  if(!fui) return;
   if(fui->addr) freeaddrinfo(fui->addr);
-  if(fui->url) free(fui->url);
-  if(fui->proto) free(fui->proto);
-  if(fui->host) free(fui->host);
-  if(fui->path) free(fui->path);
-  if(fui->err_msg) free(fui->err_msg);
+  if(fui->url) frontier_mem_free(fui->url);
+  if(fui->proto) frontier_mem_free(fui->proto);
+  if(fui->host) frontier_mem_free(fui->host);
+  if(fui->path) frontier_mem_free(fui->path);
   
-  free(fui);
+  frontier_mem_free(fui);
  }
  

@@ -9,7 +9,7 @@
  *
  */
  
-#include <fn-htclient.h> 
+#include <fn-htclient.h>
  
 #include <unistd.h>
 #include <fcntl.h>
@@ -27,15 +27,22 @@ int frontier_socket()
   int flags;
   
   s=socket(PF_INET,SOCK_STREAM,0);
-  if(s<0) return s;
+  if(s<0) goto err;
   
   flags=fcntl(s,F_GETFL);
-  if(flags<0) {close(s); return flags;}
+  if(flags<0) goto err;
   
   flags=flags|O_NONBLOCK;
   flags=fcntl(s,F_SETFL,(long)flags);
-  if(flags<0) {close(s); return flags;}
+  if(flags<0) goto err;
+  goto ok;
   
+err:
+  if(s>=0) close(s);
+  frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+  return FRONTIER_ESYS;
+  
+ok:  
   return s;
  }
  
@@ -49,63 +56,128 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
   socklen_t s_len;
   
   ret=connect(s,serv_addr,addrlen);
-  if(ret<0 && errno==EINPROGRESS)
+  if(ret==0) return FRONTIER_OK;
+
+  /* ret<0 below */  
+  if(errno!=EINPROGRESS)
    {
-    //printf("Connect in process. Will select.\n");
-    FD_ZERO(&wfds);
-    FD_SET(s,&wfds);
-    tv.tv_sec=30;
-    tv.tv_usec=0;
-    ret=select(s+1,NULL,&wfds,NULL,&tv);
-    if(ret<0) 
+    if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
-      printf("connect: select() error %d: %s\n",errno,strerror(errno));
-      return -1;
+      frontier_setErrorMsg(__FILE__,__LINE__,"host is down or unreachable");
+      return FRONTIER_ENETWORK;
      }
-    if(ret==0)
+    else
      {
-      printf("connect: select() timeout\n");
-      errno=ETIMEDOUT;
-      return -1;
-     }
-    if(!FD_ISSET(s,&wfds))
-     {
-      printf("connect: select() unindentified error\n");
-      return -1;
-     }
-    s_len=sizeof(val);
-    val=0;
-    ret=getsockopt(s,SOL_SOCKET,SO_ERROR,&val,&s_len);
-    if(ret<0)
-     {
-      printf("connect: getsockopt() error %d: %s\n",errno,strerror(errno));
-      return -1;
-     }
-    if(val)
-     {
-      printf("connect: socket error %d: %s\n",val,strerror(val));
-      errno=val;
-      return -1;
+      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+      return FRONTIER_ESYS;     
      }
    }
-  return 0;
+ 
+  /* non-blocking connect in progress here */
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect in progress, preparing for select.");
+  FD_ZERO(&wfds);
+  FD_SET(s,&wfds);
+  tv.tv_sec=30;
+  tv.tv_usec=0;
+  ret=select(s+1,NULL,&wfds,NULL,&tv);
+  if(ret<0) 
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    return FRONTIER_ESYS;
+   }
+  if(ret==0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"connect timed out");
+    return FRONTIER_ENETWORK;
+   }
+  
+  if(!FD_ISSET(s,&wfds))
+   {
+    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    return FRONTIER_EUNKNOWN;
+   }
+  s_len=sizeof(val);
+  val=0;
+  ret=getsockopt(s,SOL_SOCKET,SO_ERROR,&val,&s_len);
+  if(ret<0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    return FRONTIER_ESYS;
+   }
+  if(val)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",val,strerror(val));
+    return FRONTIER_ESYS;
+   }
+  return FRONTIER_OK;
  }
  
+ 
+static int socket_write(int s,const char *buf, int len)
+ {
+  int ret;
+  fd_set wfds;
+  struct timeval tv;
+  
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"write request %d bytes",len);
+
+  FD_ZERO(&wfds);
+  FD_SET(s,&wfds);
+  tv.tv_sec=30;
+  tv.tv_usec=0;
+  ret=select(s+1,NULL,&wfds,NULL,&tv);
+  if(ret<0) 
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    return FRONTIER_ESYS;
+   }
+  if(ret==0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"write timed out");
+    return FRONTIER_ENETWORK;
+   }
+  if(!FD_ISSET(s,&wfds))
+   {
+    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    return FRONTIER_EUNKNOWN;
+   }
+   
+  ret=send(s,buf,len,0);
+  if(ret>=0) return ret;
+  
+  if(errno==ECONNRESET)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"connection reset by peer");
+    return FRONTIER_ENETWORK;
+   }
+   
+  frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+  return FRONTIER_ESYS;   
+ }
+
  
 int frontier_write(int s,const char *buf, int len)
  {
   int ret;
+  int total;
+  int repeat;
   
-  ret=write(s,buf,len);
-  if(ret<0) return ret;
-  if(ret!=len)
+  repeat=3;	// XXX repeat write 3 times (if no error)
+  
+  total=0;
+  while(repeat--)
    {
-    printf("write: wrote %d, expected %d\n",ret,len);
-    return -1;
+    ret=socket_write(s,buf+total,len-total);
+    if(ret<0) return ret;
+    total+=ret;
+    if(total==len) return total;
    }
-  return ret;
+   
+  frontier_setErrorMsg(__FILE__,__LINE__,"failed to write over network");
+  return FRONTIER_ENETWORK;      
  }
 
+ 
 
 int frontier_read(int s, char *buf, int size)
  {
@@ -120,27 +192,24 @@ int frontier_read(int s, char *buf, int size)
   ret=select(s+1,&rfds,NULL,NULL,&tv);
   if(ret<0) 
    {
-    printf("read: select() error %d: %s\n",errno,strerror(errno));
-    return -1;
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    return FRONTIER_ESYS;
    }
   if(ret==0)
    {
-    printf("read: select() timeout\n");
-    errno=ETIMEDOUT;
-    return -1;
+    frontier_setErrorMsg(__FILE__,__LINE__,"read timed out");
+    return FRONTIER_ENETWORK;
    }
   if(!FD_ISSET(s,&rfds))
    {
-    printf("read: select() unindentified error\n");
-    return -1;
+    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    return FRONTIER_EUNKNOWN;
    }
    
-  ret=read(s,buf,size);
-  if(ret<0)
-   {
-    printf("read: error %d: %s\n",errno,strerror(errno));
-    return -1;
-   }
-  return ret;
+  ret=recv(s,buf,size,0);
+  if(ret>=0) return ret;
+  
+  frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+  return FRONTIER_ESYS;   
  }
  

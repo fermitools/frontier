@@ -9,64 +9,123 @@
  *
  */
 #include <frontier.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-static const char *ferror[]=
+#define MSG_BUF_SIZE	1024
+#define LOG_BUF_SIZE	1024
+
+static
+#ifdef _REENTRANT
+__thread
+#endif /*_REENTRANT*/
+char _frontier_error_msg[MSG_BUF_SIZE];
+
+static
+#ifdef _REENTRANT
+__thread
+#endif /*_REENTRANT*/
+char _frontier_log_msg[LOG_BUF_SIZE];
+
+
+extern int frontier_log_level;
+extern char *frontier_log_file;
+
+extern void *(*frontier_mem_alloc)(size_t size);
+extern void (*frontier_mem_free)(void *p);
+
+
+static const char *fn_errs[]=
  {
-  "OK",							/*0*/
-  "invalid argument",					/*-1*/
-  "no more memory",					/*-2*/
-  "libcurl initialization failed", 			/*-3*/
-  "Channel can not be created",    			/*-4*/
-  "libcurl has not accepted the URL", 			/*-5*/
-  "surprise - unknown error!",				/*-6*/
-  "HTTP response code is not 200",			/*-7*/
-  "XML parser can not parse the response",		/*-8*/
-  "Basse64 decode failed",				/*-9*/
-  "no more rows in the RS",				/*-10*/
-  "no such RS",						/*-11*/
-  "Frontier API is not initialized",			/*-12*/
-  "MD5 digest mismatch",				/*-13*/
-  "Payload error signalled from server",		/*-14*/
-  "FRONTIER_SERVER environment variable is not set",	/*-15*/
-  "Generated request URL is too big",			/*-16*/
-  0
+  "Ok",
+  "Invalid argument passed",			/*FRONTIER_EIARG*/
+  "mem_alloc failed",				/*FRONTIER_EMEM*/
+  "config error",				/*FRONTIER_ECFG*/
+  "system error",				/*FRONTIER_ESYS*/
+  "unknown error",				/*FRONTIER_EUNKNOWN*/
+  "error while communicating over network",	/*FRONTIER_ENETWORK*/
+  "protocol error (bad response, etc)",		/*FRONTIER_EPROTO*/
+  NULL
  };
-static int ferror_last=16;
 
-
-static const char *cerror[]=
+static const char *log_desc[]=
  {
-  "OK",						/*0*/
-  "libcurl - unsupported protocol requested",	/*1*/
-  "libcurl - failed init",			/*2*/
-  "libcurl - wrong URL format",			/*3*/
-  "libcurl - wrong format of something (something wrong)", /*4*/
-  "libcurl - proxy name lookup failed",		/*5*/
-  "libcurl - host name lookup failed",		/*6*/
-  "libcurl - could not connect to remote host",	/*7*/
-  0
+  "debug",
+  "warn ",
+  "error"
  };
-static int cerror_last=7;
 
-
-const char *frontier_error_desc(int err)
+const char *frontier_get_err_desc(int err_num)
  {
-  if(err>0) return "unknown";
-
-  err=-err;
-
-  if(err<=ferror_last)
+  int i;
+  if(err_num>0) return "unknown";
+  i=0;
+  while(fn_errs[i])
    {
-    return ferror[err];
+    if(i==(-err_num)) return fn_errs[i];
+    ++i;
    }
+  return "unknown_2";
+ }
+ 
+void frontier_setErrorMsg(const char *file,int line,const char *fmt,...)
+ {
+  int ret,pos;
+  va_list ap;
+  
+  bzero(_frontier_error_msg,MSG_BUF_SIZE);
+  
+  ret=snprintf(_frontier_error_msg,MSG_BUF_SIZE,"[%s:%d]: ",file,line);
+  pos=ret;
+  
+  va_start(ap,fmt);
+  ret+=vsnprintf(_frontier_error_msg+pos,MSG_BUF_SIZE-ret,fmt,ap);
+  va_end(ap);
+  
+  frontier_log(FRONTIER_LOGLEVEL_ERROR,file,line,"%s",_frontier_error_msg+pos);
+ }
+ 
+ 
+const char *frontier_getErrorMsg()
+ {
+  return _frontier_error_msg;
+ }
 
-  err-=100;
 
-  if(err>=0 && err<=cerror_last)
+void frontier_log(int level,const char *file,int line,const char *fmt,...)
+ {
+  int ret;
+  int fd;
+  va_list ap;
+  
+  if(level<frontier_log_level) return;
+  // To make sure that log_desc is not out of boundaries
+  if(level<0) level=0;
+  if(level>2) level=2;
+  
+  ret=snprintf(_frontier_log_msg,LOG_BUF_SIZE-1,"%s [%s:%d]: ",log_desc[level],file,line);
+  
+  va_start(ap,fmt);
+  ret+=vsnprintf(_frontier_log_msg+ret,LOG_BUF_SIZE-ret-1,fmt,ap);
+  va_end(ap);
+  
+  _frontier_log_msg[ret]='\n';
+  _frontier_log_msg[ret+1]=0;
+  
+  if(!frontier_log_file)
    {
-    return cerror[err];
+    write(1,_frontier_log_msg,ret+1);
+    fsync(1);
+    return;
    }
-
-  return "unknown";
+  fd=open(frontier_log_file,O_CREAT|O_APPEND|O_WRONLY,0644);
+  if(fd<0) return;
+  write(fd,_frontier_log_msg,ret+1);
+  close(fd);
  }
 

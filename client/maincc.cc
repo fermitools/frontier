@@ -78,7 +78,7 @@ class SvxBeamPosition
   SvxBeamPosition(frontier::CDFDataSource& ds)
    {
     //CID=ds.getLongLong();
-    CHANNELID=ds.getLongLong();
+    CHANNELID=ds.getInt();
     BEAMX=ds.getDouble();
     BEAMY=ds.getDouble();
     SLOPEX=ds.getDouble();
@@ -129,8 +129,8 @@ class SvxBeamPosition
     FITCOV33=ds.getDouble();
     STATISTICS0=ds.getDouble();
     STATISTICS1=ds.getDouble();
-    FLAG0=ds.getLongLong();
-    FLAG1=ds.getLongLong();
+    FLAG0=ds.getInt();
+    FLAG1=ds.getInt();
     SPARE0=ds.getDouble();
     SPARE1=ds.getDouble();
     SPARE2=ds.getDouble();
@@ -155,8 +155,8 @@ class CalTrigWeights
   CalTrigWeights(frontier::CDFDataSource& ds)
    {
     //CID=ds.getLongLong();
-    ID=ds.getLongLong();
-    TRIGSCL=ds.getFloat();
+    ID=ds.getInt();
+    TRIGSCL=ds.getDouble();
     ET_WEIGHT_CENT=ds.getRawAsArrayFloat();
     ET_WEIGHT_WALL=ds.getRawAsArrayFloat();
     ET_WEIGHT_PLUG=ds.getRawAsArrayFloat();

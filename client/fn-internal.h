@@ -18,7 +18,6 @@ struct s_FrontierMemData
  {
   size_t size;
   size_t len;
-  int status;
   char *buf;
  };
 typedef struct s_FrontierMemData FrontierMemData;
@@ -31,6 +30,7 @@ struct s_FrontierPayload
  {
   int id;
   int encoding;
+  int error;
   int error_code;
   char *error_msg;
   char *blob;
@@ -51,16 +51,15 @@ int frontierPayload_finalize(FrontierPayload *pl);
 
 struct s_FrontierResponse
  {
-  int payload_num;
   int error;
-  int error_code;
+  int payload_num;
   int error_payload_ind;
   void *parser;
   int p_state;
   FrontierPayload *payload[FRONTIER_MAX_PAYLOADNUM];
  };
 typedef struct s_FrontierResponse FrontierResponse;
-FrontierResponse *frontierResponse_create();
+FrontierResponse *frontierResponse_create(int *ec);
 void frontierResponse_delete(FrontierResponse *fr);
 int FrontierResponse_append(FrontierResponse *fr,char *buf,int len);
 int frontierResponse_finalize(FrontierResponse *fr);
@@ -70,8 +69,10 @@ int frontierResponse_finalize(FrontierResponse *fr);
 
 #define FRONTIER_ENV_SERVER	"FRONTIER_SERVER"
 #define FRONTIER_ENV_PROXY	"FRONTIER_PROXY"
+#define FRONTIER_ENV_LOG_LEVEL	"FRONTIER_LOG_LEVEL"
+#define FRONTIER_ENV_LOG_FILE	"FRONTIER_LOG_FILE"
 
-#define FRONTIER_MAX_REQUEST_URL	4096
+//#define FRONTIER_MAX_REQUEST_URL	4096
 
 struct s_FrontierConfig
  {
@@ -81,7 +82,7 @@ struct s_FrontierConfig
   int proxy_num;
   int server_cur;
   int proxy_cur;
-  char buf[FRONTIER_MAX_REQUEST_URL];
+//  char buf[FRONTIER_MAX_REQUEST_URL];
  };
 typedef struct s_FrontierConfig FrontierConfig;
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url);
@@ -98,9 +99,8 @@ struct s_Channel
   FrontierResponse *resp;
   FrontierHttpClnt *ht_clnt;
   int http_resp_code;
-  int status;
-  int error;
-  int reload;
+  int reload; // Current reload flag
+  int user_reload; // reload flag desired by user
  };
 typedef struct s_Channel Channel;
 

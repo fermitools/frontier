@@ -9,10 +9,10 @@
 #
 
 OBJ	=	fn-htclient.o fn-socket.o fn-urlparse.o
-HDR	=	fn-htclient.h
-INC	=	-I.
+HDR	=	fn-htclient.h ../frontier.h ../fn-internal.h
+INC	=	-I. -I..
 
-all: $(OBJ) test-htclient
+all: $(OBJ)
 	rm -rf .libs
 	mkdir .libs
 	cp $(OBJ) .libs/

@@ -73,21 +73,19 @@ static inline double n2h_d64(const char *p)
 #include <strings.h>
 static inline int n2h_i32(const char *p) 
  {
-  union u_Buf32 u;
-  bcopy(p,u.b,4);
-  return u.v;
+  return *((int*)p);
+ }
+static inline float n2h_f32(const char *p) 
+ {
+  return *((float*)p);
  }
 static inline long long n2h_i64(const char *p) 
  {
-  union u_Buf64 u; 
-  bcopy(p,u.b,8);
-  return u.v;
+  return *((long long*)p);
  }
 static inline double n2h_d64(const char *p) 
  {
-  union u_Buf64 u; 
-  bcopy(p,u.b,8);
-  return u.d;
+  return *((double*)p);
  }
 #endif /*__BYTE_ORDER*/
 
@@ -107,7 +105,8 @@ FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec)
   
   if(n>resp->payload_num)
    {
-    *ec=FRONTIER_ENORS;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"no such payload - total %d, requested %d",resp->payload_num,n);
     return rs;
    }
 
@@ -163,7 +162,8 @@ char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return (char)-1;
    }
   ret=rs->buf[rs->pos];
@@ -179,7 +179,8 @@ char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return (char)-1;
    }
   ret=rs->buf[rs->pos];
@@ -194,7 +195,8 @@ void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
   
   if(rs->pos>=rs->size-(len-1))
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return;
    }
   buf=rs->buf+rs->pos;
@@ -211,7 +213,8 @@ int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size-3)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return -1;
    }
   ret=n2h_i32(rs->buf+rs->pos);
@@ -227,7 +230,8 @@ long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size-7)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return -1;
    }
   ret=n2h_i64(rs->buf+rs->pos);
@@ -243,7 +247,8 @@ double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size-7)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return -1;
    }
   ret=n2h_d64(rs->buf+rs->pos);
@@ -259,7 +264,8 @@ float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec)
 
   if(rs->pos>=rs->size-3)
    {
-    *ec=FRONTIER_ENOROW;
+    *ec=FRONTIER_EIARG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
     return -1;
    }
   ret=n2h_f32(rs->buf+rs->pos);

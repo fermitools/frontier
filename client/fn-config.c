@@ -20,6 +20,8 @@
 #include <frontier.h>
 #include "fn-internal.h"
 
+#define ENV_BUF_SIZE	1024
+
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
 
@@ -39,7 +41,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
   FrontierConfig *cfg;
   char *env_val;
   int i;
-  char buf[1024];
+  char buf[ENV_BUF_SIZE];
   
   cfg=(FrontierConfig*)frontier_mem_alloc(sizeof(FrontierConfig));
   if(!cfg) return cfg;
@@ -60,20 +62,20 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
   if(env_val)
    {
     cfg->server[cfg->server_num]=str_dup(env_val);
-    printf("Server <%s>\n",cfg->server[cfg->server_num]);    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Server <%s>",cfg->server[cfg->server_num]);    
     cfg->server_num++;
    }
   // Normal settings    
   for(i=0;i<FRONTIER_MAX_SERVERN && cfg->server_num<=FRONTIER_MAX_SERVERN;i++)
    {
-    snprintf(buf,1024,"%s%d",FRONTIER_ENV_SERVER,(i+1));
+    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_SERVER,(i+1));
     env_val=getenv(buf);
     if(!env_val) continue; // Another foolresistance - should have break here
     cfg->server[cfg->server_num]=str_dup(env_val);
-    printf("Server <%s>\n",cfg->server[cfg->server_num]);    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Server <%s>",cfg->server[cfg->server_num]);    
     cfg->server_num++;
    }
-  printf("Total %d servers\n",cfg->server_num);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
   
   // Proxy settings
 set_proxy:  
@@ -90,20 +92,20 @@ set_proxy:
   if(env_val)
    {
     cfg->proxy[cfg->proxy_num]=str_dup(env_val);
-    printf("Proxy <%s>\n",cfg->proxy[cfg->proxy_num]);    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Proxy <%s>",cfg->proxy[cfg->proxy_num]);    
     cfg->proxy_num++;
    }
   // Normal settings    
   for(i=0;i<FRONTIER_MAX_PROXYN && cfg->proxy_num<=FRONTIER_MAX_PROXYN;i++)
    {
-    snprintf(buf,1024,"%s%d",FRONTIER_ENV_PROXY,(i+1));
+    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_PROXY,(i+1));
     env_val=getenv(buf);
     if(!env_val) continue;
     cfg->proxy[cfg->proxy_num]=str_dup(env_val);
-    printf("Proxy <%s>\n",cfg->proxy[cfg->proxy_num]);    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Proxy <%s>",cfg->proxy[cfg->proxy_num]);
     cfg->proxy_num++;
    }
-  printf("Total %d proxies\n",cfg->proxy_num);     
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);     
     
   return cfg;
  }
@@ -143,6 +145,8 @@ int frontierConfig_nextProxy(FrontierConfig *cfg)
 void frontierConfig_delete(FrontierConfig *cfg)
  {
   int i;
+  
+  if(!cfg) return;
   
   for(i=0;i<cfg->server_num;i++)
    {
