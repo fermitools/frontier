@@ -182,7 +182,7 @@ def run(outfile, host, port, table_file, numcalls, wordy):
             
         for table in tablelist:
             cid_list_of_lists=cids[table]
-            if (len(cid_list_of_lists)>cid_key) & ((num_calls<numcalls) | (numcals==-1)):
+            if (len(cid_list_of_lists)>cid_key) & ((num_calls<numcalls) | (numcalls==-1)):
                 cid_key_exists=1
                 num_calls=num_calls+1
                 cid_list=cid_list_of_lists[cid_key]
