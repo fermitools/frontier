@@ -54,7 +54,7 @@ public final class Frontier extends CacheHttpServlet {
         timestamp = (new java.util.Date()).getTime();
         String queryString = request.getQueryString();
 
-        System.out.println("proto6log " + timestamp + " start " + id + " " + local_current + " "
+        System.out.println("frontierLog " + timestamp + " start " + id + " " + local_current + " "
                            + queryString);
 
         response.setContentType("text/xml");
