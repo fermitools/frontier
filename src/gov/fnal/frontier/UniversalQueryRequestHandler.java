@@ -71,7 +71,14 @@ public class UniversalQueryRequestHandler extends RequestHandler {
             }
         }
     }
-
+    /**
+     * Internal method which oversees calling the {@link Servicer} and wrapping the call with
+     * the correct XML.
+     * @param servicer Servicer the instance to call for obtaining database data.
+     * @param connection Connection an active database connection.
+     * @param encoder Encoder the class responsible for marshelling the Servicer's data.
+     * @throws ServletException
+     */
     private void produceData(Servicer servicer, Connection connection, Encoder encoder) throws
         ServletException {
         try {
@@ -94,6 +101,12 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         }
     }
 
+    /**
+     * Produces md5 digest.
+     * @param encoder Encoder
+     * @throws ServletException
+     * @return StringBuffer
+     */
     private StringBuffer md5Digest(Encoder encoder) throws ServletException {
         StringBuffer md5_ascii = null;
         try {
@@ -187,10 +200,12 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      * @exception ServletException
      */
     private void generateExceptionXML(String message) throws ServletException {
-        stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"", noLF);
-        stream(" encoding=\"" + encoding + "\">", LF);
-        stream("<quality error=\"1\" code=\"???\" message=\"" + message + "\"/>", LF);
-        stream("</payload>", LF);
+      stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"", noLF);
+      stream(" encoding=\"" + encoding + "\">", LF);
+      // Replace any double quote with a single one.  When outputting the data to the stream.
+      stream("<quality error=\"1\" code=\"???\" message=\""
+             + message.replace('"','\'') + "\"/>", LF);
+      stream("</payload>", LF);
     }
 
 }
