@@ -76,7 +76,8 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   // WhereClause for selection in XSD v1
   class WhereClause
    {
-    StringBuffer clause=new StringBuffer(" where ");;
+    StringBuffer clause=new StringBuffer("");
+    String str_clause;
     ArrayList aParams=new ArrayList();
     HashMap aMap=new HashMap();
    }// end of WhereClause
@@ -153,11 +154,14 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     
     StringBuffer sql=new StringBuffer("");
     sql.append(main_sql);
-    sql.append(" ");
-    sql.append(wc.clause);
+    if(wc.str_clause.length()>0)
+     {
+      sql.append(" where ");
+      sql.append(wc.str_clause);
+     }      
     sql.append(" ");
     sql.append(tail_sql);
-    //System.out.println("sql ["+sql.toString()+"]");
+    System.out.println("sql ["+sql.toString()+"]");
     
     Connection con=null;
     PreparedStatement stmt=null;
@@ -350,7 +354,8 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
         if(pos<0) break;
         wc.clause.replace(pos,pos+6,"?");
        }
-      //System.out.println("New clause ["+wc.clause.toString()+"]");      
+      wc.str_clause=wc.clause.toString().trim();
+      System.out.println("New clause ["+wc.clause.toString()+"]");      
       // XSD v1 does not define "method", so here is no map_by_method
      }
    }
