@@ -57,6 +57,7 @@ int do_main(int argc, char **argv)
   float vf;
   double vd;
   std::string *vs;
+  int arg_name_ind;
   
 #ifdef FNTR_USE_EXCEPTIONS 
   try
@@ -64,9 +65,9 @@ int do_main(int argc, char **argv)
 #endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc<4)
+    if(argc<2)
      {
-      std::cout<<"Usage: "<<argv[0]<<" object_name:v[:m] key_name key_val {key_name key_val}\n";
+      std::cout<<"Usage: "<<argv[0]<<" [-r] object_name:v[:m] {key_name key_val {key_name key_val}..}\n";
       exit(1);
      }
      
@@ -75,9 +76,19 @@ int do_main(int argc, char **argv)
     frontier::CDFDataSource ds;
     CHECK_ERROR();
     
-    //ds.setReload(1);
+    if(strcmp(argv[1],"-r")==0) 
+     {
+      arg_name_ind=2;
+      ds.setReload(1);
+     }
+    else
+     {
+      arg_name_ind=1;
+      ds.setReload(0);
+     }
+    
 
-    frontier::MetaRequest metareq(argv[1],frontier::BLOB);
+    frontier::MetaRequest metareq(argv[arg_name_ind],frontier::BLOB);
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&metareq);
@@ -104,9 +115,9 @@ int do_main(int argc, char **argv)
       delete name;
      }
 
-    frontier::Request req(argv[1],frontier::BLOB,argv[2],argv[3]);
+    frontier::Request req(argv[arg_name_ind],frontier::BLOB);
 
-    for(int i=4;i+1<argc;i+=2)
+    for(int i=arg_name_ind+1;i+1<argc;i+=2)
      {
       req.addKey(argv[i],argv[i+1]);     
      }
