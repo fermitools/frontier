@@ -1,0 +1,25 @@
+-- D:\mydocs\docs\desinger\frontier.con
+--
+-- Generated for Oracle 9i on Tue Aug 24  13:54:32 2004 by Server Generator 9.0.2.92.10
+  
+PROMPT Creating Primary Key on 'FRONTIER_DESCRIPTORS'
+ALTER TABLE FRONTIER_DESCRIPTORS
+ ADD (CONSTRAINT FD_PK PRIMARY KEY 
+  (NAME
+  ,VERSION)
+ USING INDEX 
+ PCTFREE 10
+ STORAGE
+ (
+   INITIAL 24K
+   NEXT 24K
+   PCTINCREASE 0
+   MINEXTENTS 1
+   MAXEXTENTS 25
+ ) TABLESPACE FRONTIER_INDEX)
+/
+
+
+ 
+
+
