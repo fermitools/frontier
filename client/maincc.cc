@@ -191,7 +191,7 @@ int main(int argc, char **argv)
 
     frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
     
-    ds.setReload(1);
+    //ds.setReload(1);
 
     frontier::Request req1("svxbeamposition","1",frontier::BLOB,"cid","316011");
     frontier::Request req2("caltrigweights","1",frontier::BLOB,"cid","14319");

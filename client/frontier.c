@@ -34,7 +34,7 @@ struct s_HttpHeader
 typedef struct s_HttpHeader HttpHeader;
 
 
-static void clean_headers(FrontierMemData *m);
+static void clean_headers(Channel *chn);
 
 
 static const char *str_copy(const char *str, size_t len)
@@ -101,6 +101,7 @@ static Channel *channel_create(int *ec)
   chn->status=FRONTIER_SEMPTY;
   chn->proxy_url=(char*)0;
   chn->reload=0;
+  chn->http_status_line=(char*)0;
 
   *ec=FRONTIER_OK;
  
@@ -111,12 +112,13 @@ static Channel *channel_create(int *ec)
 static void channel_delete(Channel *chn)
  {
   if(!chn) return;
-  clean_headers(chn->md_head);
+  clean_headers(chn);
   if(chn->curl) curl_easy_cleanup(chn->curl);
   frontierMemData_delete(chn->md_head);
   frontierResponse_delete(chn->resp);
 
   if(chn->proxy_url) frontier_mem_free((void*)chn->proxy_url);
+  if(chn->http_status_line) frontier_mem_free((void*)chn->http_status_line);
 
   frontier_mem_free(chn);
  }
@@ -186,7 +188,7 @@ static size_t write_data(void *buf,size_t size,size_t nmemb,void *u)
 
 
 
-static int httpHeader_append(FrontierMemData *m,char *str,int size)
+static int httpHeader_append(Channel *chn,char *str,int size)
  {
   HttpHeader dummy;
   HttpHeader *h;
@@ -194,10 +196,31 @@ static int httpHeader_append(FrontierMemData *m,char *str,int size)
   int i;
   int len;
   int ret;
+  FrontierMemData *m=chn->md_head;
 
 
-  if(m->len==0 && strncmp(str,"HTTP/",5)==0)
+  if(!chn->http_status_line) // The HTTP status line is expected here
    {
+    chn->http_status_line=str_copy(str,size);
+    if(strncmp(str,"HTTP/",5))
+     {
+      printf("Wrong reply from server <%s>\n",str);
+      return -1;
+     }
+    p=str;
+    while(*p && *p!=' ') ++p;
+    
+    /* Be paranoic */
+    if(!*p) return -1;
+    ++p;
+    if(!*p) return -1;
+    
+    if(strncmp(p,"200",3)!=0)
+     {
+      printf("HTTP error, status line %s\n",str);
+      return -1;
+     }
+    
     return FRONTIER_OK;
    }
 
@@ -262,11 +285,11 @@ Ok:
 
 static size_t write_header(void *buf,size_t size,size_t nmemb,void *u)
  {
-  FrontierMemData *md=(FrontierMemData*)u;
+  Channel *chn=(Channel*)u;
   size_t len=size*nmemb;
   int ret;
 
-  ret=httpHeader_append(md,buf,len);
+  ret=httpHeader_append(chn,buf,len);
   if(ret!=FRONTIER_OK)
    {
     return -1;
@@ -277,10 +300,11 @@ static size_t write_header(void *buf,size_t size,size_t nmemb,void *u)
 
 
 
-static void clean_headers(FrontierMemData *m)
+static void clean_headers(Channel *chn)
  {
   int i;
   HttpHeader *h;
+  FrontierMemData *m=chn->md_head;
 
   for(i=0;i<m->len;i+=sizeof(HttpHeader))
    {
@@ -289,6 +313,9 @@ static void clean_headers(FrontierMemData *m)
     frontier_mem_free(h->value);
    }
   m->len=0;
+  
+  if(chn->http_status_line) frontier_mem_free((void*)chn->http_status_line);
+  chn->http_status_line=(char*)0;
  }
 
 
@@ -308,7 +335,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
   chn->resp=frontierResponse_create();
   if(!chn->resp) { ret=FRONTIER_EMEM; goto err; }
 
-  clean_headers(chn->md_head);
+  clean_headers(chn);
   chn->status=FRONTIER_SEMPTY;
 
   res=curl_easy_setopt(chn->curl,CURLOPT_URL,url);
@@ -323,7 +350,7 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
   res=curl_easy_setopt(chn->curl,CURLOPT_HEADERFUNCTION,write_header);
   if(res) {ret=FRONTIER_EEND-res; goto err;}
 
-  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEHEADER,chn->md_head);
+  res=curl_easy_setopt(chn->curl,CURLOPT_WRITEHEADER,chn);
   if(res) {ret=FRONTIER_EEND-res; goto err;}
 
   if(chn->reload) headers=curl_slist_append(headers, "pragma: no-cache");
@@ -338,6 +365,20 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
    }
 
   res=curl_easy_perform(chn->curl);
+  //printf("Res=%d\n",res);
+  
+  if(res==CURLE_COULDNT_RESOLVE_PROXY ||
+     res==CURLE_COULDNT_RESOLVE_HOST ||
+     res==CURLE_COULDNT_CONNECT ||
+     res==CURLE_WRITE_ERROR)
+   {
+    printf("Trying one more time with proxy disabled\n");
+    res=curl_easy_setopt(chn->curl,CURLOPT_PROXY,"");
+    if(res) {ret=FRONTIER_EEND-res; goto err;}    
+    res=curl_easy_perform(chn->curl);
+    //printf("Res2=%d\n",res);
+   }
+  
   curl_slist_free_all(headers);
 
   if(res)

@@ -75,6 +75,7 @@ struct s_Channel
   int error;
   const char *proxy_url;
   int reload;
+  const char *http_status_line;
  };
 typedef struct s_Channel Channel;
 
