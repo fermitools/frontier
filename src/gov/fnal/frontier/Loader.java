@@ -13,7 +13,7 @@ public class Loader {
 
     Loader() {}
 
-    public Descriptor load(InputStream data) 
+    public Descriptor load(String name, String version, InputStream data) 
 	throws LoaderException {
 	return null;
     }

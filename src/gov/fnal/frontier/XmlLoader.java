@@ -16,42 +16,43 @@ public class XmlLoader extends Loader {
 
     XmlLoader() {}
 
-    public Descriptor load(InputStream data) 
+    public Descriptor load(String name, String aVersion, InputStream data) 
 	throws LoaderException {
 	DocumentBuilder builder = null;
-	Document doc = null;
+	Document            doc = null;
+	Descriptor   descriptor = null;
 	try {
 	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 	    builder = factory.newDocumentBuilder();
 	    doc = builder.parse(data);
-
-
-	    Element root = doc.getDocumentElement();
-	    System.out.println("Root Name: " + root.getTagName());
-	    System.out.println("type: " + root.getAttribute("type"));
-	    
-	    NodeList children = root.getChildNodes();
-	    for (int i=0;i<children.getLength();i++) {
-		Node child = children.item(i);
-		if (child instanceof Element) {
-		    Element childElement = (Element) child;
-		    System.out.println("Element name: " + childElement.getTagName());
-		}
+	    Element root      = doc.getDocumentElement();
+	    String type       = root.getAttribute("type");
+	    String version    = root.getAttribute("version");
+	    String xsdVersion = root.getAttribute("xmlversion");
+	    Parser parser     = null;
+	    if (! type.equals(name)) {
+		String msg = "XSD type tag does not match type supplied on URL. ";
+		msg += type + " != " + name;
+		throw new LoaderException(msg);
 	    }
-
-
+	    else if (! version.equals(aVersion)) {
+		String msg = "XSD version tag does not match version supplied on URL. ";
+		msg += version + " != " + aVersion;
+		throw new LoaderException(msg);
+	    }
+	    else if (xsdVersion.equals("1.0"))
+		parser = new XmlParser(type,version,xsdVersion);
+	    else 
+		throw new LoaderException("XSD version " + xsdVersion + " is not supported.");
+	    descriptor = parser.parse(root);
 	} catch (IOException e) {
-	    System.out.println("1 - error: " + e.getMessage());
 	    throw new LoaderException(e.getMessage());
 	} catch (ParserConfigurationException e) {
-	    System.out.println("2 - error: " + e.getMessage());
 	    throw new LoaderException(e.getMessage());
 	} catch (SAXException e) {
-	    System.out.println("3 - error: " + e.getMessage());
-	    System.out.println(data.toString());
 	    throw new LoaderException(e.getMessage());
 	}
 
-	return null;
+	return descriptor;
     }
 }

@@ -39,7 +39,7 @@ public class ServicerFactory {
 	Descriptor descriptor = null;
 	try {
 	    if (result.type.compareToIgnoreCase("xml") == 0)
-		descriptor = xmlLoader.load(result.data);
+		descriptor = xmlLoader.load(className,classVersion,result.data);
 	    else if (result.type.compareToIgnoreCase("jar") == 0)
 		throw new ServicerFactoryException("Jar files are not yet supported");
 	    else
@@ -53,7 +53,7 @@ public class ServicerFactory {
 	System.out.println("*************************************************************");
 	System.out.println("*************************************************************");
 	if ( 1 > 0 )
-	    throw new ServicerFactoryException("DONE WITH ServicerFactory.  Write more code!");
+	    throw new ServicerFactoryException("Don with ServicerFactory, write more code!");
 	return servicer;
     }
 
