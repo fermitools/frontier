@@ -3,8 +3,6 @@ package gov.fnal.frontier;
 import java.util.*;
 import javax.naming.*;
 
-import java.lang.Exception.*;
-
 /**
  * Contains all user suppled data required to execute a single user request.  
  *
@@ -23,17 +21,8 @@ public class Command {
     private int univQueryCom = 1;
     private int adminCom     = 2;
 
-    public Command(String key, String value) throws CommandException {
-	if (key == "type") {
-	    commandType = univQueryCom;
-	    put(key,value);
-	}
-	else if (key == "admin") {
-		commandType = adminCom;
-		put(key,value);
-	}
-	else
-	    throw new CommandException("Unrecognized command type " + commandType);
+    public Command(String key, String value) {
+	put(key,value);
     }
 
     public boolean isUniversalQueryCommand() {
@@ -42,6 +31,14 @@ public class Command {
 	return false;
     }
 	
+    public void setUniversalQueryCommand() {
+	commandType = univQueryCom;
+    }
+
+    public void setAdminCommand() {
+	commandType = adminCom;
+    }
+
     public boolean isAdminCommand() {
 	if (commandType == adminCom)
 	    return true;

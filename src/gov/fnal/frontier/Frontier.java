@@ -1,6 +1,7 @@
 package gov.fnal.frontier;
 
 import java.io.*;
+import java.util.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import com.oreilly.servlet.*;
@@ -16,10 +17,13 @@ import com.oreilly.servlet.*;
 
 public final class Frontier extends CacheHttpServlet {
 
-    private DbConnectionMgr connMgr = null;
+    private DbConnectionMgr connMgr     = null;
+    private CommandParser   parser      = null;
+    private ArrayList       commandList = null;
 
     public void init() throws ServletException {
 	connMgr = DbConnectionMgr.getDbConnectionMgr();
+	parser  = new CommandParser();
     }
 
     /**
@@ -37,8 +41,20 @@ public final class Frontier extends CacheHttpServlet {
                       HttpServletResponse response)
         throws IOException, ServletException {
 
+        response.setContentType("text/plain");
         PrintWriter writer = response.getWriter();
-	writer.println("Let's see if this thing works!!");
+	String queryString = request.getQueryString();
+
+	try {
+	    commandList = parser.parse(queryString);
+	} catch (CommandParserException e) {
+	    throw new ServletException(e.getMessage());
+	}
+
+        writer.println("----------------------------------------");
+	writer.println("Ok, I'm up and running....");
+	writer.println("queryString: " + queryString);
+        writer.println("----------------------------------------");
 	writer.flush();
     }
 
