@@ -139,8 +139,16 @@ public class WhereClause {
             where += phrases[i];
             if (i < params.size()) {
                 String key = ( ( (Parameter) params.get(i)).key);
+		String type = ( ( (Parameter) params.get(i)).type);
                 String value = command.get(key);
-                where += value + " ";
+		if(type.compareTo("string")==0)
+		 {
+		  where += "\'"+value + "\' ";
+		 }
+		else
+		 {
+                  where += value + " ";
+		 }
             }
         }
         return where;
