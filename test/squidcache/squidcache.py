@@ -31,8 +31,8 @@ SYNOPSIS
     Send output to the file OUTFILE. By default, output is written to
     the standard output.
 
-  -w, --wordy
-    Outputs the data recieved back from the server.
+  -s, --squidstats
+    Outputs the data it gets from the squid server (needs special setup).
 
 EXAMPLES:
 
@@ -66,7 +66,7 @@ def processCommandLine(opts, args):
             sys.exit()
         if o in ("-o", "--output"):
             outfile = file(a, "w")
-        if o in ("-w", "--wordy"):
+        if o in ("-s", "--squidstats"):
             wordy = 1
 
     if not args or len(args) < 4:
@@ -211,12 +211,17 @@ def run(outfile, host, port, table_file, numcalls, wordy):
                     num_records=info[find(info,"records")+7:]
                     # Get data from squid through the web server
                     #
-                    squid_info=get_squid_info()
+                    if wordy==1:
+                        squid_info=get_squid_info()
                     #
                     # Write info to output file:
                     # Begin_time duration obj_size table_name cid cid_status squid_size squid_entries
                     #
-                    word="%d\t%d\t%s\t%s\t%d\t%s\t%d\t%d\t%4.1f\t%4.1f\t%d\t%d\n"%(start_time,duration,num_records,table,cid,cid_status,squid_info[0],squid_info[1],squid_info[2],squid_info[3],squid_info[4],squid_info[5])
+                    if wordy==1:
+                        word="%d\t%d\t%s\t%s\t%d\t%s\t%d\t%d\t%4.1f\t%4.1f\t%d\t%d\n"%(start_time,duration,num_records,table,cid,cid_status,squid_info[0],squid_info[1],squid_info[2],squid_info[3],squid_info[4],squid_info[5])
+                    else:
+                        word="%d\t%d\t%s\t%s\t%d\t%s\n"%(start_time,duration,num_records,table,cid,cid_status)
+
                     #print word
                     outfile.write(word)
         if control == 0:
@@ -242,6 +247,9 @@ if __name__ == "__main__":
 
     #print "run level:(outfile, host, port, table_file, numcalls, wordy)",\
     #       outfile, host, port, table_file, numcalls, wordy
-    outfile.write("start_time\tdur\trecords\ttable\tcid\tstatus\tswap\tmemory\tcpu_5min\tcpu_60min\tentries\tdisk_objects\n")
+    if wordy==1:
+        outfile.write("start_time\tdur\trecords\ttable\tcid\tstatus\tswap\tmemory\tcpu_5min\tcpu_60min\tentries\tdisk_objects\n")
+    else:
+        outfile.write("start_time\tdur\trecords\ttable\tcid\tstatus\n")
     run(outfile, host, port, table_file, numcalls, wordy)
     outfile.close()
