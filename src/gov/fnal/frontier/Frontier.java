@@ -94,7 +94,7 @@ public final class Frontier extends CacheHttpServlet {
         }
 
         long timestamp2 = (new java.util.Date()).getTime();
-        System.out.println("proto6log " + timestamp2 + " stop  " + id + " " + local_current + " "
+        System.out.println("frontierLog " + timestamp2 + " stop  " + id + " " + local_current + " "
                            + (timestamp2 - timestamp));
     }
 
