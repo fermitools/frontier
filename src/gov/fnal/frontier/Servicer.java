@@ -48,7 +48,16 @@ public class Servicer {
 	while (resultSet.next()) {
 	    recordCnt += 1;
 	    for (int cnt=1;cnt<=columnCnt;cnt++) {
-		encoder.writeLong(recordCnt);
+		String columnType = rsmd.getColumnTypeName(cnt);
+		if ( columnType == "RAW")
+		    encoder.writeBytes(resultSet.getBytes(cnt));
+		else if (columnType == "NUMBER")
+		    if (rsmd.getScale(cnt)==0)
+			encoder.writeLong(resultSet.getLong(cnt));
+		    else
+			encoder.writeDouble(resultSet.getDouble(cnt));
+		else
+		    throw new Exception("Unknown columnType: " + columnType);
 	    }
 	}
 	encoder.flush();

@@ -7,13 +7,10 @@ import javax.servlet.http.*;
 import com.oreilly.servlet.*;
 
 /**
- * Top level frontier servlet object.
- * $Id$
- * $Author$
- * $Date$
- * $Revision$
+ * Top level Frontier servlet object.
+ * @version $Revision$
+ * @author Stephen P. White <swhite@fnal.gov>
  */
-
 
 public final class Frontier extends CacheHttpServlet {
 
