@@ -49,6 +49,7 @@ from urllib import urlopen
 from socket import gethostname, gethostbyname
 from pickle import *
 from commands import *
+from string import *
 
 def usage():
     print __doc__
@@ -106,10 +107,44 @@ def doTransaction(outfile, host, port, table, index, expid, transid, pid, ipaddr
         outfile.write("\n" + data)
 def get_squid_info():
     print "get_squid_info called"
-    squid_objects_memory=100
-    squid_objects_disk=10000
-    Squid_cache_size_disk=10000
-    return (squid_objects_memory,squid_objects_disk,Squid_cache_size_disk)
+    #url from where to get status information (needs to be updated by hand before running script)
+    url="http://lynx.fnal.gov/cgi-bin/cachemgr.cgi?host=localhost&port=3128&operation=info"
+    #get status information from cachemgr.cgi
+    f = urlopen(url)
+    info = f.read()
+    f.close()
+
+    # order of data is: ('Swap(kB) Mem(kB) 5minCPU(%) 60minCPU(%) #Entries on-disk')
+    #parse needed infomation from cachemgr.cgi output buffer
+    #needed lines are:
+    # Storage Swap size:
+    # Storage Mem size:
+    # CPU Usage, 5 minute avg:
+    # CPU Usage, 60 minute avg:
+    # ## StoreEntries
+    # ## on-disk objects
+
+    line=info
+    tmpvar = find(line, "Storage Swap size")
+    storage_swap_size=atol( line[tmpvar+19:find(line, " KB", tmpvar)])
+
+    tmpvar = find(line, "Storage Mem size:")
+    storage_memory_size = atol( line[tmpvar+18:find(line, " KB", tmpvar)])
+
+    tmpvar = find(line, "CPU Usage, 5 minute avg:")
+    cpu_5min_agerage = atof(line[tmpvar+25:find(line, "%", tmpvar)])
+
+    tmpvar = find(line, "CPU Usage, 60 minute avg:")
+    cpu_60min_agerage =  atof(line[tmpvar+26:find(line, "%", tmpvar)])
+
+    tmpvar = find(line, "StoreEntries")
+    store_entries =atol( line[rfind(line," ",tmpvar-10,tmpvar-2)+1:tmpvar-1])
+
+    tmpvar = find(line, "on-disk objects")
+    on_disk_objects = atol(line[rfind(line," ",tmpvar-10,tmpvar-2)+1:tmpvar-1])
+    #print "storage_swap_size,storage_memory_size,cpu_5min_agerage,cpu_60min_agerage,store_entries,on_disk_objects"
+    #print storage_swap_size,storage_memory_size,cpu_5min_agerage,cpu_60min_agerage,store_entries,on_disk_objects
+    return (storage_swap_size,storage_memory_size,cpu_5min_agerage,cpu_60min_agerage,store_entries,on_disk_objects)
 
 def run(outfile, host, port, table_file, numcalls, wordy):
     pid = os.getpid()
@@ -120,48 +155,68 @@ def run(outfile, host, port, table_file, numcalls, wordy):
     u=Unpickler(table_file)
     cids=u.load()
     tablelist=cids.keys()
-    cid_key=0
+    cid_key_count=0
+    num_calls=0
     cid_key_exists=1
+    control=0
     #
     # loop over cid key elements
     #
     while cid_key_exists:
         # loop over all tables
-        ##following 1 lines are for testing
-        #tablelist=["CALL1Peds3"]
+        cid_key_exists=0
+        
+        
+        #
+        # Every 100th cid_key, fetch the first one as a control
+        #
+        if ((cid_key_count % 2)== 0)& (control==0)& (cid_key_count !=0):
+            control=1
+            cid_key=0
+            cid_status="old"
+        else:
+            control=0
+            cid_status="new"
+            cid_key=cid_key_count
+            
+            
         for table in tablelist:
             cid_list_of_lists=cids[table]
-            cid_list=cid_list_of_lists[cid_key]
-            cid=cid_list[0]
-            print "table,cid:",table,cid
-            #
-            # call the client program
-            #
-            run_maintest="../client/maintest %s %s %s cid %s"%(host, port, table, cid)
-            print "run_maintest:",run_maintest
-            maintest_info=getstatusoutput(run_maintest)
-            print "maintest status, output:",maintest_info
-            #
-            # Get data from squid through the web server
-            #
-            squid_info=get_squid_info()
-            #
-            # Write info to output file
-            #
-            cid_key_exists=0
-#>>> x[x.keys()[1]]
-#[[33259L], [71345L]]
-#>>> x[x.keys()[1]][1]
-#[71345L]
-#>>> x[x.keys()[1]][1][0]
-#71345L
-#>>> y=x[x.keys()[1]][1][0]
-#>>> print y
-#71345
-#    -outfile.write("expid\tpid\taddr\ttransid\ttype\tsize\tstart\tstop\tdur\n")
-#    open
-#    for transid in range(0, numcalls):
-#        doTransaction(outfile, host, port, table, index, expid, transid, pid, ipaddr, wordy)
+            if (len(cid_list_of_lists)>cid_key) & ((num_calls<numcalls) | (numcals==-1)):
+                cid_key_exists=1
+                num_calls=num_calls+1
+                cid_list=cid_list_of_lists[cid_key]
+                cid=cid_list[0]
+                print "table,cid:",cid_key,table,cid,cid_status
+                #
+                # call the client program
+                #
+                run_maintest="../../client/maintest %s %s %s cid %s"%(host, port, table, cid)
+                print "run_maintest:",run_maintest
+                maintest_info=getstatusoutput(run_maintest)
+                print "maintest status, output:",maintest_info
+                if maintest_info[0]>0:
+                    print "ERROR from maintest"
+                else:                    #
+                    info=maintest_info[1]
+                    start_time=atol(info[8:find(info,"\nfinish")])
+                    end_time=atol(info[find(info,"finish:")+8:find(info,"\nURL")])
+                    duration=end_time-start_time
+                    num_records=info[find(info,"records")+7:]
+                    # Get data from squid through the web server
+                    #
+                    squid_info=get_squid_info()
+                    #
+                    # Write info to output file:
+                    # Begin_time duration obj_size table_name cid cid_status squid_size squid_entries
+                    #
+                    word="%d\t%d\t%s\t%s\t%d\t%s\t%d\t%d\t%4.1f\t%4.1f\t%d\t%d\n"%(start_time,duration,num_records,table,cid,cid_status,squid_info[0],squid_info[1],squid_info[2],squid_info[3],squid_info[4],squid_info[5])
+                    #print word
+                    outfile.write(word)
+        if control == 0:
+            cid_key_count=cid_key_count+1
+        
+                        
 
 if __name__ == "__main__":
     try:
@@ -179,6 +234,8 @@ if __name__ == "__main__":
         usage()
         sys.exit(1)
 
-    print "run level:(outfile, host, port, table_file, numcalls, wordy)",\
-           outfile, host, port, table_file, numcalls, wordy
+    #print "run level:(outfile, host, port, table_file, numcalls, wordy)",\
+    #       outfile, host, port, table_file, numcalls, wordy
+    outfile.write("start_time\tdur\trecords\ttable\tcid\tstatus\tswap\tmemory\tcpu_5min\tcpu_60min\tentries\tdisk_objects\n")
     run(outfile, host, port, table_file, numcalls, wordy)
+    outfile.close()
