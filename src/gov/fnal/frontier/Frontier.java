@@ -12,6 +12,7 @@ import java.net.URLDecoder;
 import java.util.*;
 import java.text.SimpleDateFormat;
 import java.io.*;
+import apmon.*;
 
 /**
  * Top level Frontier servlet object called by Tomcat.
@@ -29,41 +30,56 @@ public final class Frontier extends CacheHttpServlet {
     private static final String frontierVersion = "1.0";
     private static final String xmlVersion = "1.0";
     private static final SimpleDateFormat date_fmt=new SimpleDateFormat("MM/dd/yy HH:mm:ss.SSS z Z");
-    
-    private static boolean initialized=false;
-    
+
     private static String conf_server_name="not_set";
     private static String conf_ds_name;
     private static String conf_xsd_table;
-    
+    private static String confMonitorNode;
+    private static String confMonitorMillisDelay;
+
 
     public static String getDsName(){return conf_ds_name;}
     public static String getXsdTableName(){return conf_xsd_table;}
-        
-    
-    private static synchronized void fn_init(ServletConfig sc)
-     {
-      if(initialized) return; // External check is not thread safe
+
+    private static Monitor monitor;
+
+    /**
+     * Overrides the convenience method of GenericServlet and is called by it during
+     * object construction.
+     * @param sc ServletConfig
+     */
+    public void init(ServletConfig sc){
+      System.out.println("FroNtier initilization started...");
       try
-       {	
-	conf_server_name=sc.getInitParameter("ServerName");
-	conf_ds_name=sc.getInitParameter("DataSourceName");
-	conf_xsd_table=sc.getInitParameter("XsdTableName");
-	
-	if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
-	if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
-	if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
-	
-	initialized=true;
+       {
+         conf_server_name=sc.getInitParameter("ServerName");
+         conf_ds_name=sc.getInitParameter("DataSourceName");
+         conf_xsd_table=sc.getInitParameter("XsdTableName");
+         confMonitorNode=sc.getInitParameter("MonitorNode");
+         confMonitorMillisDelay=sc.getInitParameter("MonitorMillisDelay");
+
+        if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
+        if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
+        if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
+
+        if((confMonitorNode!=null) && (confMonitorMillisDelay!=null)) {
+          monitor = new Monitor(confMonitorNode, confMonitorMillisDelay);
+          monitor.setDaemon(true);
+          monitor.start();
+          System.out.println("Monitor Started, will record events every " +
+                             confMonitorMillisDelay + " milliseconds.");
+        } else
+          System.out.println("Monitor was NOT started.");
        }
       catch(Exception e)
        {
-        System.out.println("FRONTIER ERROR: "+e);
-	e.printStackTrace();
+         System.out.println("FRONTIER ERROR: "+e);
+         e.printStackTrace();
        }
+       System.out.println("FroNtier initilization completed.");
      }
-     
-     
+
+
     public static void Log(String msg)
      {
       StringBuffer buf=new StringBuffer("");
@@ -77,16 +93,16 @@ public final class Frontier extends CacheHttpServlet {
       System.out.println(buf.toString());
      }
 
-     
+
     public static void Log(String msg,Exception e)
-     {     
+     {
       ByteArrayOutputStream baos=new ByteArrayOutputStream();
       PrintWriter pw=new PrintWriter(baos);
       e.printStackTrace(pw);
       pw.flush();
       Log(msg+"\n"+baos.toString());
      }
-     
+
     /**
      * Respond to a GET request for the content produced by this
      * servlet.  This function handles call-outs to the different
@@ -97,10 +113,8 @@ public final class Frontier extends CacheHttpServlet {
      * @throws ServletException if a servlet error occurs
      */
     public void doGet(HttpServletRequest request,
-                      HttpServletResponse response) throws IOException, ServletException 
+                      HttpServletResponse response) throws IOException, ServletException
      {
-        if(!initialized) fn_init(getServletConfig());
-
         int local_id;
         //Identifier id;
         long timestamp = (new java.util.Date()).getTime();
@@ -108,6 +122,7 @@ public final class Frontier extends CacheHttpServlet {
         CommandParser parser = null;
         ArrayList commandList = null;
         ServletOutputStream writer = null;
+        String xFrontierId = null;
 
         synchronized (mutex) {
             ++count_total;
@@ -115,34 +130,36 @@ public final class Frontier extends CacheHttpServlet {
             local_id=count_total;
             //id = new Identifier(count_total);
         }
-        
-	Thread.currentThread().setName("id="+local_id);
+
+        Thread.currentThread().setName("id="+local_id);
 
         try {
-	    String queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
-	    StringBuffer client_desc=new StringBuffer("");
-	    client_desc.append("start threads:");
-	    client_desc.append(count_current);
-	    client_desc.append(" query ");
-	    client_desc.append(queryString);
-	    client_desc.append(" raddr ");
-	    client_desc.append(request.getRemoteAddr());
-	    client_desc.append(" frontier-id: ");
-	    client_desc.append(request.getHeader("x-frontier-id"));
-	    for(Enumeration en=request.getHeaderNames();en.hasMoreElements();)
-	     {
-	      String name=(String)en.nextElement();
-	      if(name.compareToIgnoreCase("via")==0 || name.compareToIgnoreCase("x-forwarded-for")==0)
-	       {
-	        client_desc.append(' ');
-	        client_desc.append(name);
-		client_desc.append(": ");
-	        client_desc.append(request.getHeader(name));
-	       }
-	     }            
-	    Log(client_desc.toString());
-            
-	    response.setContentType("text/xml");
+            String queryString = URLDecoder.decode(request.getQueryString(), "UTF-8");
+            StringBuffer client_desc=new StringBuffer("");
+            client_desc.append("start threads:");
+            client_desc.append(count_current);
+            client_desc.append(" query ");
+            client_desc.append(queryString);
+            client_desc.append(" raddr ");
+            client_desc.append(request.getRemoteAddr());
+            client_desc.append(" frontier-id: ");
+            xFrontierId = request.getHeader("x-frontier-id");
+            if (xFrontierId==null) xFrontierId = "Unknown";
+            client_desc.append(xFrontierId);
+            for(Enumeration en=request.getHeaderNames();en.hasMoreElements();)
+             {
+              String name=(String)en.nextElement();
+              if(name.compareToIgnoreCase("via")==0 || name.compareToIgnoreCase("x-forwarded-for")==0)
+               {
+                client_desc.append(' ');
+                client_desc.append(name);
+                client_desc.append(": ");
+                client_desc.append(request.getHeader(name));
+               }
+             }
+            Log(client_desc.toString());
+
+            response.setContentType("text/xml");
             response.setCharacterEncoding("US-ASCII");
             // For Squid
             response.setDateHeader("Expires",timestamp+time_expire);
@@ -156,7 +173,6 @@ public final class Frontier extends CacheHttpServlet {
                            xmlVersion
                            + "\">");
             try {
-	        if(!initialized) throw new Exception("The server is not initialized");
                 commandList = parser.parse(queryString);
                 connMgr.initialize();
                 handleRequest(commandList, writer);
@@ -177,11 +193,13 @@ public final class Frontier extends CacheHttpServlet {
         } finally {
             writer.println("</frontier>");
             writer.close();
+            monitor.increment();
             synchronized (mutex) {
                 --count_current;
             }
-	    
-         Log("stop threads:"+count_current+" ET="+((new java.util.Date()).getTime()-timestamp));
+
+         Long elapsedTime = new Long((new java.util.Date()).getTime()-timestamp);
+         Log("stop threads:"+count_current+" ET="+(elapsedTime.longValue()));
         }
     }
 
@@ -221,7 +239,7 @@ public final class Frontier extends CacheHttpServlet {
      * @param message Text message to place into writer.println
      * @throws ServletException if a servlet error occurs
      */
-    private String generateBadQualityTag(Exception e) 
+    private String generateBadQualityTag(Exception e)
      {
       Log("ERROR: "+e,e);
       return "<quality error=\"1\" message=\"" + e.getMessage() + "\"/>";
