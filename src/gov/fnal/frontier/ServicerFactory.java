@@ -45,7 +45,7 @@ public class ServicerFactory {
     /**
      * Constructor.
      */
-    ServicerFactory() {}
+    public ServicerFactory() {}
 
     /**
      * This method oversees the construction of the Servicer sub-class.
