@@ -31,13 +31,37 @@ long long print_time(const char *msg)
  } 
 
 
+static void usage(char **argv)
+ {
+  printf("Usage: %s [-r] [-n repeat] server_url -o object key valu [{key value}] [{-o object key value [{key value}] }]\n",argv[0]);
+  exit(1);
+ }
+ 
+ 
 int do_main(frontier::DataSource &ds,int obj1_ind,int argc, char **argv)
  {
   long long t1,t2;   
   std::vector<const frontier::Request*> vrq;
-  for(int i=obj1_ind;i+2<argc;i+=3)
+  char **arg_p=argv+(obj1_ind+1); // Skipping first "-o"
+  
+  while(*arg_p)
    {
-    frontier::Request* req=new frontier::Request(argv[i],"1",frontier::BLOB,argv[i+1],argv[i+2]);     
+    for(int i=0;i<3;i++)
+     {
+      char *p=arg_p[i];
+      if(!p) usage(argv);
+      if(strncmp(p,"-o",2)==0) usage(argv);
+     }
+    frontier::Request* req=new frontier::Request(arg_p[0],"1",frontier::BLOB,arg_p[1],arg_p[2]);
+    arg_p+=3;
+    while(*arg_p && strncmp(*arg_p,"-o",2))
+     {
+      if(!(*(arg_p+1)) || strncmp(*(arg_p+1),"-o",2)==0) usage(argv);
+      req->addKey(*arg_p,*(arg_p+1));
+      arg_p+=2;
+     }
+    if(*arg_p && strncmp(*arg_p,"-o",2)==0) ++arg_p;
+    else if(*arg_p && strncmp(*arg_p,"-o",2)!=0) usage(argv);
     vrq.insert(vrq.end(),req);
    }
   t1=print_time("start:  ");
@@ -51,16 +75,9 @@ int do_main(frontier::DataSource &ds,int obj1_ind,int argc, char **argv)
     printf("Payload %d records %d bsize %d\n",i,nrec,ds.getRSBinarySize());
     delete vrq[i-1];
    }
-  printf("Duration %lld\n",t2-t1);
+  printf("Duration %lld ms\n",t2-t1);
     
   return 1;
- }
-
- 
-void usage(char **argv)
- {
-  printf("Usage: %s [-r] [-n repeat] server_url object_name key_name key_value [{object_name key_name key_value} ...]\n",argv[0]);
-  exit(1);
  }
 
  
@@ -96,6 +113,7 @@ int main(int argc, char **argv)
     server=argv[i];
    }
   if(!server || !obj1_ind) usage(argv);
+  if(strncmp(argv[obj1_ind],"-o",2)) usage(argv);
    
 #ifdef FNTR_USE_EXCEPTIONS      
   try
