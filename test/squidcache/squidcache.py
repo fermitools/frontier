@@ -44,7 +44,7 @@ EXAMPLES:
 __version__ = "$Revision:"
 
 import os, sys, getopt
-from time import time
+from time import time,sleep
 from urllib import urlopen
 from socket import gethostname, gethostbyname
 from pickle import *
@@ -110,6 +110,9 @@ def get_squid_info():
     #url from where to get status information (needs to be updated by hand before running script)
     url="http://lynx.fnal.gov/cgi-bin/cachemgr.cgi?host=localhost&port=3128&operation=info"
     #get status information from cachemgr.cgi
+    #sleep of 1 second added because squid is too busy and returns empty.
+    #Tried 0.5 seconds but it failed
+    sleep(1) # have to sleep 
     f = urlopen(url)
     info = f.read()
     f.close()
@@ -125,7 +128,10 @@ def get_squid_info():
     # ## on-disk objects
 
     line=info
+    #print line
     tmpvar = find(line, "Storage Swap size")
+    print "tempvar",tmpvar
+    print line[tmpvar+19:find(line, " KB", tmpvar)]
     storage_swap_size=atol( line[tmpvar+19:find(line, " KB", tmpvar)])
 
     tmpvar = find(line, "Storage Mem size:")
@@ -170,7 +176,7 @@ def run(outfile, host, port, table_file, numcalls, wordy):
         #
         # Every 100th cid_key, fetch the first one as a control
         #
-        if ((cid_key_count % 2)== 0)& (control==0)& (cid_key_count !=0):
+        if ((cid_key_count % 100)== 0)& (control==0)& (cid_key_count !=0):
             control=1
             cid_key=0
             cid_status="old"
