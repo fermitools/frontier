@@ -3,7 +3,7 @@ package gov.fnal.frontier;
 import java.io.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
-import gov.fnal.frontier.codec.Encoder;
+import gov.fnal.frontier.fdo.*;
 import java.util.*;
 import java.sql.*;
 

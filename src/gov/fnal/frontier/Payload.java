@@ -3,6 +3,7 @@ package gov.fnal.frontier;
 import java.sql.*;
 import java.io.*;
 import gov.fnal.frontier.codec.*;
+import gov.fnal.frontier.fdo.*;
 import java.util.*;
 
 public class Payload

@@ -1,7 +1,6 @@
 package gov.fnal.frontier.fdo;
 
 import java.io.*;
-import gov.fnal.frontier.codec.Encoder;
 
 /**
  * Interface to Frontier Data Object. Any DataObject implementation

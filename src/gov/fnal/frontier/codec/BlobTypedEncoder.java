@@ -15,6 +15,7 @@ package gov.fnal.frontier.codec;
 
 import java.io.*;
 import java.security.*;
+import gov.fnal.frontier.fdo.Encoder;
 
 
 public class BlobTypedEncoder implements Encoder

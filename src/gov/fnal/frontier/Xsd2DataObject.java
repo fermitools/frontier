@@ -1,7 +1,7 @@
 package gov.fnal.frontier;
 
 import java.io.*;
-import gov.fnal.frontier.codec.Encoder;
+import gov.fnal.frontier.fdo.*;
 import java.util.*;
 import java.sql.*;
 

@@ -4,6 +4,7 @@ import java.io.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import java.util.*;
+import gov.fnal.frontier.fdo.*;
 
 
 
@@ -76,16 +77,16 @@ public class Xsd2DataObjectHelper extends DefaultHandler
     protected String sql_type;
     protected ArrayList aParams;
     
-    protected MethodInfo()
+    protected MethodInfo(String n,String d,boolean c,long e,String t,String a) throws Exception
      {
-      super();
+      super(n,d,c,e,t,a);
       aParams=new ArrayList();
      }
      
      
     protected MethodDesc getDesc()
      {
-      MethodDesc md=new MethodDesc(name,domain,noCache,expire,transaction,access);
+      MethodDesc md=super.copy();
       return md;
      }
    }
@@ -204,13 +205,21 @@ public class Xsd2DataObjectHelper extends DefaultHandler
      
     if(local.equals("method"))
      {
-      current_method=new MethodInfo();
-      current_method.name=attrs.getValue("name");
-      current_method.domain=attrs.getValue("domain");
-      current_method.noCache=(attrs.getValue("cache-control")).equals("no-cache");
-      current_method.expire=Long.parseLong(attrs.getValue("expire"));
-      current_method.transaction=attrs.getValue("transaction");
-      current_method.access=attrs.getValue("access");
+      String t_name=attrs.getValue("name");
+      String t_domain=attrs.getValue("domain");
+      boolean t_noCache=(attrs.getValue("cache-control")).equals("no-cache");
+      long t_expire=Long.parseLong(attrs.getValue("expire"));
+      String t_transaction=attrs.getValue("transaction");
+      String t_access=attrs.getValue("access");
+
+      try
+       {
+        current_method=new MethodInfo(t_name,t_domain,t_noCache,t_expire,t_transaction,t_access);
+       }
+      catch(Exception e)
+       {
+        throw new SAXException(e);
+       }
       return;
      }    
      
@@ -242,7 +251,7 @@ public class Xsd2DataObjectHelper extends DefaultHandler
     
     if(local.equals("method"))
      {
-      mapMethods.put(current_method.name,current_method);
+      mapMethods.put(current_method.getName(),current_method);
       current_method=null;
       return;
      }

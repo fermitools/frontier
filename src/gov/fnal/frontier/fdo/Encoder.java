@@ -5,7 +5,7 @@
  * @author: Sergey Kosyakov
  *
  */
-package gov.fnal.frontier.codec;
+package gov.fnal.frontier.fdo;
 
 public interface Encoder
  {
