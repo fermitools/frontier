@@ -90,8 +90,8 @@ public class Monitor extends Thread
   /**
    * Synchronized method which resets the hit counter to zero.
    */
-  private synchronized void resetHits() {
+  private void resetHits() 
+   {
     hits = 0;
-  }
-
-}
+   }
+ }
