@@ -1,6 +1,6 @@
 package gov.fnal.frontier;
 
-import org.jdom.*;
+import org.jdom.Element;
 
 /**
  * $Id$
@@ -11,17 +11,15 @@ import org.jdom.*;
 
 public class Parser {
 
-
     protected XmlDescriptor descriptor = null;
 
     Parser(String type, String version, String xsdVersion) {
-	descriptor = new XmlDescriptor(type, version, xsdVersion);
+        descriptor = new XmlDescriptor(type, version, xsdVersion);
     }
 
     public XmlDescriptor parse(Element root) throws LoaderException {
 
-	return descriptor;
+        return descriptor;
     }
 
 }
-

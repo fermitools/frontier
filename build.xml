@@ -48,7 +48,7 @@
 
   * Definitions from a "{build}-build.xml" file in the top level
     source directory of this application. The value of the property
-    "deploy" must be specified on the "ant" command line 
+    "deploy" must be specified on the "ant" command line
     (ant -Ddeploy=somewhere ...)
     This file contains parameters related to the build environment on
     the named machine.
@@ -97,7 +97,7 @@
 
   catalina.home        The directory in which you have installed
                        a binary distribution of Tomcat .  This will
-                       be used by the "deploy" target. It is also used in 
+                       be used by the "deploy" target. It is also used in
                        compilation, when building the CLASSPATH.
 
   dist.home            The name of the base directory in which
@@ -136,7 +136,7 @@
   with the "/manager" web application installed with Tomcat .  Before they
   can be successfully utilized, you must perform the following steps:
 
-  - Copy the file "server/lib/catalina-ant.jar" from your Tomcat 
+  - Copy the file "server/lib/catalina-ant.jar" from your Tomcat
     installation into the "lib" directory of your Ant installation.
 
   - Create a "build.properties" file in your application's top-level
@@ -186,7 +186,7 @@
   * Being copied into the "/WEB-INF/lib" directory during execution
     of the "deploy" target.
 
-  Because we will automatically include all of the Java classes that Tomcat 
+  Because we will automatically include all of the Java classes that Tomcat
   exposes to web applications, we will not need to explicitly list any of those
   dependencies.  You only need to worry about external dependencies for JAR
   files that you are going to include inside your "/WEB-INF/lib" directory.
@@ -233,7 +233,7 @@
     <fileset dir="${catalina.home}/shared/lib">
       <include name="*.jar"/>
     </fileset>
-    
+
     <!-- Include the jar files that will be added to the war file -->
     <fileset dir="${web.home}/WEB-INF/lib">
       <include name="*.jar"/>
@@ -396,7 +396,7 @@
     </copy>
 
     <!-- Create application JAR file -->
-    <!-- File name changed from the original 
+    <!-- File name changed from the original
          "${dist.home}/${app.name}-${app.version}.war"
          because that made Tomcat deploy it with a path that include the
          version number. -->
@@ -411,7 +411,7 @@
 <!--
 
   The "localinstall" target intalls a binary distribution of the application
-  on the local server, by copying the WAR file. This target depends on 
+  on the local server, by copying the WAR file. This target depends on
   "dist", to make sure and up-to-date distribution is available.
 
 -->
@@ -422,7 +422,7 @@
   <property name="deploy.home"
             value="${catalina.home}/webapps"
   />
-        
+
   <!-- Copy the WAR file -->
   <copy file="${dist.home}/${app.name}.war"
         tofile="${deploy.home}/${app.name}.war"
@@ -452,7 +452,7 @@
   <property name="deploy.home"
             value="${catalina.home}/webapps"
   />
-        
+
   <!-- Delete the WAR file -->
   <delete file="${deploy.home}/${app.name}.war"
           verbose="true"

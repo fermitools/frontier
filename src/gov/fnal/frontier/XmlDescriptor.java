@@ -12,110 +12,108 @@ import java.util.Enumeration;
 
 public class XmlDescriptor extends Descriptor {
 
-    private String name         = null;
-    private String version      = null;
-    private String xsdVersion   = null;
+    private String name = null;
+    private String version = null;
+    private String xsdVersion = null;
     private String selectClause = null;
-    private String fromClause   = null;
-    private String finalClause  = null;
-    private ArrayList attributes   = new ArrayList();
-    private ArrayList wheres       = new ArrayList();
+    private String fromClause = null;
+    private String finalClause = null;
+    private ArrayList attributes = new ArrayList();
+    private ArrayList wheres = new ArrayList();
 
     XmlDescriptor(String aName, String aVersion, String aXsdVersion) {
-	name       = aName;
-	version    = aVersion;
-	xsdVersion = aXsdVersion;
+        name = aName;
+        version = aVersion;
+        xsdVersion = aXsdVersion;
     }
 
     public void validate() throws LoaderException {
-	String msg = "";
-	if (name == null)
-	    msg += "  No value was supplied with descriptor's type tag.";
-	else if (version == null)
-	    msg += "  No value was supplied with descriptor's version tag.";
-	else if (xsdVersion == null)
-	    msg += "  No value was supplied with descriptor's xsdversion tag.";
-	else if (selectClause == null)
-	    msg += " No data was supplied with the select tag.";
-	else if (fromClause == null)
-	    msg += " No data was supplied with the from tag.";
-	if (!msg.equals(""))
-	    throw new LoaderException(msg);
-	for(int i=0;i<attributes.size();i++)
-	    ((Attribute)  attributes.get(i)).validate();
-	for(int i=0;i<wheres.size();i++)
-	    ((WhereClause)  wheres.get(i)).validate();
+        String msg = "";
+        if(name == null)
+            msg += "  No value was supplied with descriptor's type tag.";
+        else if(version == null)
+            msg += "  No value was supplied with descriptor's version tag.";
+        else if(xsdVersion == null)
+            msg += "  No value was supplied with descriptor's xsdversion tag.";
+        else if(selectClause == null)
+            msg += " No data was supplied with the select tag.";
+        else if(fromClause == null)
+            msg += " No data was supplied with the from tag.";
+        if(!msg.equals(""))
+            throw new LoaderException(msg);
+        for(int i = 0; i < attributes.size(); i++)
+            ( (Attribute) attributes.get(i)).validate();
+        for(int i = 0; i < wheres.size(); i++)
+            ( (WhereClause) wheres.get(i)).validate();
     }
 
     public void setSelectClause(String aSelectClause) {
-	selectClause = aSelectClause;
+        selectClause = aSelectClause;
     }
 
     public String getSelectClause() {
-	return selectClause;
+        return selectClause;
     }
 
     public void setFromClause(String aFromClause) {
-	fromClause = aFromClause;
+        fromClause = aFromClause;
     }
 
     public String getFromClause() {
-	return fromClause;
+        return fromClause;
     }
 
     public void setFinalClause(String aFinalClause) {
-	finalClause = aFinalClause;
+        finalClause = aFinalClause;
     }
 
     public String getFinalClause() {
-	return finalClause;
+        return finalClause;
     }
 
     public void addAttribute(String type, String field) throws LoaderException {
-	attributes.add(new Attribute(type,field));
+        attributes.add(new Attribute(type, field));
     }
 
     public WhereClause addWhereClause() {
-	WhereClause where = new WhereClause();
-	wheres.add(where);
-	return where;
+        WhereClause where = new WhereClause();
+        wheres.add(where);
+        return where;
     }
 
     /**
      * Locates a where clause that matches the given Command.
      * Then builds an SQL where clause from the data supplied
-     * in Command. 
+     * in Command.
      *
-     * @param command An instance of the Command class.  
-     * @param response The servlet response we are producing
+     * @param command An instance of the Command class.
      * @exception IOException if an input/output error occurs
      * @exception ServletException if a servlet error occurs
      * @return String containg an executable SQL where clause. If
      * no matching where clause was found then a null is returned.
-     * 
+     *
      */
     public String findAndBuildWhereClause(Command command) {
-	WhereClause matchingWhere = null;
-	String whereClause = null;
-	int numKeys = command.size();
-	for(int i=0;i<wheres.size();i++) {
-	    WhereClause where = (WhereClause) wheres.get(i);
-	    // See if this where is a potential candidate
-	    if (numKeys == where.getParamCount()) {
-		Enumeration keys = command.keys();
-		boolean match = true;
-		while( keys.hasMoreElements() && match ) {
-		    if ( !where.paramExists((String) keys.nextElement()))
-			match = false;
-		}
-		if (match)
-		    matchingWhere = where;
-	    }
-	}
-	if (matchingWhere != null)
-	    whereClause = matchingWhere.buildWhere(command);
-	return whereClause;
+        WhereClause matchingWhere = null;
+        String whereClause = null;
+        int numKeys = command.size();
+        for(int i = 0; i < wheres.size(); i++) {
+            WhereClause where = (WhereClause) wheres.get(i);
+            // See if this where is a potential candidate
+            if(numKeys == where.getParamCount()) {
+                Enumeration keys = command.keys();
+                boolean match = true;
+                while(keys.hasMoreElements() && match) {
+                    if(!where.paramExists( (String) keys.nextElement()))
+                        match = false;
+                }
+                if(match)
+                    matchingWhere = where;
+            }
+        }
+        if(matchingWhere != null)
+            whereClause = matchingWhere.buildWhere(command);
+        return whereClause;
     }
 
 }
-

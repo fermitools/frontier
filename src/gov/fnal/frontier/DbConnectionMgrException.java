@@ -6,8 +6,9 @@ package gov.fnal.frontier;
  * @version $Revision$
  */
 class DbConnectionMgrException extends Exception {
-    public DbConnectionMgrException () {}
-    public DbConnectionMgrException (String message) {
+    public DbConnectionMgrException() {}
+
+    public DbConnectionMgrException(String message) {
         super(message);
     }
 }

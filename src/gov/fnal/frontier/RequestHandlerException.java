@@ -10,11 +10,9 @@ package gov.fnal.frontier;
 public class RequestHandlerException extends Exception {
 
     RequestHandlerException() {}
-    
+
     RequestHandlerException(String message) {
-	super(message);
+        super(message);
     }
 
 }
-
-    

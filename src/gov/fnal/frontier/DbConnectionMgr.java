@@ -1,10 +1,11 @@
 package gov.fnal.frontier;
 
-import javax.naming.*;
-
-import java.sql.*;
-import javax.sql.*;
-
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
 
 /**
  * Singleton class which provides database connections.  The specific
@@ -23,9 +24,9 @@ public class DbConnectionMgr {
      * @return DbConnectionMgr
      */
     public static synchronized DbConnectionMgr getDbConnectionMgr() {
-	if (instance == null)
-	    instance = new DbConnectionMgr();
-	return instance;
+        if(instance == null)
+            instance = new DbConnectionMgr();
+        return instance;
     }
 
     /**
@@ -34,15 +35,15 @@ public class DbConnectionMgr {
      * @throws DbConnectionMgrException
      */
     public synchronized void initialize() throws DbConnectionMgrException {
-	if (dataSource == null) {
-	    try {
-		Context initContext = new InitialContext();
-		Context envContext  = (Context)initContext.lookup("java:/comp/env");
-		dataSource = (DataSource)envContext.lookup("jdbc/frontier");
-	    } catch (NamingException e) {
-		throw new DbConnectionMgrException(e.getMessage());
-	    }
-	}
+        if(dataSource == null) {
+            try {
+                Context initContext = new InitialContext();
+                Context envContext = (Context) initContext.lookup("java:/comp/env");
+                dataSource = (DataSource) envContext.lookup("jdbc/frontier");
+            } catch(NamingException e) {
+                throw new DbConnectionMgrException(e.getMessage());
+            }
+        }
     }
 
     /**
@@ -52,13 +53,13 @@ public class DbConnectionMgr {
      * @return Connection
      */
     public Connection acquire() throws DbConnectionMgrException {
-	Connection connection = null;
-	try {
-	    connection = dataSource.getConnection();
-	} catch (SQLException e) {
-		throw new DbConnectionMgrException(e.getMessage());
-	}
-	return connection;
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch(SQLException e) {
+            throw new DbConnectionMgrException(e.getMessage());
+        }
+        return connection;
     }
 
     /**
@@ -68,12 +69,12 @@ public class DbConnectionMgr {
      * @throws DbConnectionMgrException
      */
     public void release(Connection dbConnection) throws DbConnectionMgrException {
-	try {
-	    if (dbConnection != null)
-		dbConnection.close();
-	} catch (SQLException e) {
-	    throw new DbConnectionMgrException(e.getMessage());
-	}
+        try {
+            if(dbConnection != null)
+                dbConnection.close();
+        } catch(SQLException e) {
+            throw new DbConnectionMgrException(e.getMessage());
+        }
     }
 
     /**
@@ -81,5 +82,3 @@ public class DbConnectionMgr {
      */
     private DbConnectionMgr() {}
 }
-
-

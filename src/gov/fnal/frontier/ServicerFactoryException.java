@@ -10,11 +10,9 @@ package gov.fnal.frontier;
 public class ServicerFactoryException extends Exception {
 
     ServicerFactoryException() {}
-    
+
     ServicerFactoryException(String message) {
-	super(message);
+        super(message);
     }
 
 }
-
-    

@@ -10,10 +10,8 @@ package gov.fnal.frontier;
 public class ServicerException extends RequestHandlerException {
 
     ServicerException() {}
-    
+
     ServicerException(String message) {
-	super(message);
+        super(message);
     }
 }
-
-    

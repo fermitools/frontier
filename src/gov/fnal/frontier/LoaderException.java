@@ -10,10 +10,8 @@ package gov.fnal.frontier;
 public class LoaderException extends RequestHandlerException {
 
     LoaderException() {}
-    
+
     LoaderException(String message) {
-	super(message);
+        super(message);
     }
 }
-
-    

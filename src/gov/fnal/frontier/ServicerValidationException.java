@@ -10,10 +10,8 @@ package gov.fnal.frontier;
 public class ServicerValidationException extends ServicerException {
 
     ServicerValidationException() {}
-    
+
     ServicerValidationException(String message) {
-	super(message);
+        super(message);
     }
 }
-
-    
