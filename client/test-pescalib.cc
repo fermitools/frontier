@@ -109,8 +109,7 @@ int do_main(int argc, char **argv)
     else cid="91271";
     
     for(int n=0;n<1;n++)
-     {
-    
+     {    
       frontier::Request req1("PESCalib","1",frontier::BLOB,"cid",cid);
 
       std::vector<const frontier::Request*> vrq;
