@@ -43,6 +43,8 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   bzero(c,sizeof(FrontierHttpClnt));
   c->socket=-1;
   c->frontier_id=(char*)0;
+  c->data_pos=0;
+  c->data_size=0;
   
   *ec=FRONTIER_OK;
   return c;
@@ -359,6 +361,8 @@ void frontierHttpClnt_close(FrontierHttpClnt *c)
  {
   frontier_socket_close(c->socket);
   c->socket=-1;
+  c->data_pos=0;
+  c->data_size=0;
  }
  
  

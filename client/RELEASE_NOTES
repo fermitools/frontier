@@ -41,5 +41,15 @@ v1.1.2 09/17/2004
 - two new methods for diag/benchmarking tools: DataSource:getRSBinarySize() and DataSource::getRSBinaryPos()
 - fn-any adapted to test isEOF()
 
+v2.0.1 10/25/2004
+ - MetaRequest class added; it requests column names and types information
+ - test-any.cc (fn-any) rewritten to use MetaRequest (example of usage)
+ - client passes process id, user id, user name and user full name (if set) in requests to server
+ - library version excavated to 2.0.1
+ 
+v2.0.2 10/25/2004
+ - bug which could destroy failover chain has been fixed
+ - library version changed to 2.0.2
+ 
 Sergey Kosyakov, serge@fnal.gov
 

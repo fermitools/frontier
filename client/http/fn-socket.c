@@ -29,6 +29,7 @@ int frontier_socket()
   
   s=socket(PF_INET,SOCK_STREAM,0);
   if(s<0) goto err;
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"new socket s=%d",s);
   
   flags=fcntl(s,F_GETFL);
   if(flags<0) goto err;
@@ -53,6 +54,7 @@ ok:
 void frontier_socket_close(int s)
  {
   close(s);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"socket s=%d closed",s);
   //--total_socket;
   //printf("sc %d\n",total_socket);
  } 
@@ -85,7 +87,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
    }
  
   /* non-blocking connect in progress here */
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect in progress, preparing for select.");
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d in progress, preparing for select.",s);
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
   tv.tv_sec=30;
@@ -120,6 +122,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
     frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",val,strerror(val));
     return FRONTIER_ESYS;
    }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connected, s=%d .",s);
   return FRONTIER_OK;
  }
  
