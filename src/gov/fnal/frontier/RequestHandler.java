@@ -11,14 +11,17 @@ import javax.servlet.ServletOutputStream;
  */
 public class RequestHandler {
 
+    Identifier id = null;
     ServletOutputStream writer = null;
 
     /**
      * Constructor
+     * @param aId Identifier {@link Identifer}
      * @param aWriter ServletOutputStream Stream to which all data will be
      * output.
      */
-    RequestHandler(ServletOutputStream aWriter) {
+    RequestHandler(Identifier aId, ServletOutputStream aWriter) {
+        id     = aId;
         writer = aWriter;
     }
 
