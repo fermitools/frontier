@@ -6,10 +6,11 @@
 # $Header$
 # 
 # $Id$
+# $Name$
 #
 
-FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	0.2
+FN_VER_MAJOR	=	1
+FN_VER_MINOR	=	1.2
 
 ifeq ($(CXX),KCC)
 # KCC settings
