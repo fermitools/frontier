@@ -8,19 +8,36 @@ public class FrontierDataStream
   
   private int mode;
   private HashMap mapParam;
+  private int count;
   
  
   public FrontierDataStream(int mode)
    {
     this.mode=mode;
     mapParam=new HashMap();
+    count=0;
    }
    
    
-  public void append(String name,String val)
+  public void append(String name,String val) throws Exception
    {
+    if(mapParam.containsKey(name)) throw new Exception ("Parameter "+name+" is already defined");
     mapParam.put(name,val);
-    System.out.println("Added: "+name+":"+val);    
+    ++count;
+    System.out.println("Added: "+name+":"+val);
+   }
+   
+   
+  public int getParamNum()
+   {
+    return count;
+   }
+   
+   
+  public Object[] getParamNames()
+   {
+    Object[] ret=mapParam.keySet().toArray();
+    return ret;
    }
    
    

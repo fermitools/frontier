@@ -33,7 +33,6 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   public StringBuffer main_sql;
   public StringBuffer tail_sql;
   public ArrayList aWhere;
-  public HashMap mapWhere;
 
   // Returns source od DTD fr validating
   class LocalResolver implements EntityResolver 
@@ -53,8 +52,6 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     +"<!ELEMENT select (#PCDATA)> "
     +"<!ELEMENT from (#PCDATA)> "
     +"<!ELEMENT where (clause,param*)> "
-    +"<!ATTLIST where "
-    +" method CDATA #FIXED \"DEFAULT\"> "
     +"<!ELEMENT clause (#PCDATA)> "
     +"<!ELEMENT param EMPTY> "
     +"<!ATTLIST param "
@@ -111,7 +108,6 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     main_sql=new StringBuffer("select ");
     tail_sql=new StringBuffer("");
     aWhere=new ArrayList();
-    mapWhere=new HashMap();
 
     parser=XMLReaderFactory.createXMLReader(DEFAULT_PARSER_NAME);
     LocalResolver lres=new LocalResolver();
@@ -150,8 +146,10 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     System.out.println("XsdDataObject.fdo_get()");
     int rec_num=0;
     
-    WhereClause wc=(WhereClause)mapWhere.get(method);
-    if(wc==null) throw new Exception("Methos "+method+" is not defined for object "+obj_name+" in domain GET");
+    // XSD v1 does not define "method", method is ignored here
+    
+    WhereClause wc=find_wehere_clause(fds);
+    if(wc==null) throw new Exception("Can not find auitable where clause for object "+obj_name+" in domain GET");
     
     StringBuffer sql=new StringBuffer("");
     sql.append(main_sql);
@@ -225,8 +223,33 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     enc.writeEOR();
     return 1; // Just one record
    }
+     
   
-  
+   
+   
+  private WhereClause find_wehere_clause(FrontierDataStream fds)
+   {
+    Object[] keys=fds.getParamNames();
+    WhereClause ret=null;
+    
+    for(int i=0;i<aWhere.size();i++)
+     {
+      WhereClause wc=(WhereClause)aWhere.get(i);
+      if(wc.aParams.size()!=keys.length) continue;
+      
+      boolean failed=false;
+      for(int n=0;n<keys.length;n++)
+       {
+        if(!wc.aMap.containsKey((String)keys[n])) {failed=true; break;}
+       }
+      if(failed) continue;
+      // This is it!
+      ret=wc;
+      break;
+     }     
+    return ret;
+   }
+   
   /********************************************
    ********************************************
    * SAX related stuff is below   
@@ -296,10 +319,6 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
      {
       WhereClause wc=new WhereClause();
       aWhere.add(wc);
-      String method=attrs.getValue("method");
-      System.out.println("method="+method);
-      if(mapWhere.containsKey(method)) throw new SAXException("Method "+method+" is already defined");
-      mapWhere.put(method,wc);
       return;
      }
      
@@ -339,7 +358,8 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
         if(pos<0) break;
         wc.clause.replace(pos,pos+6,"?");
        }
-      System.out.println("New clause ["+wc.clause.toString()+"]");
+      System.out.println("New clause ["+wc.clause.toString()+"]");      
+      // XSD v1 does not define "method", so here is no map_by_method
      }
    }
    
