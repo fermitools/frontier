@@ -109,7 +109,7 @@ request_each: all request_each.o frontier-cpp.h
 	$(CXX) -g -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier -lfn-curl
 
 clean:
-	rm -f *.o *.core libfrontier.a frontier maincc maintest getcids
+	rm -f *.o *.core libfrontier.a frontier maincc maintest getcids request_each
 	(cd expat; rm -rf .libs libexpat.la; cd lib && rm -f *.o *.lo && rm -rf .libs _libs;)
 	(cd expat; rm -f libtool Makefile config.log config.status)
 	(cd curl; make clean)
