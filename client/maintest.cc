@@ -122,7 +122,7 @@ int main(int argc, char **argv)
      }    
    }
   
-  if(strncmp(argv[arg_ind],"-o",2)) usage(argv);
+  if(arg_ind>=argc || strncmp(argv[arg_ind],"-o",2)) usage(argv);
    
 #ifdef FNTR_USE_EXCEPTIONS      
   try

@@ -9,7 +9,7 @@
 #
 
 FN_VER_MAJOR	=	1
-FN_VER_MINOR	=	2.2
+FN_VER_MINOR	=	2.3
 
 ifeq ($(CXX),KCC)
 # KCC settings
