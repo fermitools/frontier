@@ -26,6 +26,8 @@ int main(int argc, char **argv)
     frontier::init();
 
     frontier::CDFDataSource ds(argv[1],atoi(argv[2]),"/Frontier/","");
+    
+    //ds.setReload(1);
 
     frontier::Request req(argv[3],"1",frontier::BLOB,argv[4],argv[5]);
 

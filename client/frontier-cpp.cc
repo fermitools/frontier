@@ -79,6 +79,12 @@ DataSource::DataSource(const std::string& host_name,int port_number,const std::s
    }
  }
 
+ 
+void DataSource::setReload(int reload)
+ {
+  frontier_setReload(channel,reload);
+ }
+ 
 
 void DataSource::getData(const std::vector<const Request*>& v_req)
  {

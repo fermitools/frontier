@@ -76,6 +76,7 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
 FrontierChannel frontier_createChannel(int *ec);
 void frontier_closeChannel(FrontierChannel chn);
 void frontier_setProxy(FrontierChannel u_channel,const char *proxy,int *ec);
+void frontier_setReload(FrontierChannel u_channel,int reload);
 int frontier_getRawData(FrontierChannel chn,const char *url);
 void frontier_getRespStat(FrontierChannel chn,FrontierRespStat *stat);
 const char *frontier_getHttpHeaderName(FrontierChannel c,int num);

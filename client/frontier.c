@@ -100,6 +100,7 @@ static Channel *channel_create(int *ec)
   
   chn->status=FRONTIER_SEMPTY;
   chn->proxy_url=(char*)0;
+  chn->reload=0;
 
   *ec=FRONTIER_OK;
  
@@ -160,6 +161,14 @@ void frontier_setProxy(FrontierChannel u_channel,const char *proxy,int *ec)
   else *ec=FRONTIER_OK;
  }
 
+ 
+void frontier_setReload(FrontierChannel u_channel,int reload)
+ {
+  Channel *chn=(Channel*)u_channel;
+  
+  chn->reload=reload;
+ }
+ 
 
 static size_t write_data(void *buf,size_t size,size_t nmemb,void *u)
  {
@@ -317,7 +326,8 @@ int frontier_getRawData(FrontierChannel u_channel,const char *url)
   res=curl_easy_setopt(chn->curl,CURLOPT_WRITEHEADER,chn->md_head);
   if(res) {ret=FRONTIER_EEND-res; goto err;}
 
-  headers=curl_slist_append(headers, "pragma:");  
+  if(chn->reload) headers=curl_slist_append(headers, "pragma: no-cache");
+  else headers=curl_slist_append(headers, "pragma:");
   res=curl_easy_setopt(chn->curl,CURLOPT_HTTPHEADER,headers);
   if(res) {ret=FRONTIER_EEND-res; goto err;}
 

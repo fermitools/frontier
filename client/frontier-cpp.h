@@ -114,6 +114,7 @@ class DataSource
               int port_number,
               const std::string& application_path,
               const std::string& proxy_url);
+   void setReload(int reload);
    void getData(const std::vector<const Request*>& v_req);
    void setCurrentLoad(int n);
    unsigned int getRecNum();
