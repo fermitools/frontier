@@ -1,0 +1,179 @@
+
+\chapter{Technology}
+
+\section{Overview}
+
+\begin{fixme}
+This entire section is notes---not final text.
+\end{fixme}
+
+The internet is filled with widely accepted, production quality,
+frameworks and tools used for delivering database, and other
+information using the HTTP protocol.There are several general
+technologies used for serving dynamic content pages including Tux,
+Apache, PHP, Perl, Python, and Server-Side Java. Database access and
+pool management for the database connections has been developed for
+many of the server products as well, we know that we will need to
+access oth Oracle, MySQL, and possibly other database
+platforms. Caching of dynamic content pages is not normal, but it is
+possible to build it into the server products, and also there are many
+caching proxy server products which offer reasonable performance and
+versitile configuration options to meet our needs.  In addition,
+whatever products are deployed the server performance monitored. Some
+of the products reviewed have monitoring features built in, and some
+do not. There are many tools available for watching the overall
+performance of machines running the servers such as memory, cpu, and
+netword activity.
+
+{reference L. Titchkosky, M. Arlitt, C. Williamson, ``A Performance
+Comparison of Dynamic Web Technology,'' Performance Evaluation Review,
+volume 31 number 3, December 2003, pp2-11.}
+
+There is a broad array of server software approaches used on the
+internet to deliver dynamic content pages including Tux, Apache, PHP,
+Server-sise Java, Perl and python.
+
+{reference
+http://www.redhat.com/docs/manuals/tux/TUX-2.2-Manual/intro.html} Tux,
+also known as Red Hat Content Accelerator, is a high performance
+kernal-based web server for Linux. Red Hat Content Accelerator runs
+partly within a custom version of kernel 2.4.x or higher and partly as
+a user-space daemon. With a capable network card, Red Hat Content
+Accelerator enables direct scatter-gather DMA from the page cache
+directly to the network, thus avoiding data copies. Whenever Red Hat
+Content Accelerator is unsure how to process a request or receives a
+request it is unable to handle, it always redirects the request to the
+user-space web server daemon to handle it in an RFC-compliant
+manner. An example of this user-space web server daemon is Apache.It
+is currently limited to serving static webpages and coordinating with
+kernel-space modules, user-space modules, and regular user-space Web
+server daemons to provide dynamic content. Regular user-space Web
+servers do not need to be altered in any way for Red Hat Content
+Accelerator to coordinate with them. However, user-space code has to
+use a new interface based on the tux(2) system call. Red Hat Content
+Accelerator also has the ability to cache dynamic content. Red Hat
+Content Accelerator modules (which can be build in kernel space or in
+user space; user space is recommended) can create "objects" which are
+stored using the page cache. To respond to a request for dynamic data,
+a Red Hat Content Accelerator module can send a mix of
+dynamically-generated data and cached pre-generated objects, taking
+maximal advantage of Red Hat Content Accelerator's zero-copy
+architecture.
+
+
+Apache can be used to serve dynamic content pages by including plugins
+which are available for many languages including PHP, perl, python,
+and Java. It has the advantage that most of the worlds web servers run
+Apache, and it is well documented, highly configurable, and there are
+many monitoring packages available for it.  PHP is a scripting
+language specifically designed for the Web, and it is generally used
+as a plug-in wiht Apache.
+
+There are a number of Java products which provide server-side dynamic
+content processing using modules, servlets, written in Java. Tomcat is
+a servlet container that provides the official reference
+implementation for both Java Servlets and Java Server
+Pages. (http://jakarta.apache.org/tomcat) Jetty ia a Web server and
+Java Servlet container written in Java. It is advertized as one of the
+fastest servlet servers available. (http://jetty.mortbay.org/jetty)
+Resin is a commercial Web server and Java servlet container freely
+available to non-commercial users.
+
+\hyphenation{language update}
+
+\begin{table}[h]
+\centering
+\caption{What is this table about?}
+\begin{tabularx}{\textwidth}{XXXXXX}\toprule
+Product  & Performance & Configurability & Servlet Language & Servlet Update & Caching and Proxy Servers \\ \midrule
+         &             &                 &                  &                &                            \\ \bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Caching and Proxy servers}
+
+Caching is configurable for, or can be built into, many of the servers
+discussed above. Another approach which can be used in conjunction
+with the dynamic content servers is an independent layer of caching
+provided by proxy servers. For a comprehensive overview of this
+technology see (Duane Wessels, Web Caching) This is a well understood
+technology used on the internet to provide performance and reliability
+across the internet, although it is rarely used in conjunction with
+dynamic content pages. Proxy caching servers provide many features
+which make them attractive including authentication, request
+filtering, response filtering, prefetching, translation and
+transcoding, and traffic shaping. They can be interconnected in
+various configurations of meshes, clusters, hierarchies.
+
+There are many products available which are interesting for our
+use. Squid is an open source package that runs on a wide range of unix
+platforms and it is highly configurable. Netscape Proxy Server runs
+oon unix systems as well and windoew NT, and is one of the first proxy
+products. CacheFlow provides intellegent prefetching and refreshing
+features. InfoLiberanis designed for reliability and fault
+tolerance. There are several other products which can be purchased or
+run on proprietary hardware.
+
+Caching proxies provide the ability to configure the cache management
+and cache sharing among groupings of servers. Cache management can be
+controlled with several policies, like LRU. A variety of inter cache
+protocols are available inclueing Internet Cache Protocal (ICP), Cache
+Array Routing Protocal (CARP), Hypertext Caching Protocol (HTCP), and
+Cache Digests.
+
+System performance and reliability need to be planned and there are
+several approaches to load balancing and fail over that can be
+considered, if expensive hardware is not an option. High availability
+systems can be built with, UPS, dual redundant power supplies,
+processors, et cetera, and raid disks. Alternatively, some simple DNS
+tricks and complex load balancing. Layer foru switches can be
+configured to intellegently manage failure detection as well.  Load
+sharing techniques include DNS round Robin, Layer four switches, CARP,
+ICP.
+
+Because of the popularity of this technology, there are numerous
+monitoring tools availabel as well. Some Proxy Caching servers provide
+SNMP interfaces for which there are numerous analysis and charting
+utilities available. Also, log analysers are availale for logs
+formatted in ``standard'' formats, which most PCS's provide. Commonly
+used monitoring tools such as MRTG and RRDTool enable easy access to
+the performance data coming from each server.
+
+In additon to monitoring the software server itself, it is generally
+useful to monitor machine performance. Tools such as Ganglia, nagios,
+and tcpdump provide convenient solutions for monitoring distributed
+systems.
+
+Sun provides the base classes for JDBC, on which third party database
+venders layer their specific implementations. Oracle and MySQL supply
+jar files with their particular derived subclasses.
+
+Some vendor database connections are lab wide limited by license. We
+therefore consider database connections to be a critical resource
+which must be monitored.  A pool of available database connections
+will be provided.  This pool will be configurable as to the maximum
+and minimum number of connections allowed and how long an idle
+connection may remain open.  Server connection requests will be filled
+from and returend to this pool.  Any available connection will be
+given to the request.  If none is available a new connection will be
+created up to the maximum pool size.  After that requests will be
+queued until an existing connection is returned to the pool.
+
+We belive it is possible to supply a connection pool with third party
+software such as the DbConnectionBroker provided by JavaExchange.com
+or the connection pool which comes with Tomcat.
+
+Need to figure out JNDI
+
+Discussion of the commercial products goes here: Java, servlets,
+MySQL, JDBC, squid, ganglia, nagios, tcpdump, cURL, nameservice,
+redundancy, \etc%Note that 'etc' carries a period already.
+
+
+\section{Choices}
+
+\begin{fixme}
+What goes here?
+\end{fixme}
+
+

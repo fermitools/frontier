@@ -1,0 +1,216 @@
+\documentclass[letterpaper,10pt,twoside,article,openbib]{memoir}
+
+\usepackage{bookman}
+\usepackage{ifthen,xspace}
+\usepackage{amsfonts}
+\usepackage[usenames,dvipsnames]{color}
+
+\definecolor{MyRed}{rgb}{0.75,0,0}
+\definecolor{MyGreen}{rgb}{0,0.5,0}
+\definecolor{MyBlue}{rgb}{0,0,0.75}
+\definecolor{MyGray}{rgb}{0.9,0.9,0.9}
+% ----------------------------------------------------------------------
+\usepackage{colornames}%  X11 names, I believe
+\usepackage{booktabs}%    High quality tables
+% ----------------------------------------------------------------------
+\usepackage{listings}
+\lstloadlanguages{[ISO]C++}
+\lstset{numbers=left, numberstyle=\tiny, numbersep=10pt}
+\lstset{basicstyle=\ttfamily}
+\lstset{backgroundcolor=\color{MyGray}}
+\lstset{language=[ISO]C++,numberblanklines=false}
+\lstset{escapeinside={(*@}{@*)}}
+\lstset{morekeywords={pure}}
+% ----------------------------------------------------------------------
+\usepackage{cpplistings}
+\usepackage[pdftex]{graphicx}%    Inclusion of graphics
+\usepackage{smartref}
+
+\addtoreflist{page}
+% ----------------------------------------------------------------------
+
+\ifx\pdfoutput\undefined % We're not running pdftex
+  \usepackage[plainpages=false]{hyperref} % wants to be last
+\else
+  \usepackage[draft]{pdfdraftcopy}
+  \draftstring{DRAFT}
+  \draftfontsize{150}
+  \draftangle{45}
+  \definecolor{mydraftcolor}{rgb}{1.00, 0.95, 0.95}
+  \draftcolor{mydraftcolor}
+  \usepackage[pdftex,plainpages=false]{hyperref} % wants to be last
+\fi
+\hypersetup{ pdfauthor={Jim Kowalkowski, Marc Paterno, Lee Lueking, Stephen White}%
+	   , pdftitle={The New FroNtier}%
+	   , pdfsubject={}%
+	   , pdfkeywords={database, middleware}%
+	   %, backref=true%
+	   , colorlinks=true%
+	   , pdfstartview={FitH}%
+	   , pdfpagemode={None}%
+	   %, bookmarks=true%
+	   , bookmarksopen=false%
+	   , bookmarksnumbered=true%
+	   , linktocpage=true%
+	   , draft=false%
+	   , letterpaper=true%
+	   %, pdftex=true%
+	   , breaklinks=true%
+           , anchorcolor=black%
+           , linkcolor=blue%
+	   , citecolor=blue%
+	   , menucolor=blue%
+	   , filecolor=blue%
+	   , urlcolor=blue%
+}
+\vfuzz2pt % Don't report over-full v-boxes if over-edge is small
+\hfuzz2pt % Don't report over-full h-boxes if over-edge is small
+
+% Format code snippets in monospaced font
+\newcommand{\code}[1]{\lstinline{#1}}
+
+% FOrmat keywords in monospace font
+\newcommand{\kw}[1]{\textbf{\texttt{#1}}}
+
+% Format definitions and terminology in italicized font
+\newcommand{\defn}[1]{\textit{#1}}
+\newcommand{\term}[1]{\textit{#1}}
+
+% Format special words in small caps
+\newcommand{\spec}[1]{\textsc{\lowercase{#1}}}
+
+% Ensure next page number is odd, without page numbers in between
+\newcommand{\clearemptydoublepage}{\newpage{\pagestyle{empty}\cleardoublepage}}
+
+% Raised dot
+\newcommand{\middot}{$\cdot$\xspace}
+
+% Render 'C++' nicely
+\newcommand{\cpp}{C\kern-0.15ex{+}\kern-0.1ex{+}\xspace}
+\newcommand{\cppox}{C\kern-0.15ex{+}\kern-0.1ex{+}0x\xspace}
+
+% Latin abbreviations
+\newcommand{\adhoc}{\textit{ad hoc}\xspace}
+\newcommand{\eg}{\textit{e.g.},\xspace}
+\newcommand{\etal}{\textit{et al.}\xspace}
+\newcommand{\etc}{\textit{etc.}\xspace}
+\newcommand{\ie}{\textit{i.e.},\xspace}
+\newcommand{\qv}{\textit{q.v.}\xspace}
+\newcommand{\sic}{\textit{sic}\xspace}
+\newcommand{\viz}{\textit{viz.}\xspace}
+
+% document-specific abbreviations
+\newcommand{\doctitle}{The New FroNtier}
+\newcommand{\frontier}{\textsc{FroNtier}\xspace}
+
+\newcommand{\DO}{D\O\xspace}
+
+\setlength{\topmargin}{-0.5in}
+\setlength{\textwidth}{6.5in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textheight}{9in}
+\setlength{\marginparsep}{0in}
+\setlength{\marginparwidth}{0in}
+
+\setlength{\parskip}{.5\baselineskip}
+
+\setcounter{tocdepth}{-1}
+
+% discourage widows
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+
+% use section symbol when referring to sections and subsections
+\renewcommand{\sectionautorefname}{\S}
+\renewcommand{\subsectionautorefname}{\S}
+\setsecnumdepth{subparagraph}
+
+\makeatletter
+% \zeroseps sets list before/after skips to minimum values
+\newcommand{\@zeroseps}{\setlength{\topsep}{\z@}
+                        \setlength{\partopsep}{\z@}
+                        \setlength{\parskip}{\z@}}
+\newlength{\lcodeindent} \setlength{\lcodeindent}{\parindent}
+% now we can do the new environment. This has no extra before/after spacing.
+\newenvironment{lcode}[1]{\@zeroseps
+  \renewcommand{\verbatim@startline}{\verbatim@line{\hskip\lcodeindent}}
+  \small\setlength{\baselineskip}{\onelineskip}\color{#1}\verbatim}%
+  {\endverbatim\normalcolor
+   \vspace{-\baselineskip}%
+   \noindent
+}
+\makeatother
+
+% Environment for handling notes during document preparation
+\newenvironment{fixme}{\sffamily\slshape\color{MyRed}}{\rmfamily\upshape\normalcolor}
+
+\newcommand{\pion}{$\pi^0$}
+\newcommand{\papertitle}[1]{\emph{#1}}
+\newcommand{\colorrule}[1]{\color{#1}\hrulefill\normalcolor}
+\newcommand{\markdist}{{\checkmark}}
+
+\setsubsecheadstyle{\bfseries\raggedright}
+% ----------------------------------------------------------------------
+
+% new pagestyle
+\setlength{\headwidth}{\textwidth}
+\makepagestyle{J16}
+\makerunningwidth{J16}{\headwidth}
+\makeheadrule{J16}{\headwidth}{\normalrulethickness}
+\makerunningwidth{J16}{\headwidth}
+\makeoddhead{J16}%
+  {\normalfont\bfseries\doctitle~(rev.~\docrevision)}{}{\normalfont\bfseries\thepage}
+\makeevenhead{J16}%
+  {\normalfont\bfseries\thepage}{}{\normalfont\bfseries\doctitle~(rev.~\docrevision)}
+\pagestyle{J16}
+
+\flushbottom
+\thispagestyle{empty}
+\pagenumbering{arabic}
+
+\input{version}
+
+\begin{document}
+
+\begin{center}%
+  {\HUGE\doctitle} \\
+  \vskip\baselineskip
+  Jim Kowalkowski, Marc Paterno \textit{CD/CEPA/APS/SLD}; \\
+  Lee Leuking, Stephen White \textit{CD/CEPA/xxx}
+\end{center}
+
+\noindent
+\hrulefill
+% ----------------------------------------------------------------------
+%
+
+% Put only 'chapter' headings into the Table of Contents. This is appropriate 
+% for a short document, using the 'article' option.
+%
+\maxtocdepth{section}
+\setlength{\cftbeforechapterskip}{0pt}
+\tableofcontents*
+\nobibintoc
+\noindent\hrulefill
+
+\definecolor{shadecolor}{gray}{0.90}
+\setverbatimfont{\normalfont\small\ttfamily}
+
+\tightlists
+
+% ----------------------------------------------------------------------
+\input{introduction}
+\input{requirements}
+\input{architectural}
+\input{technology}
+\input{analysis}
+\input{development}
+\input{release}
+\input{deployment}
+% ----------------------------------------------------------------------
+%\begin{thebibliography}
+%\end{thebibliography}
+% ----------------------------------------------------------------------
+\end{document}

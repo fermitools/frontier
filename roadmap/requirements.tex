@@ -1,0 +1,484 @@
+\chapter{Requirements}
+
+\section{From CDF}
+
+The original source of this list of requirements is CDF as entered on
+the \href{http://whcdf03.fnal.gov/ntier-wiki}{\frontier
+wiki}\footnote{This wiki is available at
+\url{http://whcdf03.fnal.gov/ntier-wiki.}}. This is a filtered and
+modified list.
+
+\begin{fixme}
+What part of these requirements are specific to CDF? What part
+are general? We should categorize them, so that we can see where
+experiment-independent functionality is required, and what should be
+handled in experiment-specific modules.
+\end{fixme}
+
+\begin{enumerate}
+
+\item
+
+There must be a way to install \frontier system components on the
+supported platforms without Unix \emph{root} access.
+
+\item
+
+Installations must include standard configuration files that are
+well-documented and step-by-step instructions for customizing an
+installation.
+
+\item
+
+In its simplest form (\ie if the default configuration is acceptible),
+an installation on a standard platform shall be directed by a single
+command.
+
+\item
+
+Any library or part of the system that is compiled or linked into CDF
+jobs must be supported by CDF software development tools.
+
+\item
+
+The system must be available and supported 24/7.
+
+\item
+
+No single failure within \frontier will cause a job that needs database
+information to stop functioning. In other words, there must be
+multiple paths to database information for an application to choose
+from.
+
+\item
+
+Recovery from an isolated process failure in \frontier shall require no
+human administrative intervention.
+
+\item
+
+Introduction of new database objects shall not impede service to
+clients for any perceivable time (probably seconds?). Secondly, new
+tables shall be able to be accessed without a new infrastructure
+(library and process) release. Finally, adding support for a new
+object should not require any direct human intervention on all \frontier
+servers.
+
+\item
+
+A benchmark application will be supplied that records transaction
+durations. The database response time must be less than or equal to
+that that of the current system.  The test scenario will include
+differing loads, such as 20 jobs starting simultaneously, and will
+measure the average response time over the run.
+
+\item
+
+Scalability---Response time should be $\mathcal{O}(n)$?  The system shall
+allow administrative redistribution of load to achieve $\mathcal{O}(n)$
+\eg adding another sibling caching tier)?
+
+\begin{fixme}
+This requirement needs to be clarified. What is $n$---the size of a
+transaction? The number of simultaneous requests? Requests for the
+same table, the same object, or merely to the same server?
+\end{fixme}
+
+\item
+
+All caches must allow remote management, supporting at least purging,
+data prefetch, and cache size parameter adjustments.
+
+\item
+
+If the system utilizes external products in its implementation, then
+those products must be well tested, have a wide user base, and have an
+established method for support and distribution.
+
+\begin{fixme}
+These qualities must be quantified.
+\end{fixme}
+
+\item
+
+The data accessed by clients shall be specified using the current
+Java-DDL.  The client access code should be generated using the
+standard CDF code generation tools.
+
+\item
+
+The client application must be free of vendor specific database access
+library code and must not directly generate SQL.
+
+\item
+
+The \frontier releases shall not be bound (coupled) to CDF releases.
+
+\item
+
+The client shall be decoupled from the database schema and older
+clients must be immune to schema changes. The system must support
+adding columns to a table, removing columns from a table, changing
+names of columns in a table, and splitting a table into two or more
+tables.
+
+\begin{fixme}
+The expected results must be spelled out here.
+\end{fixme}
+
+\item
+
+If the database schema changes, old clients must work or manifestly
+fail. 
+
+\begin{fixme}
+This needs to be improved. Is it really acceptible for
+any change in the database schema to cause all old clients to fail?
+According to this requirement, it is.
+\end{fixme}
+
+\item
+
+The system must be capable of single-point administration.
+
+\item
+
+Adding new table access with a one-to-one mapping between data in
+table and client object shall require no human intervention with the
+server.
+
+\item
+
+Code for handling schema changes that invalidate simple mappings to
+clients shall be distributed from a single point to all servers.
+
+\item
+
+The system should minimize connections to the database. Total real
+database connections will be limited by configuration parameters. The
+\frontier system must not exceed this number.
+
+\item
+
+The system must be capable of being installed and configured on
+private networks and behind firewalls. The system must include
+documentation how to configure the system behind firewalls and private
+networks and any limitation or restrictions that may be incurred under
+they circumstances.
+
+\item
+
+If the system contains caching layers, then clients must be able to
+run using the cached data even if the actual connection to the data
+source is lost.
+
+\end{enumerate}
+
+\section{From APS}
+
+\begin{enumerate}
+
+\item
+
+The monitoring data produced by \frontier must conform to the experiment
+monitoring system?
+
+\item
+
+Servers must supply information to measure performance.
+
+\begin{fixme}
+Spell them out here.
+\end{fixme}
+
+\item
+
+Servers must have remote administration capabilities. This includes
+code upgrades and configuration changes.
+
+\item
+
+Servers must be able to provide status information and performance
+data on a timely basis---at least every 15 minutes.
+
+\item
+
+The system must provide a means for automatically notifying
+administrators when faults occur.
+
+\item
+
+The system must be capable of attributing time and resources to
+individual users.
+
+\item
+
+The system must be capable of blocking and restricting requests from
+specific users or domains.
+
+\item
+
+The system must be able to run without failure with artificial job
+skewing removed in farm job startup.
+
+\item
+
+Protocol messages and data descriptions must be versioned to allow
+backward compatibility and upgrades.
+
+\item
+
+Servers must be able to produce, on demand, version information that
+includes: release, protocol version, and object types and versions
+available.
+
+\item
+
+Server must be able to accept global changes to parameters or global
+distribution of new mapping code (push). It is not necessary for
+global administration facilities to be responsible for delivery to
+dead or disconnected servers. As such, server must query the global
+facility for changes that must be applied during startup (pull).
+
+\end{enumerate}
+
+\section{Behavioral}
+
+\begin{fixme}
+It would be nice to have a few use cases here. Of particular interest
+are ones for schema change and introduction of new tables.
+\end{fixme}
+
+\begin{itemize}
+
+\item Add a new table
+\item A server node fails and a client needs access to data
+\item Add a new table, then add a column
+\item Add a new table, then delete a column
+\item Add a new table, then combine two columns into one
+\item Add a new table, then split one column into two different columns
+\item Add a new table, and then split the table into two tables.
+
+\end{itemize}
+
+\subsection{Experimenting Developer}
+
+\subsection{Reconstruction Program Starts}
+
+\subsection{Generic Browser Application Operating}
+
+\subsection{NTier server starts}
+
+\subsection{Caching layer starts}
+
+\subsection{control system reconfigures caching server}
+
+\section{Goals}
+
+\begin{enumerate}
+
+\item
+
+The system should be able to do automatic load balancing
+\ie redirecting connections or requests to pier servers.
+
+\item
+
+\begin{fixme}
+This item is missing in the list.
+\end{fixme}
+
+\item
+
+Schema changes that involve adding of columns to tables should require
+no additional code in servers.
+
+\end{enumerate}
+
+\section{Major Issues that have been addressed}
+
+This section contains a collection of issues and arguments leading to
+conclusions that have come up during the creation of this system.
+Many of these are reasons for having the above stated requirements.
+
+\subsection{Regarding clients generating SQL}
+
+SQL queries must not be part of the client communications
+protocol. Generating SQL statements from a client is too low-level of
+an interface. SQL lists the columns is a particular order necessary to
+build an object. It also explicitly lists the tables and
+constraints. In order to fulfill requirements of allowing schema
+changes, a client would need to send identical SQL and the server
+would need to parse the SQL in order to construct the proper query to
+send off to the database.
+
+SQL also implies that there is a relational database or SQL capable
+database behind the schemes. Why describe an object in terms of SQL
+when it is not necessary? The constraints, such as
+CID\footnote{\textit{C}alibration ID.}, can be expressed directly
+instead of being encoded within an SQL statement. The object
+definition can also be made explicit, instead of being encoded in SQL.
+
+Having the client know the table name
+prevents many schema changes. The client knows the object it needs;
+the server should possess the knowledge of how to map tables to
+objects. Having SQL generated by the client adds code and complexity
+to the client. It knows more than simply object type information and
+which one it wants (perhaps expressed in physicist terms such as run
+number).
+
+Generating SQL in the client may also require the client to
+perform more database transactions than are necessary. In order to
+form SQL, the client may need to retrieve parts of it from
+administrative database tables. Using a higher-level application
+protocol allows the logic of administrative table access to be within
+the server---a more centrally located and controllable area. Problems
+in the logic can be corrected without disturbing existing releases and
+older executable may get the benefits of bug fixes and performance
+improvements. The client code generation tools are likely to be more
+complex.
+
+Finally, using open SQL as the FroNtier client-server protocol makes
+the server `vulnerable' to rogue clients.  In principle, any user with
+valid credentials could bypass codegen and make a direct access to the
+server.  If the protocol allows any SQL statement, then any such user
+could execute any SQL query on the database, through the bottom-tier
+FroNtier server.  At CDF, many DB problems have been traced to users
+executing `home-brewed' SQL queries which turned out to be grossly
+suboptimal.  A solution to this operation pitfall is to disallow the
+open use of SQL in the client-server protocol.  The clients can then
+request only a very limited sub-set of SQL queries, and the SQL
+query is formed in the server.  (It is assumed that the SQL query
+generated by the server will be checked by the DB experts and
+be as optimal as possible.) 
+
+
+\subsection{Regarding server mapping code versus table views}
+
+Two choices have been discussed for how to match a new schema to old
+running clients: generate the new version of an existing table in the
+database and create a database view that appears like the old table,
+and create the new version of an existing table in the database and
+put code or rules into the ntier server layer to perform the
+conversion. Doing this schema evolution in the database using views
+has limitations and is more restrictive. 
+
+There are few people that are allowed to install and manipulate these
+views - usually DBA or developers with special skills and roles. The
+views can typically only do relatively simple manipulations. The view
+assumes that the desired result can be efficiently and conveniently
+expressed as an SQL statement, which tends to flatten out
+structures. The views cannot easily manipulate data behind BLOBS and
+CLOBS.
+
+Placing the mapping code is an ntier server allows logic to be applied
+to the translation in a language that many are familiar with. In the
+current plan, the servers will allow these translators to be added
+incrementally by the user. The translators will be capable of
+generating objects in a form other than a tabular structure, such as
+hierarchical.
+
+\subsection{Regarding the use of XML}
+
+Why is XML used in the protocol if code generation is used in both the
+client end and the server end?
+
+Code generation can help to produce a compact, encoded object
+representation to transfer between server and client. The client still
+needs to know something about the data it received, such as version,
+name, size, and other descriptive information. The server may also
+send multiple objects in one request. The XML delineates the objects
+in the results. Errors or exceptions raised on the server appear
+wrapper in XML.
+
+
+
+\subsection{Other non-SQL protocol options}
+\label{sec:reqs_other_protocol_options}
+
+During the first Vertical Slice Test (VST) of the FroNtier system,
+it was discovered that the order of rows for a given table is
+different in Oracle and MySQL.  Since the code-generated client
+expects a fixed order of data fields, the server need to know what
+that order is without relying on the schema information it obtains
+from the database.
+
+There are several ways to ensure this, and they are listed below.
+It is important to point out that in the following we are discussing
+the \emph{default access pattern} -- that is, what happens when
+doing a transaction for the table that doesn't require special
+handling.  For one of the `special cases', a human needs to be
+involved and most likely there will be some hand-written code
+to handle them regardless of which option below is chosen.
+
+\begin{itemize}
+
+\item[\textbf{ (1)}] the server can connect only Oracle
+	(which returns the fields in the order they are created).  
+
+	{$\Rightarrow$} \textsl{ Unacceptable in the long term.}
+
+\item[\textbf{ (2)}] the server source code is code-generated, and the client
+	sets \textit{object\_name} and \textit{ version} variables in the URI
+	request.  The server front-end decides which code to execute
+	depending on \textit{ object\_name} and \textit{ version}.
+
+	{$\Rightarrow$} \textsl{ Possible, but complicated.}
+
+
+\item[\textbf{ (3)}] the server source code is generic, and the server uses an ascii
+	map to translate \textit{ object\_name} and \textit{ version} into 
+	\textit{ table\_name} and \textit{ list\_of\_rows} that should be
+	returned to the client.
+
+	{$\Rightarrow$} \textsl{ Much more flexible than (2).  This can 
+	work for CDF.}
+
+
+\item[\textbf{ (4)}] the server source code is generic, and the client sends
+	the list of elements (components of \textit{ object\_name}) it wants,
+        in the order it wants.  This is the same as (3), except that
+        now the server doesn't need to know anything at all, unless
+        \textit{ object\_name} is a special case.
+
+
+	{$\Rightarrow$} \textsl{ Even more flexible than (3), with the
+	advantage that the server is completely generic for the default
+	access.  This can not only work for CDF (given that the client's
+        list of desired fields is defined in codegen), but, as compared
+	to (3) has an added advantage of allowing for a `hands-off' 
+	server for most situations.}
+
+\end{itemize}
+
+\subsection{Desired attributes within a request}
+
+On several occasions the subject of whether or not a request will
+contain a list of attribute names in the order that the client wants
+to see them.  The claim is that such a list will allow the ntier
+server to use metadata in the database to match requested names with
+table column names to satify the request.  The purpose being that
+simple mappings of object->table can be handled without adding code
+or configuration to the ntier system.
+
+This is very similar to the situation concerning clients generating
+SQL and has the same ill effects.  It is disguised by not placing 
+all the SQL syntax around the requested information.  This procedure
+also assumes that type in the metadata system of the database
+can be unambiguously mapped back into the C++ types so that the 
+returned data in correct.  I do not believe that this is the true.
+To lift this assumtion, the request would need to include the
+names and the types.
+
+If this were implemented, the server would be required to treat each
+request as unique.  This means that each request would need to be
+decoded put the response put together dynamically depending on the
+data in the request.  Using the attribute request list bloats the request.
+Nearly all the requests for a particular type will look the same, this
+means work will be done redundantly.
+
+If we use use standard type definitions synchronized in the client and
+server, the server would always use one method of constructing
+results based on the type identifier in the request.  A request would
+be smaller.
+

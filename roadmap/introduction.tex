@@ -1,0 +1,192 @@
+\chapter{Introduction}
+
+The software that reconstructs and analyzes 
+collider-detector event data 
+typically requires access to information other than
+the main input data stream. 
+This includes information such as: 
+data catalogs, 
+detector conditions,
+software and hardware configurations,
+detector calibration, 
+and alignment.
+The information can be loosely said
+to be data
+needed to locate 
+event data and ancillary data needed
+by the applications. Accessing both usually depends on information in
+the input data stream and the type of processing that will be
+done. Most of the access to this information is through
+SQL\footnote{Structured query language, the standard language for querying relational databases.}
+from a
+RDBMS\footnote{\textit{R}elational \textit{d}atabase \textit{m}anagement \textit{s}ystem.},
+although the view of the data is, in many circumstances,
+hierarchical.
+
+\section{Purpose of this Document}
+
+The purpose of this document 
+is to be a roadmap
+to aid in the research and development
+of an enterprise-wide system
+for querying and delivery of ancillary data and catalog information 
+stored in experiment databases.
+We call this project \frontier.
+We are looking for a good path to get to a useable system---not just any
+path.
+
+Contained in this document are the working set of requirements,
+an overall architecture, plans for incremental testing and evaluation,
+and specific design and deployment details. This document is meant to
+evolve as the project progresses so that it can always be used as a
+reference and a guide to new members of the project.
+
+
+\section{Scope of the Project}
+
+The initial goal
+for the system is delivery 
+of calibration and alignment to 
+%CDF AC++ jobs\footnote{\emph{AC++} is the CDF triggering, reconstruction and analysis framework.}
+or any application that uses the CDF
+standard \cpp database interface.
+
+An additional goal 
+is to produce a system 
+that is sufficiently flexible and general
+to meet the needs
+of other experiments.
+
+\begin{fixme}
+I think we need a clearer, crisper definition of the scope for
+the project. How does BTeV fit in in this scope? What about \DO? What
+about its use for supporting other database needs, besides
+calibration-type data?
+\end{fixme}
+
+\section{Rationale for the Project}
+
+The current system in place at the experiments has limitations on
+performance, maintenance, and scalability. We look to produce a system
+that is more easily maintainable, which can be extended more easily,
+and which can scale with user need more readily.
+
+\section{Definitions}
+
+\begin{description}
+
+\item[Core system code]
+
+The core framework and other infrastructure that is fixed for a given
+release of \frontier.
+
+\item[Static configuration parameters]
+
+Values that are set during installation of a release and cannot be
+reset with restarting server processes. The server itself cannot make
+adjustments to these values; changes must come from a separate
+administration channel or tool.
+
+\item[Dynamic configuration parameters]
+
+Values that can be changed by talking to a server, without requiring
+that the server be shut down.
+
+\item[Table/Object mapping \textit{or} access code]
+
+Code that maps database information to object form that is needed by
+the final client application. This code can be added dynamically to a
+running server on demand from users or administrators and is not as
+tightly coupled to a \frontier release.
+
+\item[Client application]
+
+The code the uses objects that are populated by the \frontier system.
+
+\item[Client API]
+
+The library that is coupled to a client application release. This is
+code that is used by the client to gain access to database
+information.
+
+\item[\frontier system]
+
+The main release components and related products, configuration
+parameter sets, and mapping libraries.
+
+
+\item[\frontier administration]
+
+The installation, upgrade, and configuration of server components,
+distribution of mapping code, and changing of dynamic parameters.
+
+\item[Java-DDL]
+
+CDF uses Java source code as an object definition language. This is a
+Java file that users write to describe a piece of data they want to
+store and retrieve from a database.
+
+\item[CID]
+
+Originally "Calibration Identifier".  It turns
+out that it is really an
+object ID (instance of a particular class).  It uniquely identifies an
+instance within am entire database (independent of type).
+
+\item[DBTableName]
+
+At CDF, object and a table have a one-to-one mapping.  This is
+better thought of an the requested object type than as a 
+database table name. 
+
+\item[ProtocolVersion]
+
+This identifies the "language" that this client speaks.  It
+is analagous to HTTP1.0 versus HTTP1.1.  It most likely has
+little to do with a CDF release and more to do with an
+ntier release.
+
+\item[Version]
+
+Each time a class undergoes some change in structure, the version
+number is increased.  This implies that CDF release 5.3.1 and 5.4
+can contain class X with different definitions and still get the
+correct data from a server.
+
+\item[UUID]
+
+Universal unique identifier. It may be possible to simply 
+encode items 1-4 above into a single UUID. Now a single value implies 
+an object with a particular set of attributes.
+
+\item[base64]
+
+An encoding scheme that generates a sequence of printable
+characters from a binary stream of data to allow easy transmission over
+a protocol that is commonly used for text such as HTTP.  This has more to
+do with the low-level protocol than with the interpretation of the bytes
+that are encoded.  The programs interpret the byte stream, not the 
+base64 encoded stream.  We should also compress the data stream before
+it is base64 encoded.
+
+\item[CSV]
+
+Comma Separated Values.  A method of representing tabular data.
+Each row end with a newline.  Column values are separated by commas.
+
+\item[BLOB]
+
+Binary Large Object.  A stream of bytes that can only be
+interpreted by the receiving client.
+
+\item[DataRepresentation]
+
+The way in which a block of
+information delivered to a client is represented.
+Examples are CSV and BLOB.
+
+\item[Object]
+
+An instance of a particular class.
+
+\end{description}
