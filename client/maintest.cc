@@ -38,9 +38,10 @@ int main(int argc, char **argv)
     std::cout<<"Usage: "<<argv[0]<<" server_url object_name key_name key_value [{object_name key_name key_value} ...]"<<'\n';
     exit(1);
    }
-      
+#ifdef FNTR_USE_EXCEPTIONS      
   try
    {
+#endif //FNTR_USE_EXCEPTIONS   
     frontier::init();
 
     frontier::CDFDataSource ds(argv[1]);
@@ -64,7 +65,7 @@ int main(int argc, char **argv)
       std::cout<<"Payload "<<i<<" number of records "<<nrec<<'\n';
       delete vrq[i-1];
      }
-    
+#ifdef FNTR_USE_EXCEPTIONS    
    }
   catch(std::exception& e)
    {
@@ -76,6 +77,7 @@ int main(int argc, char **argv)
     std::cout << "Unknown exception\n";
     exit(1);
    }
+#endif //FNTR_USE_EXCEPTIONS   
  }
 
 
