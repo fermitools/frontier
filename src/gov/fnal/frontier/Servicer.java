@@ -27,6 +27,21 @@ public class Servicer {
 
     Servicer() {}
 
+    /**
+     * Validates that the data in the Command produces a
+     * vaild SQL where clause.  As a side effect the SQL
+     * select statement is built and loaded into the instance.
+     *
+     * @param command An instance of the Command class.
+     * @exception ServicerValidationExeption Thrown if a valid
+     * SQL statement cannot be created.
+     * @return void.
+     * 
+     */
+    public void validateAndLoad(Command command) throws ServicerValidationException {
+	throw new ServicerValidationException("Servicer.validateAndLoad must be overridden.");
+    }
+	
     public void validate(Command command) throws ServicerValidationException {
 
         cmd=command;

@@ -39,7 +39,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	    ServicerFactory sf = new ServicerFactory();
 	    Servicer servicer = sf.load(objectName,objectVersion);
 	    //Servicer servicer = new Servicer();  /* HACK HACK HACK  Need to call ServicerFactory!! */
-	    servicer.validate(command);
+	    servicer.validateAndLoad(command);
 	    stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion,noLF);
 	    stream("\" encoding=\"" + encoding + "\">",LF);
 	    produceData(servicer);

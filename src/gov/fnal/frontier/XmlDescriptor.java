@@ -86,16 +86,17 @@ public class XmlDescriptor extends Descriptor {
      * Then builds an SQL where clause from the data supplied
      * in Command. 
      *
-     * @param command An instance of the command class.  
+     * @param command An instance of the Command class.  
      * @param response The servlet response we are producing
      * @exception IOException if an input/output error occurs
      * @exception ServletException if a servlet error occurs
      * @return String containg an executable SQL where clause. If
-     * no data was found then null is returned.
+     * no matching where clause was found then a null is returned.
      * 
      */
     public String findAndBuildWhereClause(Command command) {
 	WhereClause matchingWhere = null;
+	String whereClause = null;
 	int numKeys = command.size();
 	for(int i=0;i<wheres.size();i++) {
 	    WhereClause where = (WhereClause) wheres.get(i);
@@ -111,7 +112,9 @@ public class XmlDescriptor extends Descriptor {
 		    matchingWhere = where;
 	    }
 	}
-	return matchingWhere.buildWhere(command);
+	if (matchingWhere != null)
+	    whereClause = matchingWhere.buildWhere(command);
+	return whereClause;
     }
 
 }
