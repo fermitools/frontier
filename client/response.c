@@ -25,7 +25,7 @@ xml_cdata(void *userData,const XML_Char *s,int len)
   
   frontierPayload_append(fr->payload[fr->payload_num-1],s,len);
 
-  printf("xml_cdata\n");
+  //printf("xml_cdata\n");
  }
 
 
