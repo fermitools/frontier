@@ -116,8 +116,10 @@ public class XmlDescriptor extends Descriptor {
      * no matching where clause was found then a null is returned.
      *
      */
-    public String findAndBuildWhereClause(Command command) {
+    public String findAndBuildWhereClause(Command command)
+     {
         if(command.isMetaQueryCommand()) return "";
+        if(wheres.size()==0) return "";
         WhereClause matchingWhere = null;
         String whereClause = null;
         int numKeys = command.size();

@@ -46,7 +46,7 @@ public class XmlServicer implements Servicer {
                 "Unable to find a where clause which matches the supplied keys.");
         sqlStatement = "SELECT " + descriptor.getSelectClause();
         sqlStatement += " FROM " + descriptor.getFromClause();
-        sqlStatement += " WHERE " + whereClause;
+        if(whereClause.length()>0) sqlStatement += " WHERE " + whereClause;
         sqlStatement += " " + descriptor.getFinalClause();
     }
 
@@ -63,6 +63,7 @@ public class XmlServicer implements Servicer {
         ResultSet rs = null;
         try {
             stmt = connection.createStatement();
+            System.out.println(sqlStatement);
             rs = stmt.executeQuery(sqlStatement);
             while(rs.next()) {
                 recordCnt++;

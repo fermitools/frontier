@@ -64,9 +64,9 @@ int do_main(int argc, char **argv)
 #endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc<4)
+    if(argc<2)
      {
-      std::cout<<"Usage: "<<argv[0]<<" object_name key_name key_val {key_name key_val}\n";
+      std::cout<<"Usage: "<<argv[0]<<" object_name {key_name key_val {key_name key_val}...}\n";
       exit(1);
      }
      
@@ -104,9 +104,9 @@ int do_main(int argc, char **argv)
       delete name;
      }
 
-    frontier::Request req(argv[1],"1",frontier::BLOB,argv[2],argv[3]);
+    frontier::Request req(argv[1],"1",frontier::BLOB);
 
-    for(int i=4;i+1<argc;i+=2)
+    for(int i=2;i+1<argc;i+=2)
      {
       req.addKey(argv[i],argv[i+1]);     
      }
