@@ -4,7 +4,8 @@ import java.util.*;
 import javax.naming.*;
 
 /**
- * Contains all user suppled data required to execute a single user request.  
+ * Contains all user suppled data required to execute a single user request.  Outside classes
+ * are allowed to remove commands from this class as they processes them.
  *
  * $Id$
  * $Author$
@@ -51,6 +52,10 @@ public class Command {
 
     public String get(String key) throws NullPointerException {
 	return (String) commandDict.get(key);
+    }
+
+    public String remove(String key) throws NullPointerException {
+	return (String) commandDict.remove(key);
     }
 
     public Enumeration keys() {

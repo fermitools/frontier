@@ -31,15 +31,15 @@ public class ServicerFactory {
     public Servicer load(String className, String classVersion) 
 	throws ServicerFactoryException {
 	Servicer servicer = null;
-	
 	/**
-	   This is where we would put a call to check the cache
+	   This is where we will put a call to check the cache
 	**/
 	SFDataResult result = getData(className,classVersion);
-	Descriptor descriptor = null;
 	try {
-	    if (result.type.compareToIgnoreCase("xml") == 0)
-		descriptor = xmlLoader.load(className,classVersion,result.data);
+	    if (result.type.compareToIgnoreCase("xml") == 0) {
+		XmlDescriptor descriptor = (XmlDescriptor) xmlLoader.load(className,classVersion,result.data);
+		servicer = new XmlServicer(descriptor);
+	    }
 	    else if (result.type.compareToIgnoreCase("jar") == 0)
 		throw new ServicerFactoryException("Jar files are not yet supported");
 	    else
@@ -47,13 +47,6 @@ public class ServicerFactory {
 	} catch (LoaderException e) {
 	    throw new ServicerFactoryException(e.getMessage());
 	}
-	System.out.println("*************************************************************");
-	System.out.println("*************************************************************");
-	System.out.println("Leaving the ServicerFactory code, gonna return excepiton ....");
-	System.out.println("*************************************************************");
-	System.out.println("*************************************************************");
-	if ( 1 > 0 )
-	    throw new ServicerFactoryException("Don with ServicerFactory, write more code!");
 	return servicer;
     }
 

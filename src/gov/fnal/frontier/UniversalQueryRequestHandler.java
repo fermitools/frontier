@@ -128,10 +128,10 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      *
      */
     private void validate(Command command) throws RequestHandlerException { 
-	encoding = command.get("encoding");
+	encoding = command.remove("encoding");
 	if (encoding == null)
 	    throw new RequestHandlerException("Missing the tag 'encoding'");
-	String type = command.get("type");
+	String type = command.remove("type");
 	if (type == null)
 	    throw new RequestHandlerException("Missing the tag 'type'");
 	else {

@@ -29,5 +29,9 @@ public class Attribute {
     public String getField() {
 	return field;
     }
+
+    public void validate() throws LoaderException {
+	// Nothing to do here.  Should be valid on creation.
+    }
 }
 			     
