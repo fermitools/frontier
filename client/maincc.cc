@@ -154,8 +154,8 @@ class CalTrigWeights
   
   CalTrigWeights(frontier::CDFDataSource& ds)
    {
-    CID=ds.getLong();
-    ID=ds.getLong();
+    CID=ds.getLongLong();
+    ID=ds.getLongLong();
     TRIGSCL=ds.getDouble();
     ET_WEIGHT_CENT=ds.getRawAsArrayFloat();
     ET_WEIGHT_WALL=ds.getRawAsArrayFloat();

@@ -115,6 +115,10 @@ class DataSource
    unsigned int getRecNum();
    int getInt();
    long getLong();
+#ifndef KCC_COMPILE
+   // Any better idea?
+   long long getLongLong();
+#endif //KCC_COMPILE
    double getDouble();
    std::string *getString();
    std::string *getBlob();

@@ -10,7 +10,7 @@
 
 ifeq ($(CXX),KCC)
 # KCC settings
-CXXOPT		=	--no_exceptions -DFNTR_USE_NAMESPACE
+CXXOPT		=	--no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE
 COPT		=	-DFRONTIER_DEBUG
 else
 # GCC settings

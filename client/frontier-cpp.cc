@@ -208,6 +208,17 @@ long DataSource::getLong()
   return ad.getInt();
  }
 
+#ifndef KCC_COMPILE
+long long DataSource::getLongLong()
+ {
+  AnyData ad;
+  
+  if(getAnyData(&ad)) return -1;
+  
+  return ad.getLongLong();  
+ }
+#endif //KCC_COMPILE
+
 
 double DataSource::getDouble()
  {
