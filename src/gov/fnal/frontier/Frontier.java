@@ -7,6 +7,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.oreilly.servlet.CacheHttpServlet;
+import java.net.URLDecoder;
 
 /**
  * Top level Frontier servlet object called by Tomcat.
@@ -52,8 +53,7 @@ public final class Frontier extends CacheHttpServlet {
         }
 
         timestamp = (new java.util.Date()).getTime();
-        String queryString = request.getQueryString();
-
+        String queryString = URLDecoder.decode(request.getQueryString(),"UTF-8");
         System.out.println("frontierLog " + timestamp + " start " + id + " " + local_current + " "
                            + queryString);
 
@@ -74,12 +74,15 @@ public final class Frontier extends CacheHttpServlet {
             connMgr.initialize();
             handleRequest(commandList, writer);
         } catch (CommandParserException e) {
-            writer.println("<transaction payloads=\"0\">");
+            writer.println("<transaction payloads=\"0\"/>");
             writer.println(generateBadQualityTag(e.getMessage()));
         } catch (DbConnectionMgrException e) {
+            /** @todo Need to cleaup th /transaction clauses */
+            writer.println("</transaction>");
             System.out.println("Unable to obtain connection: " + e.getMessage());
             writer.println(generateBadQualityTag(e.getMessage()));
         } catch (Exception e) {
+            writer.println("</transaction>");
             System.out.println("Error: " + e);
             e.printStackTrace();
             writer.println(generateBadQualityTag(e.getMessage()));
