@@ -46,8 +46,6 @@ public final class Frontier extends CacheHttpServlet {
         DbConnectionMgr connMgr                   = null;
         CommandParser   parser                    = null;
         ArrayList       commandList               = null;
-        UniversalQueryRequestHandler queryHandler = null;
-        AdministrationRequestHandler adminHandler = null;
         ServletOutputStream writer                = null;
 		
 	synchronized(mutex)

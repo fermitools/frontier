@@ -24,7 +24,6 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     private String  objectName      = null;
     private String  objectVersion   = null;
     private Encoder encoder         = null;
-    private ClassLoader classLoader = new ClassLoader();
     private DbConnectionMgr connMgr = DbConnectionMgr.getDbConnectionMgr();
 
 
@@ -37,17 +36,25 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	try {
 	    validate(command);
 	    encoder = getEncoder(writer);
-	    Servicer servicer = classLoader.load(objectName,objectVersion);
+	    ServicerFactory sf = new ServicerFactory();
+	    Servicer servicer = sf.load(objectName,objectVersion);
+	    //Servicer servicer = new Servicer();  /* HACK HACK HACK  Need to call ServicerFactory!! */
 	    servicer.validate(command);
 	    stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion,noLF);
 	    stream("\" encoding=\"" + encoding + "\">",LF);
 	    produceData(servicer);
+	} catch (ServicerFactoryException e) {
+	    generateExceptionXML(e.getMessage());
 	} catch (RequestHandlerException e) {
-	    stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"",noLF);
-	    stream(" encoding=\"" + encoding + "\">",LF);
-	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
-	    stream("</payload>",LF);
+	    generateExceptionXML(e.getMessage());
 	}
+    }
+
+    private void generateExceptionXML(String message) throws ServletException {
+	stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"",noLF);
+	stream(" encoding=\"" + encoding + "\">",LF);
+	stream("<quality error=\"1\" code=\"???\" message=\"" + message + "\"/>",LF);
+	stream("</payload>",LF);
     }
 
     private void produceData(Servicer servicer) throws ServletException {
