@@ -11,7 +11,7 @@ import javax.sql.DataSource;
  * Singleton class which provides database connections.  The specific
  * database supported is determined by configuring the server.xml file.
  * @author Stephen P. White <swhite@fnal.gov>
- * udapted for Frontier3 by: Sergey Ksoyakov
+ * udapted for Frontier3 by: Sergey Kosyakov
  * @version $Revision$
  */
 public class DbConnectionMgr 
