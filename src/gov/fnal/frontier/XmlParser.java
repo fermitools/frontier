@@ -5,7 +5,7 @@ import java.util.Iterator;
 import org.jdom.Element;
 /**
  * XML parser which supports version 1.0 of the XSD.  It is responsible for parsing the XSD into
- * a {@link XmlDescriptor}.
+ * a {@link XmlDescriptor}. The XSD is validated for syntax errors.
  * @author Stephen P. White <swhite@fnal.gov>
  * @version $Revision$
  */
@@ -59,8 +59,8 @@ public class XmlParser extends Parser {
         else if(name.equals("where"))
             processWhere(element);
         else
-            throw new LoaderException("Unknown Element " + element.getName()
-                                      + " in supplied in XSD.");
+            throw new LoaderException("The XSD contains the element '" + element.getName()
+                                      + "' which it does not know how to process.");
     }
 
     /**
@@ -98,11 +98,11 @@ public class XmlParser extends Parser {
                     clause = child.getTextTrim();
                     where.addClause(clause);
                 } else
-                    throw new LoaderException("where contains multiple 'clause' tags");
+                    throw new LoaderException("The XSD's where contains multiple 'clause' tags");
             } else if(name.equals("param"))
                 where.addParam(child.getAttributeValue("type"), child.getAttributeValue("key"));
             else
-                throw new LoaderException("where contains unknown element " + name);
+                throw new LoaderException("The XSD's where contains unknown element " + name);
         }
     }
 }
