@@ -25,13 +25,9 @@ using namespace frontier;
 
 static const char *blob_type_name[]={"byte","int4","int8","float","double","time","string"};
  
-int AnyData::getInt()
+int AnyData::castToInt()
  {
-  if(isNull) return 0;
-  if(t==BLOB_TYPE_INT4) return v.i4;
-#ifdef FRONTIER_DEBUG
-  std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to int\n";
-#endif //FRONTIER_DEBUG
+  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to int",blob_type_name[t]);
   switch(t)
    {
     case BLOB_TYPE_BYTE: return (int)v.b;
@@ -42,17 +38,14 @@ int AnyData::getInt()
     case BLOB_TYPE_ARRAY_BYTE: return atoi(v.str.p);
     default: break; // Just to make this geek gcc happy
    }
-  std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
-  exit(2);
+  type_error=FRONTIER_EUNKNOWN;
+  frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
+  return 0;
  }
  
-long long AnyData::getLongLong()
+long long AnyData::castToLongLong()
  {
-  if(isNull) return 0;
-  if(t==BLOB_TYPE_INT8 || t==BLOB_TYPE_TIME) return v.i8;
-#ifdef FRONTIER_DEBUG
-  std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to long long\n";
-#endif //FRONTIER_DEBUG
+  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to long long",blob_type_name[t]);
   switch(t)
    {
     case BLOB_TYPE_BYTE: return (long long)v.b;
@@ -62,17 +55,14 @@ long long AnyData::getLongLong()
     case BLOB_TYPE_ARRAY_BYTE: return atoll(v.str.p);
     default: break; // Just to make this geek gcc happy
    }
-  std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
-  exit(2); 
+  type_error=FRONTIER_EUNKNOWN;
+  frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
+  return 0;
  }
    
-float AnyData::getFloat()
+float AnyData::castToFloat()
  {
-  if(isNull) return 0.0;
-  if(t==BLOB_TYPE_FLOAT) return v.f;
-#ifdef FRONTIER_DEBUG
-  std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to float\n";
-#endif //FRONTIER_DEBUG
+  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to float",blob_type_name[t]);
   switch(t)
    {
     case BLOB_TYPE_BYTE: return (float)v.b;
@@ -83,17 +73,14 @@ float AnyData::getFloat()
     case BLOB_TYPE_ARRAY_BYTE: return (float)atof(v.str.p);
     default: break; // Just to make this geek gcc happy
    }
-  std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
-  exit(2);  
+  type_error=FRONTIER_EUNKNOWN;
+  frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
+  return 0;
  }
    
-double AnyData::getDouble()
+double AnyData::castToDouble()
  {
-  if(isNull) return 0.0;
-  if(t==BLOB_TYPE_DOUBLE) return v.d;
-#ifdef FRONTIER_DEBUG
-  std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to double\n";
-#endif //FRONTIER_DEBUG
+  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to double",blob_type_name[t]);
   switch(t)
    {
     case BLOB_TYPE_BYTE: return (double)v.b;
@@ -104,17 +91,14 @@ double AnyData::getDouble()
     case BLOB_TYPE_ARRAY_BYTE: return atof(v.str.p);
     default: break; // Just to make this geek gcc happy
    }
-  std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
-  exit(2);   
+  type_error=FRONTIER_EUNKNOWN;
+  frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
+  return 0;
  }
  
-std::string* AnyData::getString()
+std::string* AnyData::castToString()
  {
-  if(isNull) return NULL;
-  if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s);
-#ifdef FRONTIER_DEBUG
-  std::cout<<"WARNING: converting "<<blob_type_name[t]<<" to string\n";
-#endif //FRONTIER_DEBUG
+  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to string",blob_type_name[t]);
   std::ostringstream oss;
   switch(t)
    {
@@ -126,8 +110,9 @@ std::string* AnyData::getString()
     case BLOB_TYPE_DOUBLE: oss<<v.d; return new std::string(oss.str());
     default: break; // Just to make this geek gcc happy
    }
-  std::cout<<"ERROR: can not be here "<<__FILE__<<":"<<__LINE__<<'\n';
-  exit(2);    
+  type_error=FRONTIER_EUNKNOWN;
+  frontier_setErrorMsg(__FILE__,__LINE__,"something wrong out there");
+  return 0;
  }
 
 

@@ -13,8 +13,8 @@ FN_VER_MINOR	=	0.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
-CXXOPT_LIB	=	-g -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
-CXXOPT_APP	=	-g -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
+CXXOPT_LIB	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
+CXXOPT_APP	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	KCC -shared --no_exceptions -o libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier.so.$(FN_VER_MAJOR)
 else

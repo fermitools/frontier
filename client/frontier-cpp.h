@@ -14,6 +14,11 @@
 #include <string>
 #include <vector>
 
+extern "C"
+ {
+#include <frontier.h>
+ };
+
 namespace frontier{
 
 enum encoding_t {BLOB};
@@ -64,7 +69,7 @@ const BLOB_TYPE BLOB_TYPE_EOR=7;
 
 class DataSource;
  
-// You are not going to use this class directly
+// You are not going to use this class directly. Never. It's here only for inlining.
 class AnyData
  {
   private:
@@ -80,24 +85,31 @@ class AnyData
     } v;
    int isNull;   // I do not use "bool" here because of compatibility problems [SSK]   
    BLOB_TYPE t;  // The data type
-  
+   int type_error;
+
+   int castToInt();
+   long long castToLongLong();
+   float castToFloat();
+   double castToDouble();
+   std::string* castToString();
+     
   public:
-   explicit AnyData(): isNull(0),t(BLOB_TYPE_NONE){}
-   void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;}
-   void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;}
-   void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;}
-   void set(double d){t=BLOB_TYPE_DOUBLE;v.d=d;}
-   void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;}
-   void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;}
-   BLOB_TYPE type() const{return t;}
-   
-   ~AnyData(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
-   
-   int getInt();
-   long long getLongLong();
-   float getFloat();
-   double getDouble();
-   std::string* getString();
+   explicit AnyData(): isNull(0),t(BLOB_TYPE_NONE),type_error(FRONTIER_OK){}
+   inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
+   inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
+   inline void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;type_error=FRONTIER_OK;}
+   inline void set(double d){t=BLOB_TYPE_DOUBLE;v.d=d;type_error=FRONTIER_OK;}
+   inline void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;type_error=FRONTIER_OK;}
+   inline void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;type_error=FRONTIER_OK;}
+   inline BLOB_TYPE type() const{return t;}
+
+   inline int getInt(){if(isNull) return 0;if(t==BLOB_TYPE_INT4) return v.i4; return castToInt();}
+   inline long long getLongLong(){if(isNull) return 0; if(t==BLOB_TYPE_INT8 || t==BLOB_TYPE_TIME) return v.i8; return castToLongLong();}
+   inline float getFloat(){if(isNull) return 0.0; if(t==BLOB_TYPE_FLOAT) return v.f; return castToFloat();}
+   inline double getDouble(){if(isNull) return 0.0;if(t==BLOB_TYPE_DOUBLE) return v.d; return castToDouble();}
+   inline std::string* getString(){if(isNull) return NULL; if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s); return castToString();}   
+      
+   ~AnyData(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!   
  };
  
 
