@@ -95,6 +95,7 @@ int main(int argc, char **argv)
      }
     server=argv[i];
    }
+  if(!server || !obj1_ind) usage(argv);
    
 #ifdef FNTR_USE_EXCEPTIONS      
   try
