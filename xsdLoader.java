@@ -80,11 +80,10 @@ public class xsdLoader {
             blobInsert += " (name,version,xsd_type,xsd_data)";
             blobInsert += " VALUES (?,?,?,?)";
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
-//            String oracleUrl =
-//                "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)"
-//                + "(PORT=1521)(HOST=fcdofprd.fnal.gov))(CONNECT_DATA=(SID=cdfofprd)))";
-            String oracleUrl = "jdbc:oracle:oci:@cdfofpr1";
-            conn = DriverManager.getConnection(oracleUrl, "user", "pswd");
+            String oracleUrl =
+                "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)"
+                + "(PORT=1521)(HOST=fcdflnx1.fnal.gov))(CONNECT_DATA=(SID=cdfofpr1)))";
+            conn = DriverManager.getConnection(oracleUrl, "frontier_prd", "frontier_prd");
             pstmt = conn.prepareStatement(blobInsert);
         } catch(Exception ex) {
             throw new Exception("connect - " + ex.getMessage());
