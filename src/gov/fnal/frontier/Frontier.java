@@ -22,6 +22,9 @@ public final class Frontier
   private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
   private static Monitor monitor;           // MonAlisa stuff, wrapper class
   
+  private static boolean use_fdo_cache;     // If true, the FDO info is created once (
+                                            // based on XSD or else)
+  
     
   public long time_expire=-1;
   public boolean noCache=false;
@@ -57,7 +60,7 @@ public final class Frontier
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
     conf_monitor_node=getPropertyString(prb,"MonitorNode");
-    conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");    
+    conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");
     if(conf_monitor_node!=null && conf_monitor_delay!=null) 
      {
       try
@@ -72,7 +75,12 @@ public final class Frontier
         monitor=null;
        }
      } 
-    else Frontier.Log("MonAlisa monitor was not configured.");        
+    else Frontier.Log("MonAlisa monitor was not configured.");
+    
+    String tmp=getPropertyString(prb,"UseFdoCache");
+    use_fdo_cache=(tmp!=null && tmp.equalsIgnoreCase("yes"));
+    if(use_fdo_cache) Frontier.Log("FDO cache is in use");
+    else Frontier.Log("FDO cache is DISABLED");
         
     initialized=true;
    }
@@ -183,5 +191,10 @@ public final class Frontier
   public static String getXsdTableName()
    {
     return conf_xsd_table;
+   }
+   
+  public static boolean isFdoCache()
+   {
+    return use_fdo_cache;
    }
  } // class Frontier

@@ -41,7 +41,7 @@ public class Payload
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
-    fdo=(FrontierDataObject)htFdo.get(key);
+    if(Frontier.isFdoCache()) fdo=(FrontierDataObject)htFdo.get(key);
     if(fdo!=null)
      {
       //System.out.println("Got "+key+" from cache");
@@ -76,7 +76,7 @@ public class Payload
       time_expire=md.getExpire();
       //System.out.println("Time_expire="+time_expire);      
       noCache=md.isNoCache();
-      htFdo.put(key,fdo);      
+      if(Frontier.isFdoCache()) htFdo.put(key,fdo);      
      }
     finally
      {
