@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ListIterator;
 
 /**
  * This class creates uses data from an {@link XmlDescriptor} to produce obtain data from
@@ -74,6 +75,15 @@ public class XmlServicer implements Servicer {
             throw new ServicerException(e.getMessage());
         }
         return recordCnt;
+    }
+
+    /**
+     * Returns an iterator which when used will return an Object which may be cast to an
+     * {@link Attribute} object.
+     * @return ListIterator
+     */
+    public ListIterator getAttributes() {
+        return descriptor.getAttributes();
     }
 
     /**
