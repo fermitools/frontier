@@ -1,146 +1,147 @@
 package gov.fnal.frontier;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.*;
+import javax.servlet.http.*;
 
-/**
- * Contains the connents of a single command as supplied by the user.
- * Outside classes are allowed to remove commands from this class as they
- * processes them.
- * @author Stephen P. White <swhite@fnal.gov>
- * @version $Revision$
- */
-public class Command {
 
-    private Hashtable commandDict = new Hashtable();
-
-    private int commandType = 0; // Invalid command
-    private final static int univQueryCom = 1;
-    private final static int adminCom = 2;
-    private final static int metaQueryCom = 3;
-
-    /**
-     * Constructor.
-     * @param key String key - the major command keyword.
-     * @param value String - the value of the major keyword.
-     */
-    public Command(String key, String value) {
-        put(key, value);
-    }
-
-    /**
-     * Returnes true if the instance is a query command.
-     * @return boolean
-     */
-    public boolean isUniversalQueryCommand() {
-        if(commandType == univQueryCom)
-            return true;
-        return false;
-    }
-
-    /**
-     * Sets the instance to be a query command.
-     */
-    public void setUniversalQueryCommand() {
-        commandType = univQueryCom;
-    }
+public class Command 
+ {
+  public static final int CMD_ADMIN=0;
+  public static final int CMD_GET=1;
+  public static final int CMD_UPDATE=2;
+  public static final int CMD_META=3;
+  public static final String[] domain_name={"admin","get","update","meta"};
+  
+  public int cmd_domain;
+  public String obj_name;
+  public String obj_version;
+  public String command;
+  public String method;
+  public String encoder;
+  public FrontierDataStream fds;
+  
+  private Command()
+   {
+   }
+ 
+   
+  public static ArrayList parse(HttpServletRequest req) throws Exception
+   {
+    ArrayList ret=new ArrayList();
     
-   public void setMetaQueryCommand(){commandType=metaQueryCom;}
-   public boolean isMetaQueryCommand(){return commandType==metaQueryCom;}
+    String req_method=req.getMethod();
+    if(req_method.equals("GET"))
+     {
+      set_get_command(ret,req.getQueryString());
+     }
+    else if(req_method.equals("POST"))
+     {
+      throw new Exception("POST is not implemented yet!");
+     }
+    else
+     {
+      throw new Exception("Unsupported method ["+req_method+"]");
+     }
+    return ret;
+   }  
+   
+   
+   
+  private static void set_get_command(ArrayList cmd_list,String query_str) throws Exception
+   {
+    System.out.println("Query string ["+query_str+"]");
+    String[] param=new String[4];
+    Object[] env=new Object[2];
+        
+    boolean completed=get_next_param(param,env,query_str);
+    
+    while(!completed)
+     {
+      Command c=new Command();
+      
+      if(param[0].equals("type"))
+       {
+        c.cmd_domain=CMD_GET;
+        c.obj_name=param[1];
+        c.obj_version=param[2];
+        c.command="get";
+        c.method=param[3];
+       }
+      else if(param[0].equals("meta"))
+       {
+        c.cmd_domain=CMD_META;
+        c.obj_name=param[1];
+        c.obj_version=param[2];
+        c.command=""; // Does not matter
+        c.method="";  // Does not matter
+       }
+      else
+       {
+        throw new Exception("Unsupported request type ["+param[0]+"]");
+       }
+       
+      if(!get_next_param(param,env,query_str)) throw new Exception("Incomplete - first down and 10!");
+      
+      if(param[0].equals("encoding")) c.encoder=param[1];
+      else throw new Exception("Unexpected parameter ["+param[0]+"="+param[1]+"]");
+              
+      // Get parameters list
+      c.fds=new FrontierDataStream(FrontierDataStream.BY_NAME);
+      while(true)
+       {
+        completed=get_next_param(param,env,query_str);
+        if(completed) break;
+        if(param[0].equals("type") || param[0].equals("meta")) break;
+        c.fds.append(param[0],param[1]);
+       }
+      cmd_list.add(c);      
+     }
+   }
+   
 
-    /**
-     * Sets the instance to be an administration command.
-     */
-    public void setAdminCommand() {
-        commandType = adminCom;
-    }
+   
+  private boolean static get_next_param(String[] param,Object[] env,String str) throws Exception
+   {
+    param[0]=null;
+    param[1]=null;
+    param[2]=null;
+    param[3]=null;
 
-    /**
-     * Returns true if the instaces is an administration command.
-     * @return boolean
-     */
-    public boolean isAdminCommand() {
-        if(commandType == adminCom)
-            return true;
-        return false;
-    }
-
-    /**
-     * Returns true if the requested key exists.
-     * @param key String The value to perfom an existance check on.
-     * @throws NullPointerException if the key is null
-     * @return boolean
-     */
-    public boolean containsKey(String key) throws NullPointerException {
-        return commandDict.containsKey(key);
-    }
-
-    /**
-     * Returns the value of key.
-     * @param key String The data to return the value for.
-     * @throws NullPointerException if the key is null.
-     * @return String
-     */
-    public String get(String key) throws NullPointerException {
-        return(String) commandDict.get(key);
-    }
-
-    /**
-     * Removes the key from this instances and returns it to the caller.
-     * @param key String The key to remove and return.
-     * @throws NullPointerException if the key is null
-     * @return String
-     */
-    public String remove(String key) throws NullPointerException {
-        return(String) commandDict.remove(key);
-    }
-
-    /**
-     * Returns all the keys in the instance.  Each value in the Enumeration must
-     * be cast to a String.
-     * @return Enumeration
-     */
-    public Enumeration keys() {
-        return commandDict.keys();
-    }
-
-    /**
-     * Adds a key/value pair to this instance.
-     * @param key String Tag to identify the data by.
-     * @param value String Data to be saved.
-     * @throws NullPointerException if the key or value is null.
-     */
-    public void put(String key, String value) throws NullPointerException {
-        commandDict.put(key, value);
-    }
-
-    /**
-     * Returns the number of key/value combinations in the instance.
-     * @return int
-     */
-    public int size() {
-        return commandDict.size();
-    }
-
-    /**
-     * Ouputs contents of the instances as a String suitable for printing.
-     * @return String
-     */
-    public String dump() {
-        String dumpString = "Type: ";
-        if(isUniversalQueryCommand())
-            dumpString += "Universal Query Command";
-        else if(isAdminCommand())
-            dumpString += "Administration Command";
-        else
-            dumpString += "???? What am I ????";
-
-        Enumeration keys = commandDict.keys();
-        while(keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            dumpString += "\n" + "Key: " + key + " value: " + (String) commandDict.get(key);
-        }
-        dumpString += "\n";
-        return dumpString;
-    }
-}
+    // getParameterNames()'s result order is undefined, so do it manually
+    StringTokenizer st=(StringTokenizer)env[0];
+    if(st==null) 
+     {
+      st=new StringTokenizer(str,"&");
+      env[0]=st;
+     }
+    if(!st.hasMoreTokens()) return true;
+    String token=st.nextToken();
+    
+    st=new StringTokenizer(token,"=");
+    String par=st.nextToken(); par=java.net.URLDecoder.decode(par,"US-ASCII");
+    String val=st.nextToken(); val=java.net.URLDecoder.decode(val,"US-ASCII");
+    
+    param[0]=par;    
+    if(par.equals("type") || par.equals("meta"))
+     {
+      st=new StrinTokenizer(val,":");
+      param[1]=st.nextToken();
+      if(st.hasMoreTokens()) param[2]=st.nextToken();
+      if(st.hasMoreTokens()) param[3]=st.nextToken();
+     }
+    else
+     {
+      param[1]=val;
+     }
+    return false;
+   }
+   
+     
+   
+  public String toString()
+   {
+    String ret="d="+domain_name[cmd_domain]+",on="+obj_name+",ov="+obj_version+",c="+command;
+    ret+=",m="+method+",e="+encoder+",pl=["+fds+"]";
+    return ret;
+   }
+ }
