@@ -125,6 +125,8 @@ public final class Frontier extends CacheHttpServlet {
 	    client_desc.append(count_current);
 	    client_desc.append(" query ");
 	    client_desc.append(queryString);
+	    client_desc.append(" raddr ");
+	    client_desc.append(request.getRemoteAddr());
 	    client_desc.append(" frontier-id: ");
 	    client_desc.append(request.getHeader("x-frontier-id"));
 	    for(Enumeration en=request.getHeaderNames();en.hasMoreElements();)
