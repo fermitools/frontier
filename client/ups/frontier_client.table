@@ -9,6 +9,9 @@ Group:
   Flavor=ANY
   Qualifiers="GCC-v3.3"
 
+  Flavor=ANY
+  Qualifiers="GCC-v3.4"
+
 Common:
   Action=Setup
     setupenv()
