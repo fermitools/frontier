@@ -86,7 +86,8 @@ public class XmlServicer implements Servicer {
         for(int columnCnt = 1; columnCnt < descriptor.getAttributeCount() + 1; ++columnCnt)
             try {
                 String columnType = descriptor.getAttributeType(columnCnt - 1);
-                String field = descriptor.getAttributeField(columnCnt - 1);
+                //String field = descriptor.getAttributeField(columnCnt - 1);
+                //System.out.println("field: " + field + "  columnType: " + columnType);
                 if(columnType.compareToIgnoreCase("int") == 0)
                     encoder.writeInt(rs.getInt(columnCnt));
                 else if(columnType.compareToIgnoreCase("long") == 0)
