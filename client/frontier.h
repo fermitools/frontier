@@ -85,8 +85,6 @@ void frontier_closeChannel(FrontierChannel chn);
 void frontier_setReload(FrontierChannel u_channel,int reload);
 int frontier_getRawData(FrontierChannel chn,const char *uri);
 void frontier_getRespStat(FrontierChannel chn,FrontierRespStat *stat);
-const char *frontier_getHttpHeaderName(FrontierChannel c,int num);
-const char *frontier_getHttpHeaderValue(FrontierChannel c,int num);
 const char *frontier_error_desc(int err);
 
 int frontier_n2h_i32(const void* p);

@@ -107,6 +107,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
   if(internal_data) {frontierRSBlob_close((FrontierRSBlob*)internal_data,&ec);internal_data=NULL;}
 
   std::ostringstream oss;
+  oss<<"Frontier";
   char delim='?';
  
   for(std::vector<const Request*>::size_type i=0;i<v_req.size();i++)

@@ -33,4 +33,5 @@ test-htclient: $(OBJ) test-htclient.c $(HDR)
 clean:
 	rm -f *.o
 	rm -f test-htclient
+	rm -rf .libs
 

@@ -115,33 +115,12 @@ const char *frontierConfig_getServerUrl(FrontierConfig *cfg)
   return cfg->server[cfg->server_cur];
  }
  
- 
-const char *frontierConfig_getRequestUrl(FrontierConfig *cfg,const char *uri,int *ec)
- {
-  int ret;
-  
-  *ec=FRONTIER_OK;
-  bzero(cfg->buf,FRONTIER_MAX_REQUEST_URL);
-  ret=snprintf(cfg->buf,FRONTIER_MAX_REQUEST_URL,"%s/Frontier%s",frontierConfig_getServerUrl(cfg),uri);
-  if(ret>=FRONTIER_MAX_REQUEST_URL)
-   {
-    *ec=FRONTIER_EREQTOOBIG;
-    return (char*)0;
-   }
-  //printf("URL <%s>\n",cfg->buf);
-  return cfg->buf;
- }
-
 
 const char *frontierConfig_getProxyUrl(FrontierConfig *cfg)
  {
-  char *url;
+  if(cfg->proxy_cur>=cfg->proxy_num) return NULL;
   
-  if(cfg->proxy_cur>=cfg->proxy_num) return ""; // One implicit which is always ""
-  
-  url=cfg->proxy[cfg->proxy_cur];
-  if(url) return url;
-  return "";
+  return cfg->proxy[cfg->proxy_cur];
  } 
 
 

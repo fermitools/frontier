@@ -12,6 +12,7 @@
 #ifndef __HEADER_H_FN_INTERNAL_H
 #define __HEADER_H_FN_INTERNAL_H
 
+#include <http/fn-htclient.h>
 
 struct s_FrontierMemData
  {
@@ -85,7 +86,6 @@ struct s_FrontierConfig
 typedef struct s_FrontierConfig FrontierConfig;
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url);
 const char *frontierConfig_getServerUrl(FrontierConfig *cfg);
-const char *frontierConfig_getRequestUrl(FrontierConfig *cfg,const char *uri,int *ec);
 const char *frontierConfig_getProxyUrl(FrontierConfig *cfg);
 int frontierConfig_nextServer(FrontierConfig *cfg);
 int frontierConfig_nextProxy(FrontierConfig *cfg);
@@ -96,13 +96,11 @@ struct s_Channel
  {
   FrontierConfig *cfg;
   FrontierResponse *resp;
-  FrontierMemData *md_head;
-  void *curl;
+  FrontierHttpClnt *ht_clnt;
   int http_resp_code;
   int status;
   int error;
   int reload;
-  const char *http_status_line;
  };
 typedef struct s_Channel Channel;
 

@@ -188,7 +188,6 @@ int FrontierResponse_append(FrontierResponse *fr,char *buf,int len)
 int frontierResponse_finalize(FrontierResponse *fr)
  {
   int i;
-  
   if(XML_Parse(fr->parser,"",0,1)==XML_STATUS_ERROR) 
    {
     fr->error=FRONTIER_XMLPARSE;

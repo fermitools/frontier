@@ -32,25 +32,24 @@ INC		=	-I./expat/local/include -I./curl/local/include -I.
 LIBDIR		=
 LIBS		=
 
-OBJ		=	anydata.o fn-base64.o fn-md5.o frontier.o payload.o rs-bin.o error.o fn-config.o frontier-cpp.o memdata.o response.o
-
+OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o error.o fn-config.o anydata.o frontier-cpp.o
 HDR		=	frontier.h fn-internal.h
 
-all: libcurl libexpat libfrontier.so distrib
+all: htclient libexpat libfrontier.so distrib
 
-libcurl:
-	(cd curl; make all)
+htclient:
+	(cd http && CC=$(CC) COPT="$(COPT)" make all)
 
 libexpat:
-	(cd expat; make all)	
+	(cd expat && make all)	
 
-libfrontier.so: $(OBJ)
+libfrontier.so: $(OBJ) http/.libs
 	rm -f libfrontier.so
 	rm -f libfrontier.so.$(FN_VER_MAJOR)
 	rm -f libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR)
 	rm -rf .libs
 	mkdir .libs
-	cp ./curl/curl-7.11.1/lib/.libs/*.o .libs
+	cp ./http/.libs/*.o .libs
 	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
 	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
@@ -62,8 +61,8 @@ distrib:
 	mkdir dist
 	mkdir dist/lib
 	cp libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
-	(cd dist/lib/; ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR) )
-	(cd dist/lib/; ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so )
+	(cd dist/lib/ && ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so.$(FN_VER_MAJOR) )
+	(cd dist/lib/ && ln -s libfrontier.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier.so )
 	mkdir dist/include
 	cp frontier-cpp.h dist/include
 	cp frontier.h dist/include
@@ -143,11 +142,10 @@ test-pescalib: all test-pescalib.o frontier-cpp.h
 
 clean:
 	rm -f *.o *.core libfrontier.* frontier main maincc maintest getcids request_each test-pescalib
-	(cd expat; make clean)
-	(cd curl; make clean)
-	rm -fr dist/lib dist/include
+	(cd expat && make clean)
+	(cd http && make clean)
+	rm -fr dist
 	rm -rf .libs
 	rm -rf ti_files
-	rm -fr dist
 
 
