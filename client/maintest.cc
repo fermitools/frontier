@@ -62,7 +62,7 @@ int main(int argc, char **argv)
      {
       ds.setCurrentLoad(i);
       int nrec=ds.getRecNum();
-      std::cout<<"Payload "<<i<<" number of records "<<nrec<<'\n';
+      std::cout<<"Payload "<<i<<" records "<<nrec<<" bsize "<<ds.getRSBinarySize()<<std::endl;
       delete vrq[i-1];
      }
 #ifdef FNTR_USE_EXCEPTIONS    

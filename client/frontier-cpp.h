@@ -162,11 +162,14 @@ class DataSource
    std::string *getString();
    std::string *getBlob();
    
-   // Meta info
+   // Current pyload meta info
    unsigned int getRecNum();
+   unsigned int getRSBinarySize();
+   unsigned int getRSBinaryPos();
    BLOB_TYPE lastFieldType(){return last_field_type;} // Original type of the last extracted field
    BLOB_TYPE nextFieldType(); // Next field type. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
+   inline int isEOF(){return (getRSBinarySize()==getRSBinaryPos());} // End Of File
    
    virtual ~DataSource();
  };

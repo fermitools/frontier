@@ -177,6 +177,22 @@ unsigned int DataSource::getRecNum()
  }
 
  
+unsigned int DataSource::getRSBinarySize()
+ {
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
+  return rs->size;  
+ }
+
+ 
+unsigned int DataSource::getRSBinaryPos()
+ {
+  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
+  return rs->pos;  
+ }
+  
+ 
 int DataSource::getAnyData(AnyData* buf)
  {
   if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
