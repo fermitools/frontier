@@ -43,7 +43,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	    stream("\" encoding=\"" + encoding + "\">",LF);
 	    produceData(servicer);
 	} catch (RequestHandlerException e) {
-	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion,noLF);
+	    stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"",noLF);
 	    stream(" encoding=\"" + encoding + "\">",LF);
 	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
 	    stream("</payload>",LF);

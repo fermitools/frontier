@@ -47,8 +47,11 @@ public class Servicer {
 	long recordCnt = 0;
 	while (resultSet.next()) {
 	    recordCnt += 1;
+	    System.out.println("columnCnt: " + columnCnt);
 	    for (int cnt=1;cnt<=columnCnt;cnt++) {
 		String columnType = rsmd.getColumnTypeName(cnt);
+		String name = rsmd.getColumnName(cnt);
+		System.out.println("colCnt: " + cnt + " name: " + name + " columnType: " + columnType);
 		if ( columnType == "RAW")
 		    encoder.writeBytes(resultSet.getBytes(cnt));
 		else if (columnType == "NUMBER")
