@@ -1,8 +1,8 @@
 $Id$
 
-Frontier client API v2.0.2
+Frontier client API
 
-1. To compile from CVS:
+1. To compile:
 make
 
 2. To use in C application:
@@ -16,12 +16,12 @@ Link against -lfrontier_client
 Link against -lfrontier_client
 
 4. Environment:
-export FRONTIER_SERVER1=frontier_server
-export FRONTIER_PROXY1=local_proxy
-export FRONTIER_LOG_LEVEL=error
+export FRONTIER_SERVER[1234]=frontier_server
+export FRONTIER_PROXY[1234]=local_proxy
+export FRONTIER_LOG_LEVEL={nolog,info,debug}
 
 
 
-For more details, guides/manuals see http://whcdf03.fnal.gov/ntier-wiki/FrontPage
+For more details, guides/manuals see http://lynx.fnal.gov/ntier-wiki/
 
 Sergey Kosyakov, serge@fnal.gov
