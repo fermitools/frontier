@@ -77,13 +77,13 @@ public final class Frontier extends CacheHttpServlet {
 	for (int i=0;i<numCommands;i++) {
 	    Command command = (Command) commandList.get(i);
 	    if (command.isUniversalQueryCommand())
-		handler = new UniversalQueryRequestHandler();
+		handler = new UniversalQueryRequestHandler(writer);
 	    else if (command.isAdminCommand()) 
-		handler = new AdministrationRequestHandler();
+		handler = new AdministrationRequestHandler(writer);
 	    else
 		throw new ServletException("Internal error, unknown type of Command.");
 	    try {
-		handler.process(command,writer);
+		handler.process(command);
 	    } catch (RequestHandlerException e) {
 		generateBadQualityTag(e.getMessage());
 	    }

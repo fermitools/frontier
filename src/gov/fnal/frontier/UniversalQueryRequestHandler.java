@@ -15,24 +15,28 @@ import javax.servlet.ServletOutputStream;
 
 public class UniversalQueryRequestHandler extends RequestHandler {
 
-    private String  encoding      = null;
-    private String  objectName    = null;
-    private String  objectVersion = null;
-    private Encoder encoder       = null;
+    private String  encoding        = null;
+    private String  objectName      = null;
+    private String  objectVersion   = null;
+    private Encoder encoder         = null;
+    private ClassLoader classLoader = new ClassLoader();
 
 
-    UniversalQueryRequestHandler() {}
+    UniversalQueryRequestHandler(ServletOutputStream writer) {
+	super(writer);
+    }
     
-    public void process(Command command, ServletOutputStream writer) 
+    public void process(Command command) 
 	throws RequestHandlerException, ServletException {
 
 	validate(command);
 	encoder = getEncoder(writer);
+	Servicer servicer = classLoader.load(objectName,objectVersion);
 
-	Servicer servicer = new Servicer();
 	try {
-	    servicer.validate(Command,command);
+	    servicer.validate(command);
 	    stream("<payload type=\"" + objectName + " version=\"" + objectVersion + " encoding=\"" + encoding + "\">");
+	    stream(servicer.getSql());
 	    stream("<data>");
 	
 	    stream("data data data");
@@ -41,7 +45,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	    stream("<quality stuff here/>");
 	    stream("</payload>");
 	} catch (ServicerValidationException e) {
-	    stream("<quality error=\"1\: code=\"???\" message=\"" + e.getMessage() + "\"/>");
+	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>");
 	}
     }
 
@@ -95,7 +99,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 	return encoder;
     }
 
-    void stream(String line) throws ServletException {
+    private void stream(String line) throws ServletException {
 	try {
 	    writer.println(line);
 

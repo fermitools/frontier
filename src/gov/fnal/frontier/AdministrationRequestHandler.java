@@ -17,9 +17,11 @@ public class AdministrationRequestHandler extends RequestHandler {
 
 
 
-    AdministrationRequestHandler() {}
+    AdministrationRequestHandler(ServletOutputStream writer) {
+	super(writer);
+    }
     
-    public void process(Command command, ServletOutputStream writer)
+    public void process(Command command)
 	throws RequestHandlerException, ServletException {
 
 	throw new RequestHandlerException("Admin commands are not yet supported.");

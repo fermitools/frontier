@@ -13,11 +13,13 @@ import javax.servlet.ServletOutputStream;
 
 public class RequestHandler {
 
+    ServletOutputStream writer = null;
 
-
-    RequestHandler() {}
+    RequestHandler(ServletOutputStream aWriter) {
+	writer = aWriter;
+    }
     
-    public void process(Command command, ServletOutputStream writer)
+    public void process(Command command)
 	throws RequestHandlerException, ServletException {
 
     }
