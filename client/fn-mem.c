@@ -48,7 +48,7 @@ void *frontier_malloc(size_t size)
     a_mem[max_mem].ptr=ret;
     a_mem[max_mem].size=size;  
    }
-  printf("malloc 0x%016lX, count %d, id %d, size %ld\n",(unsigned long)ret,mem_count,i,size);
+  printf("malloc 0x%016lX, count %d, id %d, size %ld\n",(unsigned long)ret,mem_count,i,(long)size);
   return ret;
  }
 
