@@ -43,6 +43,7 @@
  * @author rob@iharder.net
  * @version 2.0
  * Adapted to Frontier needs by Sergey Kosyakov
+ * $id=$
  */
 package gov.fnal.frontier.codec;
 
