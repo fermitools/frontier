@@ -68,19 +68,20 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 
     private void queryData(Servicer servicer, Connection connection) 
 	throws ServletException {
-	Statement stmt = null;
-	String sql = servicer.getSql();
+	PreparedStatement stmt=null;
+	ResultSet rs=null;
+	String sql=servicer.getSql();
 	try {
-	    stmt = connection.createStatement();
-	    ResultSet resultSet = stmt.executeQuery(sql);
-	    marshal(servicer,resultSet);
+	    stmt=connection.prepareStatement(sql);
+	    stmt.setLong(1,servicer.cid.longValue());
+	    rs=stmt.executeQuery();
+	    marshal(servicer,rs);
 	} catch (SQLException e) {
 	    stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>",LF);
 	    stream("</payload>",LF);
 	} finally {
-	    try {
-		stmt.close();
-	    } catch (SQLException e) {}
+	    try {if(rs!=null)rs.close();} catch (SQLException e) {}
+	    try {if(stmt!=null)stmt.close();} catch (SQLException e) {}
 	}
     }
 

@@ -36,7 +36,7 @@ public class BlobEncoder implements Encoder
 
   private void dump() throws Exception
    {
-    System.out.println("dump()");
+    //System.out.println("dump()");
     baos.writeTo(channel);
     baos.reset();
    }
@@ -74,7 +74,7 @@ public class BlobEncoder implements Encoder
 
   public void writeBytes(byte[] v) throws Exception
    {
-    System.out.println("writeBytes(): length "+v.length);
+    //System.out.println("writeBytes(): length "+v.length);
     os.writeInt(v.length);
     out_size+=4;
     os.write(v,0,v.length);

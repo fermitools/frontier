@@ -14,23 +14,16 @@ import com.oreilly.servlet.*;
 
 public final class Frontier extends CacheHttpServlet {
 
-    private String frontierVersion                    = "1.0";
-    private String xmlVersion                         = "1.0";
+    private static final long time_expire=(1000*60*60*24*7);	// 7 days, in milliseconds
+    
+    private static int count_total=0;
+    private static int count_current=0;
+    private static Boolean mutex=new Boolean(true);
+    
 
-    private DbConnectionMgr connMgr                   = null;
-    private CommandParser   parser                    = null;
-    private ArrayList       commandList               = null;
-    private UniversalQueryRequestHandler queryHandler = null;
-    private AdministrationRequestHandler adminHandler = null;
-    private ServletOutputStream writer                = null;
-
-    /**
-     * Initilizes the servlet.
-     */
-    public void init() {
-	connMgr      = DbConnectionMgr.getDbConnectionMgr();
-	parser       = new CommandParser();
-    }
+    private static final String frontierVersion                    = "1.0";
+    private static final String xmlVersion                         = "1.0";
+    
 
     /**
      * Respond to a GET request for the content produced by this
@@ -47,46 +40,83 @@ public final class Frontier extends CacheHttpServlet {
                       HttpServletResponse response)
         throws IOException, ServletException {
 
+	int local_current;
+        int id;
+	long timestamp;
+        DbConnectionMgr connMgr                   = null;
+        CommandParser   parser                    = null;
+        ArrayList       commandList               = null;
+        UniversalQueryRequestHandler queryHandler = null;
+        AdministrationRequestHandler adminHandler = null;
+        ServletOutputStream writer                = null;
+		
+	synchronized(mutex)
+	 {
+	  id=count_total;
+	  ++count_total;
+	  ++count_current;
+	  local_current=count_current;	 
+	 }
+	 
+	timestamp=(new java.util.Date()).getTime();	 
 	String queryString = request.getQueryString();
+
+	System.out.println("proto6log "+timestamp+" start "+id+" "+local_current+" "+queryString);	
+	 
 	response.setContentType("text/xml");
 	response.setCharacterEncoding("US-ASCII");
 	// For Squid
- 	response.setHeader("Cache-Control","max-age=31557600");
- 	response.setHeader("Expires","Wed, 15 Jan 2005 19:22:28 GMT");
- 	response.setHeader("Last-Modified","Wed, 13 Jan 2004 19:22:28 GMT");
+ 	//response.setHeader("Cache-Control","max-age=31557600");
+ 	response.setDateHeader("Expires",timestamp+time_expire);
+ 	//response.setHeader("Last-Modified","Wed, 13 Jan 2004 19:22:28 GMT");
 
+	connMgr = DbConnectionMgr.getDbConnectionMgr();
+	parser  = new CommandParser();
         writer = response.getOutputStream();
 
-	stream("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
-	stream("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion + "\">");
+	writer.println("<?xml version=\"1.0\" encoding=\"US-ASCII\"?>");
+	writer.println("<frontier version=\"" + frontierVersion + "\" xmlVersion=\"" + xmlVersion + "\">");
 	try {
 	    commandList = parser.parse(queryString);
 	    connMgr.initialize();
 	    handleRequest(commandList,writer);
 	} catch (CommandParserException e) {
-	    stream("<transaction payloads=\"0\">");
-	    generateBadQualityTag(e.getMessage());
+	    writer.println("<transaction payloads=\"0\">");
+	    writer.println(generateBadQualityTag(e.getMessage()));
 	} catch (DbConnectionMgrException e) {
 	    System.out.println("Unable to obtain connection: " + e.getMessage());
-	    generateBadQualityTag(e.getMessage());
+	    writer.println(generateBadQualityTag(e.getMessage()));
+	} catch(Exception e) {
+	    System.out.println("Error: "+e);
+	    e.printStackTrace();
+	    writer.println(generateBadQualityTag(e.getMessage()));
 	}
-	stream("</frontier>");
+	writer.println("</frontier>");
 
 	writer.close();
+	
+	synchronized(mutex)
+	 {
+	  --count_current;	  
+	  local_current=count_current;
+	 }
+	 
+	long timestamp2=(new java.util.Date()).getTime();	 
+	System.out.println("proto6log "+timestamp2+" stop  "+id+" "+local_current+" "+(timestamp2-timestamp));	
     }
 
     /**
      * Accepts a list Commands and distribues each command to the appropriate handler.
      *
      * @param commandList An ArrayList of Command objects which are to be handled.
-     * @param writer      The output stream to respond to the Command on.
+     * @param writer      The output writer.println to respond to the Command on.
      *
      * @exception ServletException if a servlet error occurs
      */
-    private void handleRequest(ArrayList commandList, ServletOutputStream writer) throws ServletException {
+    private void handleRequest(ArrayList commandList, ServletOutputStream writer) throws Exception {
 	RequestHandler handler = null;
 	int numCommands = commandList.size();
-	stream("<transaction payloads=\"" + numCommands + "\">");
+	writer.println("<transaction payloads=\"" + numCommands + "\">");
 	for (int i=0;i<numCommands;i++) {
 	    Command command = (Command) commandList.get(i);
 	    if (command.isUniversalQueryCommand())
@@ -101,34 +131,19 @@ public final class Frontier extends CacheHttpServlet {
 		generateBadQualityTag(e.getMessage());
 	    }
 	}
-	stream("</transaction>");
+	writer.println("</transaction>");
     }
 
-    /**
-     * Outputs a line of text.
-     *
-     * @param line Data to be output.
-     *
-     * @exception ServletException if a servlet error occurs
-     */
-    private void stream(String line) throws ServletException {
-	try {
-	    writer.println(line);
-
-	} catch (IOException e) {
-	    throw new ServletException(e.getMessage());
-	}
-    }
 
     /**
-    * Outputs an XML tag to the stream indicating an error condtion
+    * Outputs an XML tag to the writer.println indicating an error condtion
     *
-    * @param message Text message to place into stream.
+    * @param message Text message to place into writer.println.
     *
     * @exception ServletException if a servlet error occurs
     */
-    private void generateBadQualityTag(String message) throws ServletException {
-	stream("<quality error=\"1\" code=\"???\" message=\"" + message + "\"/>");
+    private String generateBadQualityTag(String message){
+	return "<quality error=\"1\" code=\"???\" message=\"" + message + "\"/>";
     }
 
 

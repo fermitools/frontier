@@ -14,8 +14,15 @@ import gov.fnal.frontier.codec.*;
 
 public class Servicer {
 
+    private static final String sql_pescalib=
+     "select address,gain,sourcemean,sourcerms,sourcenorm,lasernorm,"+
+     "linearity1,linearity2,linearity3,attenuation1,attenuation2,attenuation3 "+
+     "from pescalib where cid = ? ";
+    private static final String sql_calibrunlist=
+     "select CALIB_RUN,CALIB_VERSION,PERIOD,DATA_STATUS from CALIBRUNLISTS WHERE CID = ? ";
+    
     String tableName    = null;
-    Long   cid           = null;
+    public Long   cid          = null;
 
     Servicer() {}
 
@@ -35,9 +42,13 @@ public class Servicer {
     }
 	
     public String getSql() {
-	String sql = "select * FROM  " + tableName + " where CID = " + cid.longValue();
+	String sql="select * FROM  " + tableName + " where CID = ? ";
 	if (tableName.compareToIgnoreCase("calibrunlists")==0)
-	    sql = "select CALIB_RUN,CALIB_VERSION,PERIOD,DATA_STATUS from CALIBRUNLISTS WHERE CID = " + cid.longValue();
+	    sql=sql_calibrunlist;
+	else if(tableName.compareToIgnoreCase("cmuchannel")==0)
+	    sql=sql+" order by 1,2";
+	else if(tableName.compareToIgnoreCase("pescalib")==0)
+	    sql=sql_pescalib;
 	return sql;
     }
 
@@ -47,11 +58,11 @@ public class Servicer {
 	long recordCnt = 0;
 	while (resultSet.next()) {
 	    recordCnt += 1;
-	    System.out.println("columnCnt: " + columnCnt);
+	    //System.out.println("columnCnt: " + columnCnt);
 	    for (int cnt=1;cnt<=columnCnt;cnt++) {
 		String columnType = rsmd.getColumnTypeName(cnt);
 		String name = rsmd.getColumnName(cnt);
-		System.out.println("colCnt: " + cnt + " name: " + name + " columnType: " + columnType);
+		//System.out.println("colCnt: " + cnt + " name: " + name + " columnType: " + columnType);
 		if ( columnType == "RAW")
 		    encoder.writeBytes(resultSet.getBytes(cnt));
 		else if (columnType == "NUMBER")
