@@ -3,6 +3,7 @@ package gov.fnal.frontier;
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.StringTokenizer;
+import java.util.Calendar;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 
@@ -28,11 +29,12 @@ public class UniversalQueryRequestHandler extends RequestHandler {
 
     /**
      * Constructor.
+     * @param id {@link Identifier}
      * @param writer ServletOutputStream the stream to write the results of
      * the {@link Command} to.
      */
-    UniversalQueryRequestHandler(ServletOutputStream writer) {
-        super(writer);
+    UniversalQueryRequestHandler(Identifier id, ServletOutputStream writer) {
+        super(id, writer);
     }
 
     /**
@@ -56,18 +58,16 @@ public class UniversalQueryRequestHandler extends RequestHandler {
             connection = connMgr.acquire();
             produceData(servicer, connection, encoder);
         } catch(ServicerFactoryException e) {
-            generateExceptionXML(e.getMessage());
+            generateExceptionXML(e);
         } catch(RequestHandlerException e) {
-            generateExceptionXML(e.getMessage());
+            generateExceptionXML(e);
         } catch(DbConnectionMgrException e) {
-            generateExceptionXML(e.getMessage());
+            generateExceptionXML(e);
         } finally {
             try {
                 connMgr.release(connection);
             } catch(DbConnectionMgrException e) {
-                System.err.println(
-                    "UniversalQueryReqeustHandler.process - received the following error when "
-                    + "closing the database connection." + e.getMessage());
+                recordError(e);
             }
         }
     }
@@ -91,12 +91,14 @@ public class UniversalQueryRequestHandler extends RequestHandler {
                    + recordCnt + "\"/>", LF);
             stream("</payload>", LF);
         } catch(ServicerException e) {
+            recordError(e);
             stream("</data>", LF);
-            stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>", LF);
+            stream("<quality error=\"1\" message=\"" + e.getMessage() + "\"/>", LF);
             stream("</payload>", LF);
         } catch(ServletException e) {
+            recordError(e);
             stream("</data>", LF);
-            stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>", LF);
+            stream("<quality error=\"1\" message=\"" + e.getMessage() + "\"/>", LF);
             stream("</payload>", LF);
         }
     }
@@ -175,6 +177,33 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     }
 
     /**
+     * Creates a general error message on the output stream.
+     * @param exception Exception instance.
+     * to the caller via the output stream.
+     * @exception ServletException
+     */
+    private void generateExceptionXML(Exception e) throws ServletException {
+        recordError(e);
+        stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"", noLF);
+        stream(" encoding=\"" + encoding + "\">", LF);
+        // Replace any double quote with a single one.  When outputting the data to the stream.
+        stream("<quality error=\"1\" message=\"" + e.getMessage().replace('"','\'') + "\"/>", LF);
+        stream("</payload>", LF);
+    }
+
+    /**
+     * Outputs the message from the quality error to the log file.
+     * @param message String text contining the error message.
+     * @todo Need a debug class to handle such messages.
+     */
+    private void recordError(Exception e) {
+        Calendar timestamp = Calendar.getInstance();
+        System.out.println("<frontierLog " + timestamp.getTime()
+                           + " ID: " + id.getIdentifier() + "> error: " + e.getMessage());
+        e.printStackTrace();
+    }
+
+    /**
      * Outputs data to the Stream.  This is a utility method which simply allows the exception
      * to be caught in one place.
      * @param line String data to be output to the stream.
@@ -191,21 +220,6 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         } catch(IOException e) {
             throw new ServletException(e.getMessage());
         }
-    }
-
-    /**
-     * Creates a general error message on the output stream.
-     * @param message String informational data about the error which is returned
-     * to the caller via the output stream.
-     * @exception ServletException
-     */
-    private void generateExceptionXML(String message) throws ServletException {
-      stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"", noLF);
-      stream(" encoding=\"" + encoding + "\">", LF);
-      // Replace any double quote with a single one.  When outputting the data to the stream.
-      stream("<quality error=\"1\" code=\"???\" message=\""
-             + message.replace('"','\'') + "\"/>", LF);
-      stream("</payload>", LF);
     }
 
 }
