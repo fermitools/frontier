@@ -1,5 +1,8 @@
 package gov.fnal.frontier;
 
+import java.sql.Connection;
+import gov.fnal.frontier.codec.Encoder;
+
 /**
  * $Id$
  * $Author$
@@ -18,11 +21,11 @@ public class XmlServicer extends Servicer {
 
     /**
      * Validates that the data in the Command produces a
-     * vaild SQL where clause.  As a side effect the SQL
-     * select statement is built and loaded into the instance.
-     *
+     * vaild SQL where clause.  As a imporant side effect the SQL
+     * select statement is built and stored within the instance. If the Commmad
+     * is not valid an exception is thrown.
      * @param command An instance of the Command class.
-     * @exception ServicerValidationExeption Thrown if a valid
+     * @exception ServicerValidationExeption Thrown if unable to locate a valid where clause.
      * SQL statement cannot be created.
      * @return void.
      *
@@ -37,6 +40,9 @@ public class XmlServicer extends Servicer {
         sqlStatement += " FROM " + descriptor.getFromClause();
         sqlStatement += " WHERE " + whereClause;
         sqlStatement += " " + descriptor.getFinalClause();
-        throw new ServicerValidationException("SQL Statement: " + sqlStatement);
+    }
+
+    public void process(Connection connection, Encoder encoder) throws ServicerException {
+
     }
 }

@@ -58,7 +58,7 @@ public class ServicerFactory {
         ServicerFactoryException {
         Servicer servicer = null;
 
-        /** @todo Add a cache for the {@link Descriptor}s **/
+        /** @todo Add a cache for the Descriptor objects **/
 
         SFDataResult result = getData(className, classVersion);
         try {

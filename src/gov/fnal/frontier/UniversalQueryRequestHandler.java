@@ -26,7 +26,6 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     private String encoding = null;
     private String objectName = null;
     private String objectVersion = null;
-    private Encoder encoder = null;
     private DbConnectionMgr connMgr = DbConnectionMgr.getDbConnectionMgr();
 
     /**
@@ -41,24 +40,34 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     /**
      * Receives the {@link Command} to be processed and controls the processing.
      * @param command Command a single query command to be processed.
-     * @throws ServletException
+     * @exception ServletException
+     * @return void
      */
     public void process(Command command) throws ServletException {
-
+        Connection connection = null;
         try {
             validate(command);
-            encoder = getEncoder(writer);
+            Encoder encoder = getEncoder(writer);
+            /** @todo ServicerFactory needs to be a Singleton class at some point */
             ServicerFactory sf = new ServicerFactory();
             Servicer servicer = sf.load(objectName, objectVersion);
-            //Servicer servicer = new Servicer();  /* HACK HACK HACK  Need to call ServicerFactory!! */
             servicer.validateAndLoad(command);
             stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion, noLF);
             stream("\" encoding=\"" + encoding + "\">", LF);
-            produceData(servicer);
+            connection = connMgr.acquire();
+            servicer.process(connection,encoder);
+//            queryData(servicer,connection,encoder);
+            // md5Digest(......)
         } catch(ServicerFactoryException e) {
             generateExceptionXML(e.getMessage());
         } catch(RequestHandlerException e) {
             generateExceptionXML(e.getMessage());
+        } catch(DbConnectionMgrException e) {
+            generateExceptionXML(e.getMessage());
+        } finally {
+            try {
+                connMgr.release(connection);
+            } catch(DbConnectionMgrException e) {}
         }
     }
 
@@ -66,7 +75,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
      * Creates a general error message on the output stream.
      * @param message String informational data about the error which is returned
      * to the caller via the output stream.
-     * @throws ServletException
+     * @exception ServletException
      */
     private void generateExceptionXML(String message) throws ServletException {
         stream("<payload type=\"" + objectName + "\" version=\"" + objectVersion + "\"", noLF);
@@ -75,23 +84,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         stream("</payload>", LF);
     }
 
-    private void produceData(Servicer servicer) throws ServletException {
-
-        Connection connection = null;
-        try {
-            connection = connMgr.acquire();
-            queryData(servicer, connection);
-        } catch(DbConnectionMgrException e) {
-            stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>", LF);
-            stream("</payload>", LF);
-        } finally {
-            try {
-                connMgr.release(connection);
-            } catch(DbConnectionMgrException e) {}
-        }
-    }
-
-    private void queryData(Servicer servicer, Connection connection) throws ServletException {
+    private void queryData(Servicer servicer, Connection connection, Encoder encoder) throws ServletException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
         String sql = servicer.getSql();
@@ -99,7 +92,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
             stmt = connection.prepareStatement(sql);
             if(servicer.param_num > 0) stmt.setString(1, servicer.cmd.get("cid"));
             rs = stmt.executeQuery();
-            marshal(servicer, rs);
+            marshal(servicer, rs, encoder);
         } catch(SQLException e) {
             stream("<quality error=\"1\" code=\"???\" message=\"" + e.getMessage() + "\"/>", LF);
             stream("</payload>", LF);
@@ -111,7 +104,7 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         }
     }
 
-    private void marshal(Servicer servicer, ResultSet resultSet) throws SQLException,
+    private void marshal(Servicer servicer, ResultSet resultSet, Encoder encoder) throws SQLException,
         ServletException {
         try {
             stream("<data>", noLF);
@@ -140,11 +133,9 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     /**
      * Insures required keys common to all requests exist and are valid. As a
      * side effect this class will set values internal to this class.
-     *
      * @param  command  An instance of the Command class.
+     * @exception RequestHandlerExcepiton thrown if the command is invalid.
      * @return void
-     * @except RequestHandlerExcepiton thrown if the command is invalid.
-     *
      */
     private void validate(Command command) throws RequestHandlerException {
         encoding = command.remove("encoding");
@@ -166,10 +157,10 @@ public class UniversalQueryRequestHandler extends RequestHandler {
     }
 
     /**
-     * Creates and returns an Encoder of the type set in a private class variable.
-     *
-     * @except RequestHandlerExcepiton thrown if the command is invalid.
-     *
+     * Creates and returns an sub-class of Encoder and returns it to the caller.  The
+     * sub-class created is based on a private variable which was filled from the URL.
+     * @exception RequestHandlerExcepiton thrown if the command is invalid.
+     * @return Encoder
      */
     private Encoder getEncoder(ServletOutputStream writer) throws RequestHandlerException {
         Encoder encoder = null;
@@ -188,6 +179,13 @@ public class UniversalQueryRequestHandler extends RequestHandler {
         return encoder;
     }
 
+    /**
+     * Outputs data to the Stream.  This is a utility method which simply allows the exception
+     * to be caught in one place.
+     * @param line String data to be output to the stream.
+     * @param lineFeed boolean true if a newline should be placed at the end of the data.
+     * @exception ServletException
+     */
     private void stream(String line, boolean lineFeed) throws ServletException {
         try {
             if(lineFeed)

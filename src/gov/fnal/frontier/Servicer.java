@@ -2,6 +2,7 @@ package gov.fnal.frontier;
 
 import java.util.StringTokenizer;
 import java.sql.ResultSet;
+import java.sql.Connection;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import gov.fnal.frontier.codec.*;
@@ -42,7 +43,19 @@ public class Servicer {
         throw new ServicerValidationException("Servicer.validateAndLoad must be overridden.");
     }
 
-    public void validate(Command command) throws ServicerValidationException {
+     public void process(Connection connection, Encoder encoder) throws ServicerException {
+
+    }
+
+
+
+
+
+
+
+
+
+   public void validate(Command command) throws ServicerValidationException {
 
         cmd = command;
         String type = command.get("type");
