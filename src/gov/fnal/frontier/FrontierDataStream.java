@@ -28,6 +28,8 @@ public class FrontierDataStream
    {
     if(mode!=BY_NAME) throw new Exception("Wromg mode");
     
-    return (String)mapParam.get(key);
+    String ret=(String)mapParam.get(key);
+    if(ret==null) throw new Exception("Required parameter "+key+" is not defiled.");
+    return ret;
    }
  }

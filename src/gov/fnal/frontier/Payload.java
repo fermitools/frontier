@@ -3,9 +3,12 @@ package gov.fnal.frontier;
 import java.sql.*;
 import java.io.*;
 import gov.fnal.frontier.codec.*;
+import java.util.*;
 
 public class Payload
  {
+  private static Hashtable htFdo=new Hashtable(); 
+  
   private DbConnectionMgr dbm;
   private Command cmd;
   private FrontierDataObject fdo;
@@ -26,9 +29,27 @@ public class Payload
   protected Payload(Command a_cmd,DbConnectionMgr a_dbm) throws Exception
    {
     dbm=a_dbm;
-    cmd=a_cmd;
-    
+    cmd=a_cmd;        
     System.out.println("New payload for cmd="+cmd);
+    type=cmd.obj_name;
+    version=cmd.obj_version;
+    encoder=cmd.encoder;
+    err_code=0;
+    err_msg="";
+    md5="";
+    rec_num=0;
+        
+    String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
+    
+    // XXX - during development ONLY!
+    //fdo=(FrontierDataObject)htFdo.get(key);
+    if(fdo!=null)
+     {
+      System.out.println("Got "+key+" from cache");
+      time_expire=fdo.fdo_get_expiration_time();
+      noCache=fdo.fdo_is_no_cache();
+      return;      
+     }
     
     Connection con=null;
     PreparedStatement stmt=null;
@@ -51,6 +72,7 @@ public class Payload
         fdo.fdo_init(b);
         time_expire=fdo.fdo_get_expiration_time();
         noCache=fdo.fdo_is_no_cache();
+        htFdo.put(key,fdo);
        }
       else throw new Exception("Unsupported xsd_type "+xsd_type+".");
      }
@@ -59,15 +81,7 @@ public class Payload
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
       if(con!=null) try{dbm.release(con);}catch(Exception e){}
-     }
-     
-    type=cmd.obj_name;
-    version=cmd.obj_version;
-    encoder=cmd.encoder;
-    err_code=0;
-    err_msg="";
-    md5="";
-    rec_num=0;
+     }     
    }
    
    

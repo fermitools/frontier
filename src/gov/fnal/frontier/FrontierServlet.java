@@ -47,16 +47,14 @@ public final class FrontierServlet extends HttpServlet
           ResponseFormat.payload_start(out,p.type,p.version,p.encoder);
           try
            {
-            p.send(out);                        
+            p.send(out);
+            ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num);
            }
           catch(Exception e)
            {
-            Frontier.Log("Error while processing payload "+i+": "+e);
+            Frontier.Log("Error while processing payload "+i+": ",e);
+            ResponseFormat.payload_end(out,1,""+e,"",-1);
             break;
-           }
-          finally
-           {
-            ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num);
            }
          }
        }
