@@ -12,10 +12,27 @@
 
 #include <iostream>
 #include <stdexcept>
- 
+
+#include <sys/time.h>
+
+
+void print_time(const char *msg)
+ {
+  struct timeval tv;
+  
+  int ret=gettimeofday(&tv,NULL);
+  if(ret) std::cout<<"Can not get current time :-(\n";
+  
+  std::cout<<msg<<tv.tv_sec;
+  int msec=tv.tv_usec/1000;
+  if(msec<10) std::cout<<"00";
+  else if(msec<100) std::cout<<"0";
+  std::cout<<msec<<'\n';
+ } 
+
 
 int main(int argc, char **argv)
- {
+ {   
   if(argc!=6)
    {
     std::cout<<"Usage: "<<argv[0]<<" host port object_name key_name key_value"<<'\n';
@@ -34,7 +51,9 @@ int main(int argc, char **argv)
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req);
-    ds.getData(vrq); 
+    print_time("start:  ");
+    ds.getData(vrq);
+    print_time("finish: ");
 
     ds.setCurrentLoad(1);
     int nrec=ds.getRecNum();
