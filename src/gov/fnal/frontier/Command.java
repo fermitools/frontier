@@ -61,4 +61,21 @@ public class Command {
 	return commandDict.size();
     }
 
+    public String dump() {
+	String dumpString = "Type: ";
+	if (isUniversalQueryCommand())
+	    dumpString += "Universal Query Command";
+	else if (isAdminCommand())
+	    dumpString += "Administration Command";
+	else
+	    dumpString += "???? What am I ????";
+	
+	Enumeration keys = commandDict.keys();
+	while (keys.hasMoreElements()) {
+	    String key = (String) keys.nextElement();
+	    dumpString += "\n" + "Key: " + key + " value: " + (String) commandDict.get(key);
+	}
+	dumpString += "\n";
+	return dumpString;
+    }
 }

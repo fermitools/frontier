@@ -45,15 +45,25 @@ public final class Frontier extends CacheHttpServlet {
         PrintWriter writer = response.getWriter();
 	String queryString = request.getQueryString();
 
-	try {
-	    commandList = parser.parse(queryString);
-	} catch (CommandParserException e) {
-	    throw new ServletException(e.getMessage());
-	}
-
         writer.println("----------------------------------------");
 	writer.println("Ok, I'm up and running....");
 	writer.println("queryString: " + queryString);
+
+
+	try {
+	    commandList = parser.parse(queryString);
+	} catch (CommandParserException e) {
+	    writer.println(e.getMessage());
+	    throw new ServletException(e.getMessage());
+	}
+
+
+	for(int i=0;i<commandList.size();i++) {
+	    Command command = (Command) commandList.get(i);
+	    writer.println("\n\nCommand dump: ");
+	    writer.println(command.dump());
+	}
+
         writer.println("----------------------------------------");
 	writer.flush();
     }

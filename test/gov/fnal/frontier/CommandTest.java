@@ -57,6 +57,11 @@ public class CommandTest extends TestCase {
 	}
     }   
 	
+    public void testDump() {
+	Command command = new Command("type","bah!");
+	command.setUniversalQueryCommand();
+	System.out.println(command.dump());
+    }
 
 	
 }
