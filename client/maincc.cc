@@ -75,7 +75,7 @@ class SvxBeamPosition
   double SPARE2;
   double SPARE3;
 
-  SvxBeamPosition(frontier::CDFDataSource& ds)
+  SvxBeamPosition(frontier::DataSource& ds)
    {
     //CID=ds.getLongLong();
     CHANNELID=ds.getInt();
@@ -152,7 +152,7 @@ class CalTrigWeights
   std::vector<int> *ET_FACTOR_WALL;
   std::vector<int> *ET_FACTOR_PLUG;
   
-  CalTrigWeights(frontier::CDFDataSource& ds)
+  CalTrigWeights(frontier::DataSource& ds)
    {
     //CID=ds.getLongLong();
     ID=ds.getInt();
@@ -204,14 +204,16 @@ int do_main(int argc, char **argv)
     if(argc>1) server_url=argv[1];
     if(argc>2) proxy_url=new std::string(argv[2]);
     
-    frontier::CDFDataSource ds(server_url,proxy_url);
+    frontier::DataSource ds(server_url,proxy_url);
     if(proxy_url){delete proxy_url; proxy_url=NULL;}
     //frontier::CDFDataSource ds;
     
     ds.setReload(1);
 
-    frontier::Request req1("SvxBeamPosition:1",frontier::BLOB,"cid","316011");
-    frontier::Request req2("CALTrigWeights:1",frontier::BLOB,"cid","14319");
+    frontier::Request req1("SvxBeamPosition:1",frontier::BLOB);
+    req1.addKey("cid","316011");
+    frontier::Request req2("CALTrigWeights:1",frontier::BLOB);
+    req2.addKey("cid","14319");
 
     std::vector<const frontier::Request*> vrq;
     vrq.insert(vrq.end(),&req1);

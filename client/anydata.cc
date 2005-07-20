@@ -42,7 +42,7 @@ int AnyData::castToInt()
  
 long long AnyData::castToLongLong()
  {
-  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to long long",blob_type_name[t]);
+  if(t!=BLOB_TYPE_INT4) frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"converting %s to long long",blob_type_name[t]);
   switch(t)
    {
     case BLOB_TYPE_BYTE: return (long long)v.b;
@@ -112,4 +112,31 @@ std::string* AnyData::castToString()
   return NULL;
  }
 
+
+std::string* AnyData::getString()
+ {
+  if(isNull) return NULL;
+  if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s); 
+  return castToString();
+ }
+
+
+void AnyData::assignString(std::string *s)
+ {
+  if(isNull)
+   {
+    *s="";
+    return;
+   }
+
+  if(t==BLOB_TYPE_ARRAY_BYTE)
+   {
+    s->assign(v.str.p,v.str.s);
+    return;
+   }
+
+  std::string *tmp=castToString();
+  *s=*tmp;
+  delete tmp;
+ }
 

@@ -9,7 +9,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	3.0
+FN_VER_MINOR	=	4.0
 
 ifeq ($(CXX),KCC)
 # KCC settings
@@ -33,13 +33,13 @@ endif
 # Common (hopefully) settings
 INC		=	-I./expat/local/include -I./include -I.
 LIBDIR		=
-LIBS		=
+LIBS		= -lz
 
-OBJ		=	fn-base64.o fn-md5.o frontier.o response.o payload.o rs-bin.o memdata.o \
+OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h
 HDRXX		=	include/frontier_client/frontier-cpp.h
-BINAPP		=	fn-maincc fn-maintest fn-pescalib fn-any
+BINAPP		=	fn-any fn-req
 
 
 
@@ -107,12 +107,15 @@ libfrontier_client.so: $(OBJ) http/.libs
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so
 
 
-fn-base64.o: fn-base64.c $(HDR)
+fn-base64.o: fn-base64.c $(HDR) fn-base64.h
 	$(CC) $(COPT) $(INC) -c fn-base64.c
 
 fn-md5.o: fn-md5.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-md5.c
 
+fn-zlib.o: fn-zlib.c $(HDR) fn-zlib.h fn-base64.h
+	$(CC) $(COPT) $(INC) -c fn-zlib.c
+    
 fn-mem.o: fn-mem.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-mem.c
 
@@ -141,8 +144,14 @@ main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
 main: all main.o
-	$(CXX) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier
+	$(CXX) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier_client
 
+test-b64url.o: test-b64url.c $(HDR)
+	$(CC) $(COPT) $(INC) -c test-b64url.c
+
+test-b64url: test-b64url.o
+	$(CXX) -g -L. -o test-b64url test-b64url.o $(LIBS) -lfrontier_client
+    
 anydata.o: anydata.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
 
@@ -184,6 +193,12 @@ test-any.o: test-any.cc $(HDRXX)
 
 fn-any: test-any.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. -o fn-any test-any.o $(LIBS) -lfrontier_client
+
+test-req.o: test-req.cc $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c test-req.cc
+
+fn-req: test-req.o $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-req test-req.o $(LIBS) -lfrontier_client
 
 clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)

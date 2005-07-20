@@ -10,21 +10,14 @@
  */
 
 #include <frontier_client/frontier-cpp.h>
-
-
-#ifdef KCC_COMPILE
-// I love C++!
-template class std::vector<double>;
-template class std::vector<std::string>;
-template class std::vector<unsigned char>;
-template class std::vector<float>;
-template class std::vector<int>;
-template class std::vector<long>;
-#endif //KCC_COMPILE
-
 #include <stdlib.h>
-
 #include <sstream>
+
+extern "C"
+{
+extern void *(*frontier_mem_alloc)(size_t size);
+extern void (*frontier_mem_free)(void *ptr);
+};
 
 // This chunk of code below is ugly, but this is the way things 
 // were done historically (C++/KCC and other junk); 
@@ -36,32 +29,13 @@ static std::string create_err_msg(const char *str)
   return std::string(str)+std::string(": ")+std::string(frontier_getErrorMsg());
  }
 
-// The crap below supports two schemas of error reporting (for junk KCC and GCC) 
-#ifdef FNTR_USE_EXCEPTIONS
-// Exceptions
 #include <stdexcept>
 #define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::runtime_error(o->err_msg);}while(0)
 #define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::logic_error(o->err_msg);}while(0)
 #define RUNTIME_ERROR_NR(o,m,e) RUNTIME_ERROR(o,m,e,-1)
 #define LOGIC_ERROR_NR(o,m,e) LOGIC_ERROR(o,m,e,-1)
-#else
-// No exceptions, mostly for KCC
-#define RUNTIME_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=create_err_msg(m); return;}while(0)
-#define LOGIC_ERROR_NR(o,m,e) do{o->err_code=e; o->err_msg=create_err_msg(m);return;}while(0)
-#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); return r;}while(0)
-#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m);return r;}while(0)
-#endif //USE_EXCEPTIONS
 
 using namespace frontier;
-
-Request::Request(const std::string& name,
-                 const encoding_t& encoding,
-                 const std::string& key,
-                 const std::string& value):
-                 obj_name(name),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0)
- {
-  addKey(key,value);
- };
 
 
 void Request::addKey(const std::string& key,const std::string& value)
@@ -81,6 +55,28 @@ Request::~Request()
  }
 
  
+ 
+std::string Request::encodeParam(const std::string &value)
+ {
+  const char *str=value.c_str();
+  char *buf;
+  int len;
+  
+  len=fn_gzip_str2urlenc(str,strlen(str),&buf);
+  if(len<0)
+   {
+    std::ostringstream oss;
+    oss<<"Error "<<len<<" while encoding parameter ["<<value<<"]";
+    throw std::runtime_error(oss.str());
+   }
+   
+  std::string ret(buf,len);
+  frontier_mem_free(buf);
+  return ret;
+ }
+ 
+ 
+ 
 int frontier::init()
  {
   int ret;
@@ -90,7 +86,7 @@ int frontier::init()
 #else  
   ret=frontier_init(malloc,free);
 #endif //FN_MEMORY_DEBUG
-  //if(ret) RUNTIME_ERROR("Frontier initialization failed",ret);
+  if(ret) throw std::runtime_error(create_err_msg("Frontier initialization failed"));
   return ret;
  }
 
@@ -100,7 +96,10 @@ DataSource::DataSource(const std::string& server_url,const std::string* proxy_ur
  {
   int ec=FRONTIER_OK;
   const char *proxy_url_c=NULL;
-
+  first_row=0;
+  
+  init();
+  
   uri=NULL;
   internal_data=NULL;
   err_code=0;
@@ -143,14 +142,13 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
     if(v_req[i]->is_meta)
      {
       oss << delim << "meta=" << v_req[i]->obj_name; delim='&';
-      oss << delim << "encoding=" << enc;
      }
     else
      {
       oss << delim << "type=" << v_req[i]->obj_name; delim='&';
-      oss << delim << "encoding=" << enc;
      }
-
+    oss << delim << "encoding=" << enc;
+    
     if(v_req[i]->v_key)
      {
       for(std::vector<std::string>::size_type n=0;n<v_req[i]->v_key->size();n++)
@@ -172,6 +170,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
 void DataSource::setCurrentLoad(int n)
  {
   int ec=FRONTIER_OK;
+  first_row=0;
   FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
   if(ec!=FRONTIER_OK) LOGIC_ERROR_NR(this,"Can not set current load",ec);
   
@@ -220,7 +219,7 @@ unsigned int DataSource::getRSBinaryPos()
  }
   
  
-int DataSource::getAnyData(AnyData* buf)
+int DataSource::getAnyData(AnyData* buf,int not_eor)
  {
   buf->isNull=0;
   if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
@@ -228,20 +227,23 @@ int DataSource::getAnyData(AnyData* buf)
   int ec=FRONTIER_OK;
   BLOB_TYPE dt;
   
+  if(not_eor && isEOR()) LOGIC_ERROR(this,"EOR has been reached",FRONTIER_EIARG,-1);
+  
   dt=frontierRSBlob_getByte(rs,&ec);
-  //printf("Intermediate type prefix %d\n",dt);
+  //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
   if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
   last_field_type=dt;
    
   if(dt&BLOB_BIT_NULL)
    {
-    //printf("The field is NULL\n");
+    //std::cout<<"The field is NULL\n";
     buf->isNull=1;
     buf->t=dt&(~BLOB_BIT_NULL);
+    buf->v.str.s=0;
     buf->v.str.p=NULL;
     return 0;
    }
-  //printf("Extracted type prefix %d\n",dt);  
+  //std::cout<<"Extracted type prefix "<<(int)dt<<'\n';
   
   char *p;
   int len;  
@@ -256,13 +258,11 @@ int DataSource::getAnyData(AnyData* buf)
     case BLOB_TYPE_TIME: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
     case BLOB_TYPE_ARRAY_BYTE:
        len=frontierRSBlob_getInt(rs,&ec);
-       //printf("len=%d\n",len);
        if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"can not get byte array length",ec,-1);
        if(len<0) LOGIC_ERROR(this,"negative byte array length",ec,-1);
        p=new char[len+1];
        frontierRSBlob_getArea(rs,p,len,&ec); 
        p[len]=0; // To emulate C string
-       //printf("string [%s]\n",p);
        buf->set(len,p);
        break;
     case BLOB_TYPE_EOR: buf->setEOR(); break;
@@ -291,10 +291,7 @@ int DataSource::getInt()
  {
   AnyData ad;
   
-  do
-   {
-    if(getAnyData(&ad)) return -1;
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;
   return ad.getInt();
  }
 
@@ -302,10 +299,7 @@ int DataSource::getInt()
 long DataSource::getLong()
  {
   AnyData ad;
-  do
-   {
-    if(getAnyData(&ad)) return -1;
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;
   
   if(sizeof(long)==8) return ad.getLongLong();  
   return ad.getInt();
@@ -316,10 +310,7 @@ long long DataSource::getLongLong()
  {
   AnyData ad;
   
-  do
-   {
-    if(getAnyData(&ad)) return -1;
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;
   
   return ad.getLongLong();  
  }
@@ -329,10 +320,7 @@ double DataSource::getDouble()
  {
   AnyData ad;
   
-  do
-   {
-    if(getAnyData(&ad)) return -1;  
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;  
    
   return ad.getDouble();
  }
@@ -341,10 +329,7 @@ double DataSource::getDouble()
 float DataSource::getFloat()
  {
   AnyData ad;
-  do
-   {
-    if(getAnyData(&ad)) return -1;  
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;  
    
   return ad.getFloat();
  } 
@@ -354,10 +339,7 @@ long long DataSource::getDate()
  {
   AnyData ad;
   
-  do
-   {
-    if(getAnyData(&ad)) return -1;
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return -1;
   
   return ad.getLongLong();   
  }
@@ -367,10 +349,7 @@ std::string* DataSource::getString()
  {
   AnyData ad;
   
-  do
-   {
-    if(getAnyData(&ad)) return NULL;
-   }while(ad.t==BLOB_TYPE_EOR);
+  if(getAnyData(&ad)) return NULL;
    
   return ad.getString();
  }
@@ -382,6 +361,43 @@ std::string* DataSource::getBlob()
  }
 
  
+ 
+void DataSource::assignString(std::string *s)
+ {
+  AnyData ad;
+
+  if(getAnyData(&ad))
+   {
+    *s="";
+    return;
+   }
+
+  ad.assignString(s);
+ }
+
+
+
+int DataSource::next()
+ {
+  AnyData ad;
+
+  if(!first_row)
+   {
+    first_row=1;
+    return !(isEOF());
+   }
+
+  while(1)
+   {
+    if(isEOF()) return 0;
+    if(getAnyData(&ad,0)) return 0;
+    if(isEOF()) return 0;
+    if(ad.isEOR()) return 1;
+   }
+ }
+
+ 
+ 
 DataSource::~DataSource()
  {
   int ec;
@@ -391,7 +407,7 @@ DataSource::~DataSource()
  }
 
 
-std::vector<unsigned char>* CDFDataSource::getRawAsArrayUChar()
+std::vector<unsigned char>* DataSource::getRawAsArrayUChar()
  {
   std::string *blob=getBlob();
   int len=blob->size();
@@ -406,7 +422,7 @@ std::vector<unsigned char>* CDFDataSource::getRawAsArrayUChar()
  }
 
 
-std::vector<int>* CDFDataSource::getRawAsArrayInt()
+std::vector<int>* DataSource::getRawAsArrayInt()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 
@@ -426,7 +442,7 @@ std::vector<int>* CDFDataSource::getRawAsArrayInt()
  }
  
    
-std::vector<float>* CDFDataSource::getRawAsArrayFloat()
+std::vector<float>* DataSource::getRawAsArrayFloat()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 
@@ -446,7 +462,7 @@ std::vector<float>* CDFDataSource::getRawAsArrayFloat()
  }
 
 
-std::vector<double>* CDFDataSource::getRawAsArrayDouble()
+std::vector<double>* DataSource::getRawAsArrayDouble()
  {
   std::string *blob=getBlob();
   if(blob->size()%8) 
@@ -466,7 +482,7 @@ std::vector<double>* CDFDataSource::getRawAsArrayDouble()
  }
 
 
-std::vector<long>* CDFDataSource::getRawAsArrayLong()
+std::vector<long>* DataSource::getRawAsArrayLong()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 

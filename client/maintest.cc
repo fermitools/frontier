@@ -129,15 +129,15 @@ int main(int argc, char **argv)
    {
 #endif //FNTR_USE_EXCEPTIONS   
     frontier::init();
-    frontier::CDFDataSource *ds;
+    frontier::DataSource *ds;
     
     if(server)
      {
-      ds=new frontier::CDFDataSource(server);
+      ds=new frontier::DataSource(server);
      }
     else
      {
-      ds=new frontier::CDFDataSource();
+      ds=new frontier::DataSource();
      }
     if(refresh)
      {

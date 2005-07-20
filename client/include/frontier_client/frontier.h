@@ -89,6 +89,9 @@ char *frontier_str_copy(const char *str);
 void *frontier_malloc(size_t size);
 void frontier_free(void *ptr);
 
+// GZip and base64URL encode
+int fn_gzip_str2urlenc(const char *str,int size,char **out);
+
 
 #endif /*__HEADER_H_FRONTIER_H*/
 

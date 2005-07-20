@@ -12,8 +12,16 @@
 #define BASE64_INVPADDING	-2
 
 int base64_ascii2bin(const unsigned char *ascii_data,int ascii_len,
-                        unsigned char *bin_data,int buf_size);
+                     unsigned char *bin_data,int buf_size);
+                        
+int base64_bin2ascii(const unsigned char *bin_data,int bin_len,
+                     unsigned char *ascii_data,int buf_size);
 
+// URL-compatible encoding. It can be fed to standard BASE64 decoder
+// after replacing: '.'->'+', '-'->'/', '_'->'=', and appending '\n'                      
+int base64URL_bin2ascii(const unsigned char *bin_data,int bin_len,
+                        unsigned char *ascii_data,int buf_size);
+                     
 
 #endif /*__H_BASE64_CUSTOM__*/
 

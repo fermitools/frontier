@@ -11,17 +11,13 @@
 #include <frontier_client/frontier-cpp.h>
 
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 
-#ifndef FNTR_USE_EXCEPTIONS
-#define CHECK_ERROR() do{if(ds.err_code){std::cout<<"ERROR:"<<ds.err_msg<<std::endl; exit(1);}}while(0)
-#else
-#define CHECK_ERROR() 
-#endif //FNTR_USE_EXCEPTIONS
-
 int do_main(int argc, char **argv);
-
 static std::string escape_list="\\\'";
+static std::string req_data="frontier_request:1:DEFAULT";
+
 
 static void str_escape_quota(std::string *str)
  {
@@ -31,7 +27,7 @@ static void str_escape_quota(std::string *str)
   while(1)
    {
     pos=str->find_first_of(escape_list,pos);
-    if(pos>=str->size()) return;
+    if(pos==str->npos) return;
     //std::cout<<"pos="<<pos<<'\n';
     str->insert(pos,1,'\\');    
     pos+=2;
@@ -49,6 +45,13 @@ int main(int argc, char **argv)
  }
 
  
+static void print_usage(char **argv)
+ {
+  std::cout<<"Usage: \n"<<argv[0]<<" -h\n\tPrint this info\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] -f file_name\n\tRead query from file_name\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] \n\tRead query from stdin\n";
+ }
+ 
 int do_main(int argc, char **argv)
  {
   //char vc;
@@ -57,45 +60,79 @@ int do_main(int argc, char **argv)
   float vf;
   double vd;
   std::string *vs;
-  int arg_name_ind;
+  char *file_name=0;
+  int arg_ind;
+  int do_reload=0;
+  std::string sql("");
   
-#ifdef FNTR_USE_EXCEPTIONS 
   try
    {
-#endif //FNTR_USE_EXCEPTIONS
     frontier::init();
     
-    if(argc<2)
+    arg_ind=1;
+    if(argc>=2)
      {
-      std::cout<<"Usage: "<<argv[0]<<" [-r] object_name:v[:m] {key_name key_val {key_name key_val}..}\n";
-      exit(1);
+      if(strcmp(argv[1],"-h")==0)
+       {
+        print_usage(argv);
+        exit(0);
+       }
+      if(strcmp(argv[1],"-r")==0)
+       {
+        do_reload=1;
+        arg_ind=2;
+       }
+      if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
+       {
+        file_name=argv[arg_ind+1];
+       }
+      if(!file_name && argc>arg_ind)
+       {
+        print_usage(argv);
+        exit(1);
+       }
      }
      
-    //std::cout<<"Requesting \""<<argv[1]<<"\" key \""<<argv[2]<<"\" : \""<<argv[3]<<"\""<<std::endl;
-
-    frontier::DataSource ds;
-    CHECK_ERROR();
-    
-    if(strcmp(argv[1],"-r")==0) 
+    std::ifstream in_file;
+    if(file_name)
      {
-      arg_name_ind=2;
-      ds.setReload(1);
+      in_file.open(file_name);
+      if(!in_file.is_open())
+       {
+        std::cout<<"Can not open file "<<file_name<<'\n';
+        exit(2);
+       }
      }
-    else
+    while(1)
      {
-      arg_name_ind=1;
-      ds.setReload(0);
+      std::string tmp;      
+      if(file_name)
+       {
+        if(!in_file.good()) break;
+        std::getline(in_file,tmp,'\n');
+       }
+      else
+       {
+        if(!std::cin.good()) break;
+        std::getline(std::cin,tmp,'\n');       
+       }
+      sql+=tmp+'\n';
      }
+    if(file_name) {in_file.close();}
+    std::cout<<"Entered:\n"<<sql;
     
-    frontier::MetaRequest metareq(argv[arg_name_ind],frontier::BLOB);
+    std::string param=frontier::Request::encodeParam(sql);
+    std::cout<<"Param ["<<param<<"]\n";
+          
+    frontier::DataSource ds;        
+    frontier::Request req(req_data,frontier::BLOB);
+    req.addKey("p1",param);
 
     std::vector<const frontier::Request*> vrq;
-    vrq.insert(vrq.end(),&metareq);
+    vrq.push_back(&req);
     ds.getData(vrq);
-    CHECK_ERROR();
 
     ds.setCurrentLoad(1);
-    CHECK_ERROR();
     
     int field_num=0;
     
@@ -103,36 +140,20 @@ int do_main(int argc, char **argv)
     
     frontier::AnyData ad;
     
+    ds.next();
     // MetaData consists of one record with filed names.
     // Let's go over all fields:
+    std::string name,type;
+    
     while(!ds.isEOR())
      {
-      std::string *name=ds.getString();
-      CHECK_ERROR();
-      std::string *type=ds.getString();
-      CHECK_ERROR();
+      ds.assignString(&name);
+      ds.assignString(&type);
       ++field_num;
-      std::cout<<field_num<<" "<<(*name)<<" "<<(*type)<<std::endl;
-      delete type;
-      delete name;
+      std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
      }
-
-    frontier::Request req(argv[arg_name_ind],frontier::BLOB);
-
-    for(int i=arg_name_ind+1;i+1<argc;i+=2)
-     {
-      req.addKey(argv[i],argv[i+1]);     
-     }
-    
-    vrq[0]=&req;
-    ds.getData(vrq);
-    CHECK_ERROR();
-
-    ds.setCurrentLoad(1);
-    CHECK_ERROR();     
          
-    int nrec=ds.getRecNum();
-    CHECK_ERROR();
+    int nrec=ds.getRecNum()-1;
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
     while(ds.next())
@@ -140,7 +161,6 @@ int do_main(int argc, char **argv)
       for(int k=0;k<field_num;k++)
        {
         ds.getAnyData(&ad);
-        CHECK_ERROR();
         switch(ad.type())
          {
           //case frontier::BLOB_TYPE_BYTE:       vc=ds.getByte(); break;
@@ -172,7 +192,6 @@ int do_main(int argc, char **argv)
       std::cout<<"Error: must be EOF here\n";
       exit(1);
      }
-#ifdef FNTR_USE_EXCEPTIONS   
    }
   catch(std::exception& e)
    {
@@ -184,7 +203,7 @@ int do_main(int argc, char **argv)
     std::cout << "Unknown exception\n";
     exit(1);
    }
-#endif //FNTR_USE_EXCEPTIONS   
+
   return 0;
  }
 

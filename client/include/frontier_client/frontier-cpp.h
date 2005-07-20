@@ -36,23 +36,22 @@ class Request
    int is_meta;
 
   public:
-   Request(const std::string name,const encoding_t encoding):
-           obj_name(name),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0){};
-   
    Request(const std::string& name,
-           const encoding_t& encoding,
-           const std::string& key,
-           const std::string& value);
+           const encoding_t& encoding):
+          obj_name(name),enc(encoding),v_key(NULL),v_val(NULL),is_meta(0){};
+   
    virtual void addKey(const std::string& key,const std::string& value);   
-   virtual ~Request();
+   virtual ~Request();   
+   
+   static std::string encodeParam(const std::string &value);   
  };
 
  
 class MetaRequest : public Request
  {
   public:
-   MetaRequest(const std::string name,encoding_t encoding):
-               Request(name,encoding) {is_meta=1;}
+   MetaRequest(const std::string& name,
+               const encoding_t& encoding):Request(name,encoding) {is_meta=1;}
    virtual void addKey(const std::string& key,const std::string& value){}
    virtual ~MetaRequest(){}
  };
@@ -102,7 +101,16 @@ class AnyData
    std::string* castToString();
 
   public:     
-   explicit AnyData(): isNull(0),type_error(FRONTIER_OK),t(BLOB_TYPE_NONE){}
+   AnyData(): isNull(0),type_error(FRONTIER_OK),t(BLOB_TYPE_NONE){}
+   
+   long long getRawI8() const {return v.i8;}
+   double getRawD() const {return v.d;}
+   const char *getRawStrP() const {return v.str.p;}
+   unsigned getRawStrS() const {return v.str.s;}
+   int getRawI4() const {return v.i4;}
+   float getRawF() const {return v.f;}
+   char getRawB() const {return v.b;}
+      
    inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
    inline void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;type_error=FRONTIER_OK;}
@@ -117,7 +125,8 @@ class AnyData
    inline long long getLongLong(){if(isNull) return 0; if(t==BLOB_TYPE_INT8 || t==BLOB_TYPE_TIME) return v.i8; return castToLongLong();}
    inline float getFloat(){if(isNull) return 0.0; if(t==BLOB_TYPE_FLOAT) return v.f; return castToFloat();}
    inline double getDouble(){if(isNull) return 0.0;if(t==BLOB_TYPE_DOUBLE) return v.d; return castToDouble();}
-   inline std::string* getString(){if(isNull) return NULL; if(t==BLOB_TYPE_ARRAY_BYTE) return new std::string(v.str.p,v.str.s); return castToString();}   
+   std::string* getString();
+   void assignString(std::string *s);
    
    inline void clean(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
    
@@ -133,6 +142,7 @@ class DataSource
    std::string *uri;
    void *internal_data;
    BLOB_TYPE last_field_type;
+   int first_row;
 
   public:
    int err_code;
@@ -160,7 +170,7 @@ class DataSource
    // Data fields extractors
    // These methods change DS position to the next field
    // Benchmarking had shown that inlining functions below does not improve performance
-   int getAnyData(AnyData* buf);   
+   int getAnyData(AnyData* buf,int not_eor=1);
    int getInt();
    long getLong();
    long long getLongLong();
@@ -170,6 +180,14 @@ class DataSource
    std::string *getString();
    std::string *getBlob();
    
+   void assignString(std::string *s);
+   
+   std::vector<unsigned char> *getRawAsArrayUChar();
+   std::vector<int> *getRawAsArrayInt();
+   std::vector<float> *getRawAsArrayFloat();
+   std::vector<double> *getRawAsArrayDouble();
+   std::vector<long> *getRawAsArrayLong();   
+   
    // Current pyload meta info
    unsigned int getRecNum();
    unsigned int getRSBinarySize();
@@ -178,24 +196,10 @@ class DataSource
    BLOB_TYPE nextFieldType(); // Next field type. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOF(){return (getRSBinarySize()==getRSBinaryPos());} // End Of File
-   
+   int next();
+      
    virtual ~DataSource();
  };
-
-
-class CDFDataSource:public virtual DataSource
- {
-  public:
-   explicit CDFDataSource(const std::string& server_url="",const std::string* proxy_url=NULL):DataSource(server_url,proxy_url){}
-   
-   std::vector<unsigned char> *getRawAsArrayUChar();
-   std::vector<int> *getRawAsArrayInt();
-   std::vector<float> *getRawAsArrayFloat();
-   std::vector<double> *getRawAsArrayDouble();
-   std::vector<long> *getRawAsArrayLong();
- };
- 
- 
 
 }; // namespace frontier
 

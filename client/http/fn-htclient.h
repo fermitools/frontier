@@ -41,7 +41,7 @@ int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 
 #define FRONTIER_SRV_MAX_NUM	16
-#define FRONTIER_HTTP_BUF_SIZE	8192
+#define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 
 struct s_FrontierHttpClnt
  {
