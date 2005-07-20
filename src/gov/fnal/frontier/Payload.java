@@ -51,6 +51,20 @@ public class Payload
       noCache=md.isNoCache();
       return;      
      }
+     
+    // BUILTINS
+    if(cmd.obj_name.equals("frontier_request") && cmd.obj_version.equals("1"))
+     {
+      fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,true);
+      //fdo_init() MUST NOT BE CALLED FOR BUILTINS!
+      MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
+      time_expire=md.getExpire();
+      //System.out.println("Time_expire="+time_expire);      
+      noCache=md.isNoCache();
+      if(Frontier.isFdoCache()) htFdo.put(key,fdo);
+      return;
+     }
+    // END BUILTINS
     
     Connection con=null;
     PreparedStatement stmt=null;

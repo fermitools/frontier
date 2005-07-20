@@ -15,8 +15,23 @@ public class PluginDataObject implements FrontierDataObject
   // Public stuff
   public String obj_name;
   public String obj_version;
-  FrontierPlugin plugin;
-
+  private FrontierPlugin plugin;
+  
+  
+  protected PluginDataObject(DbConnectionMgr dbm,String builtin_name,String builtin_version,boolean is_plugin) throws Exception
+   {
+    if(builtin_name.equals("frontier_request"))
+     {
+      System.out.println("PluginDataObject(builtin:frontier_request)");
+      this.dbm=dbm;
+      obj_name=builtin_name;
+      obj_version=builtin_version;
+      plugin=new SQLPlugin();
+      return;
+     }
+    throw new Exception("Unknown builtin plugin "+builtin_name+":"+builtin_version);
+   }
+      
   
   protected PluginDataObject(DbConnectionMgr dbm,String requested_name,String requested_version) throws Exception
    {
