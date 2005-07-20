@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Context debug="99" displayName="froNtier Database Application" docBase="Frontier" path="/Frontier" reloadable="true">
+  <Resource auth="Container" name="jdbc/frontier-db" type="javax.sql.DataSource"/>
+  <ResourceParams name="jdbc/frontier-db">
+    <parameter>
+      <name>url</name>
+      <value>jdbc:oracle:thin:@your_path</value>
+    </parameter>
+    <parameter>
+      <name>validationQuery</name>
+      <value>select * from dual</value>
+    </parameter>
+    <parameter>
+      <name>maxIdle</name>
+      <value>1</value>
+    </parameter>
+    <parameter>
+      <name>maxActive</name>
+      <value>10</value>
+    </parameter>
+    <parameter>
+      <name>driverClassName</name>
+      <value>oracle.jdbc.driver.OracleDriver</value>
+    </parameter>
+    <parameter>
+      <name>maxWait</name>
+      <value>-1</value>
+    </parameter>
+    <parameter>
+      <name>username</name>
+      <value>db-user</value>
+    </parameter>
+    <parameter>
+      <name>factory</name>
+      <value>org.apache.commons.dbcp.BasicDataSourceFactory</value>
+    </parameter>
+    <parameter>
+      <name>logAbandoned</name>
+      <value>true</value>
+    </parameter>
+    <parameter>
+      <name>password</name>
+      <value>db-password</value>
+    </parameter>
+  </ResourceParams>
+</Context>
