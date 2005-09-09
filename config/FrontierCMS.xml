@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Context debug="99" displayName="froNtier CMS Database Web Application" docBase="FrontierCMS" path="/FrontierCMS" reloadable="true">
+  <Resource auth="Container" name="jdbc/frontiercms" type="javax.sql.DataSource"/>
+  <ResourceParams name="jdbc/frontiercms">
+    <parameter>
+      <name>url</name>
+      <value>jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(PORT=1521)(HOST=uscmsdb03.fnal.gov))(CONNECT_DATA=(SID=cmscald)))</value>
+    </parameter>
+    <parameter>
+      <name>validationQuery</name>
+      <value>select * from dual</value>
+    </parameter>
+    <parameter>
+      <name>maxIdle</name>
+      <value>1</value>
+    </parameter>
+    <parameter>
+      <name>maxActive</name>
+      <value>10</value>
+    </parameter>
+    <parameter>
+      <name>driverClassName</name>
+      <value>oracle.jdbc.driver.OracleDriver</value>
+    </parameter>
+    <parameter>
+      <name>maxWait</name>
+      <value>-1</value>
+    </parameter>
+    <parameter>
+      <name>username</name>
+      <value>##########</value>
+    </parameter>
+    <parameter>
+      <name>factory</name>
+      <value>org.apache.commons.dbcp.BasicDataSourceFactory</value>
+    </parameter>
+    <parameter>
+      <name>logAbandoned</name>
+      <value>true</value>
+    </parameter>
+    <parameter>
+      <name>password</name>
+      <value>######</value>
+    </parameter>
+  </ResourceParams>
+</Context>
