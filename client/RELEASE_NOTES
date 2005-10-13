@@ -1,5 +1,10 @@
 $Id$
 
+v2_4_0_cms 10/12/2005 (sv)
+ - cms pool clients seem to be working 
+ - fn-any, fn-req are not working against service on edge due to interface 
+   change relative to v2_3_1 release
+
 v2_1_2 01/20/2005
  - bugs in NULL strings fixed
  - diagnostic message from server now included into error message
