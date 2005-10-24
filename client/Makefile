@@ -11,15 +11,10 @@
 FN_VER_MAJOR	=	2
 FN_VER_MINOR	=	4.0
 
-ifeq ($(CXX),KCC)
-# KCC settings
-FNAPI_VERSION	=	KCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
-CC		=	gcc
-CXXOPT_LIB	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE -fPIC -DPIC
-CXXOPT_APP	=	-g -O -DFRONTIER_DEBUG --no_exceptions -DFNTR_USE_NAMESPACE -DKCC_COMPILE --one_per
-COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO		=	KCC -shared --no_exceptions -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname -Wl,libfrontier_client.so.$(FN_VER_MAJOR)
-else
+ifndef EXPAT_DIR
+  EXPAT_DIR     =       ./expat/local
+endif
+
 # GCC settings
 FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
@@ -28,10 +23,8 @@ CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEP
 CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR)
-endif
 
-# Common (hopefully) settings
-INC		=	-I./expat/local/include -I./include -I.
+INC		=	-I${EXPAT_DIR}/include -I./include -I.
 LIBDIR		=
 LIBS		= -lz
 
@@ -100,7 +93,7 @@ libfrontier_client.so: $(OBJ) http/.libs
 	rm -rf .libs
 	mkdir .libs
 	cp ./http/.libs/*.o .libs
-	cp ./expat/expat-1.95.7/lib/.libs/*.o .libs
+	if [ -d ./expat/local/lib_objects ]; then cp ./expat/local/lib_objects/*.o .libs; fi
 	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR)

@@ -7,5 +7,5 @@
 
 INST_DIR=`pwd`/local
 
-(cd expat-1.95.7; /bin/sh configure --prefix=`pwd`/../local --disable-static --enable-shared --with-pic)
+(cd expat-1.95.8; /bin/sh configure --prefix=`pwd`/../local --disable-static --enable-shared --with-pic)
 
