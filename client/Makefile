@@ -9,10 +9,15 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	4.0
+FN_VER_MINOR	=	4.1
 
 ifndef EXPAT_DIR
   EXPAT_DIR     =       ./expat/local
+  EXPAT_LD_FLAGS=      
+  EXPAT_LIBS    =      
+else
+  EXPAT_LD_FLAGS=      -L${EXPAT_DIR}/lib
+  EXPAT_LIBS    =      -lexpat
 endif
 
 # GCC settings
@@ -137,13 +142,15 @@ main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
 main: all main.o
-	$(CXX) -g -Ldist/lib -o main main.o $(LIBS) -lfrontier_client
+	$(CXX) -g -Ldist/lib ${EXPAT_LD_FLAGS} -o main main.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 test-b64url.o: test-b64url.c $(HDR)
 	$(CC) $(COPT) $(INC) -c test-b64url.c
 
 test-b64url: test-b64url.o
-	$(CXX) -g -L. -o test-b64url test-b64url.o $(LIBS) -lfrontier_client
+	$(CXX) -g -L. ${EXPAT_LD_FLAGS} -o test-b64url test-b64url.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
     
 anydata.o: anydata.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
@@ -155,43 +162,50 @@ maincc.o: maincc.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c maincc.cc
 
 fn-maincc: maincc.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. -o fn-maincc maincc.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maincc maincc.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 maintest.o: maintest.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c maintest.cc
 
 fn-maintest: maintest.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. -o fn-maintest maintest.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maintest maintest.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 getcids.o: getcids.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
 getcids: all getcids.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o getcids getcids.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 request_each.o: request_each.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
 request_each: all request_each.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o request_each request_each.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 test-pescalib.o: test-pescalib.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-pescalib.cc
 
 fn-pescalib: test-pescalib.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. -o fn-pescalib test-pescalib.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-pescalib test-pescalib.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 test-any.o: test-any.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-any.cc
 
 fn-any: test-any.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. -o fn-any test-any.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-any test-any.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 test-req.o: test-req.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-req.cc
 
 fn-req: test-req.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. -o fn-req test-req.o $(LIBS) -lfrontier_client
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req test-req.o \
+	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
 
 clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)
