@@ -62,7 +62,10 @@ src_distdir := $(package)__$(SRC_PACKAGE_TAG)
 src_distfile := $(tmpdir)/$(src_distdir).tar
 src_distfile_gz := $(src_distfile).gz
 
-# Create source distribution.
+# Build all distributions from scratch:
+all-dist: clean src-dist dist
+
+# Source distribution.
 src-dist: $(tmpdir)
 	(cd expat && make clean)
 	(cd http && make clean)
