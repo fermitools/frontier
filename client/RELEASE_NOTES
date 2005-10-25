@@ -1,5 +1,10 @@
 $Id$
 
+v2_4_1_cms 10/25/2005 (sv)
+ - distribution changes: if external $EXPAT_DIR is provided, the expat
+   files will not be included in the frontier library; however, client
+   application will have to link against external libraries in $EXPAT_DIR/lib
+
 v2_4_0_cms 10/12/2005 (sv)
  - cms pool clients seem to be working 
  - fn-any, fn-req are not working against service on edge due to interface 

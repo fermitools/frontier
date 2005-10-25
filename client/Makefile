@@ -10,6 +10,9 @@
 
 FN_VER_MAJOR	=	2
 FN_VER_MINOR	=	4.1
+COMPILER_TAG    =       gcc_3.2.3
+PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__$(COMPILER_TAG)
+SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__src
 
 ifndef EXPAT_DIR
   EXPAT_DIR     =       ./expat/local
@@ -50,33 +53,44 @@ all: htclient libexpat libfrontier_client.so $(BINAPP)
 
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
+distdir := $(shell pwd)/dist
 files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.so* ./include/frontier_client/*.h ./ups/*.table
-distfile := $(tmpdir)/$(package).tar
+src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
+distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
 distfile_gz := $(distfile).gz
+src_distdir := $(package)__$(SRC_PACKAGE_TAG)
+src_distfile := $(tmpdir)/$(src_distdir).tar
+src_distfile_gz := $(src_distfile).gz
 
+# Create source distribution.
+src-dist-prepare: $(tmpdir)
+	(cd expat && make clean)
+	(cd http && make clean)
+	tar cvf $(src_distfile) $(src_files)
+	mkdir -p $(tmpdir)/$(src_distdir)
+	(cd $(tmpdir)/$(src_distdir) && tar xvf $(src_distfile))
+	rm -f $(src_distfile)
+	(cd $(tmpdir) && tar zcvf $(src_distfile_gz) $(src_distdir))
+	
+dist-clean: 
+	rm -rf $(tmpdir) $(distdir)
 
-dist-prepare: $(tmpdir)
+$(tmpdir) $(distdir):
+	mkdir -p $@
 
-$(tmpdir):
-	mkdir -p $(tmpdir)
+dist: $(distfile_gz)
 
-dist: all dist-prepare $(distfile_gz)
-
-$(distfile_gz): all dist-prepare
-	rm -fr dist
-	mkdir dist
-	mkdir dist/lib
-	cp libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) dist/lib/
-	(cd dist/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR) )
-	(cd dist/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
-	mkdir dist/include
-	mkdir dist/include/frontier_client
-	cp -r include dist/
-	mkdir dist/bin
-	cp $(BINAPP) dist/bin/
-	cp RELEASE_NOTES dist/
-	cp README dist/
-	cp -r ups dist/
+$(distfile_gz): $(tmpdir) $(distdir) all
+	mkdir -p $(distdir)/lib
+	mkdir -p $(distdir)/bin
+	cp libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) $(distdir)/lib
+	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR) )
+	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
+	cp -r include $(distdir)
+	cp -r ups $(distdir)
+	cp $(BINAPP) $(distdir)/bin
+	cp RELEASE_NOTES $(distdir)
+	cp README $(distdir)
 	@echo "Making $@"
 	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
 	rm -f $(distfile_gz); gzip $(distfile)
@@ -211,9 +225,8 @@ clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)
 	(cd expat && make clean)
 	(cd http && make clean)
-	rm -fr dist
 	rm -rf .libs
-	rm -rf ti_files
 	rm -rf $(tmpdir)
+	rm -rf $(distdir)
 
 
