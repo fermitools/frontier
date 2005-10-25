@@ -63,7 +63,7 @@ src_distfile := $(tmpdir)/$(src_distdir).tar
 src_distfile_gz := $(src_distfile).gz
 
 # Create source distribution.
-src-dist-prepare: $(tmpdir)
+src-dist: $(tmpdir)
 	(cd expat && make clean)
 	(cd http && make clean)
 	tar cvf $(src_distfile) $(src_files)
