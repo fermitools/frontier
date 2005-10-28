@@ -153,7 +153,7 @@ int do_main(int argc, char **argv)
       std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
      }
          
-    int nrec=ds.getRecNum()-1;
+    int nrec=ds.getNumberOfRecords();
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
     while(ds.next())

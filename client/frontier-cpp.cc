@@ -202,6 +202,15 @@ unsigned int DataSource::getRecNum()
   return rs->nrec;
  }
 
+// Get number of records.
+unsigned int DataSource::getNumberOfRecords() {
+  if(!internal_data) {
+    LOGIC_ERROR(this, "Current load is not set", FRONTIER_EIARG, 0);
+  }
+  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
+  return rs->nrec;
+}
+
  
 unsigned int DataSource::getRSBinarySize()
  {

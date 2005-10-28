@@ -190,6 +190,7 @@ class DataSource
    
    // Current pyload meta info
    unsigned int getRecNum();
+   unsigned int getNumberOfRecords();
    unsigned int getRSBinarySize();
    unsigned int getRSBinaryPos();
    BLOB_TYPE lastFieldType(){return last_field_type;} // Original type of the last extracted field
