@@ -35,12 +35,14 @@ result = urllib.urlopen(frontierRequest).read()
 print "Query result:\n", result
 dom = parseString(result)
 dataList = dom.getElementsByTagName("data")
+# Control characters represent records, but I won't bother with that now,
+# and will simply replace those by space.
 for data in dataList:
   if data.firstChild is not None:
     row = base64.decodestring(data.firstChild.data)
     newrow = row
     for c in row:
-      if not curses.ascii.isprint(c):
+      if c != '\n' and not curses.ascii.isprint(c):
         newrow = newrow.replace(c, ' ')
     print '%s' % (newrow)
  
