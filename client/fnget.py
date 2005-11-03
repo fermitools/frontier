@@ -1,10 +1,21 @@
 #!/usr/bin/env python
 
+# Simple python frontier client.
+# encodes input sql query (standard encoding has to be slightly modified 
+# for url safety), retrieves data, and decodes results
+# 
+#
+# example of usage
+# ./fnget.py http://lxfs6043.cern.ch:8000/Frontier3D/Frontier "select name,version from frontier_descriptors"
+#
+#
 import sys
 import urllib
 from xml.dom.minidom import parseString
 import base64
 import zlib 
+import string
+import curses.ascii
  
 
 frontierUrl = sys.argv[1]
@@ -26,6 +37,11 @@ dom = parseString(result)
 dataList = dom.getElementsByTagName("data")
 for data in dataList:
   if data.firstChild is not None:
-    print base64.decodestring(data.firstChild.data)
-
+    row = base64.decodestring(data.firstChild.data)
+    newrow = row
+    for c in row:
+      if not curses.ascii.isprint(c):
+        newrow = newrow.replace(c, ' ')
+    print '%s' % (newrow)
+ 
 
