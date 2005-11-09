@@ -32,18 +32,37 @@ frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=%s" % (fron
 
 result = urllib.urlopen(frontierRequest).read()
 
-print "Query result:\n", result
+#print "Query result:\n", result
 dom = parseString(result)
 dataList = dom.getElementsByTagName("data")
 # Control characters represent records, but I won't bother with that now,
 # and will simply replace those by space.
 for data in dataList:
   if data.firstChild is not None:
+
     row = base64.decodestring(data.firstChild.data)
-    newrow = row
-    for c in row:
-      if c != '\n' and not curses.ascii.isprint(c):
-        newrow = newrow.replace(c, ' ')
-    print '%s' % (newrow)
- 
+    for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d'  ]:
+      row = row.replace(c, ' ')
+
+    print "\nFields: "
+    endFirstRow = row.find('\x07')
+    firstRow = row[:endFirstRow]
+    for c in firstRow:
+      if curses.ascii.isctrl(c):
+         firstRow = firstRow.replace(c, '\n')
+    print firstRow
+
+    print "\nRecords:"
+    pos = endFirstRow + 1
+    while True:
+      newrow = row[pos:]
+      endRow = newrow.find('\x07')
+      if endRow < 0:
+        break
+      fixedRow = newrow[:endRow]
+      pos = pos + endRow + 1
+      fixedRow = fixedRow.replace('\n', '')
+      print fixedRow
+    
+
 
