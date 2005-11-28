@@ -6,7 +6,8 @@
 # 
 #
 # example of usage
-# ./fnget.py http://lxfs6043.cern.ch:8000/Frontier3D/Frontier "select name,version from frontier_descriptors"
+# ./fnget.py --url=http://lxfs6043.cern.ch:8000/Frontier3D/Frontier 
+#   --sql="select name,version from frontier_descriptors"
 #
 #
 import sys
