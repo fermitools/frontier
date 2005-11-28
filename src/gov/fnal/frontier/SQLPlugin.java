@@ -69,11 +69,11 @@ public class SQLPlugin implements FrontierPlugin
     System.out.println("SQL ["+sql+"]");
 
     String stmp=sql.toLowerCase();
-    if(stmp.indexOf("drop")>=0 ||
-       stmp.indexOf("delete")>=0 ||
-       stmp.indexOf("insert")>=0 ||
-       stmp.indexOf("alter")>=0 ||
-       stmp.indexOf("create")>=0) throw new Exception("Query cancelled");
+    if(stmp.indexOf("drop ")>=0 ||
+       stmp.indexOf("delete ")>=0 ||
+       stmp.indexOf("insert ")>=0 ||
+       stmp.indexOf("alter ")>=0 ||
+       stmp.indexOf("create ")>=0) throw new Exception("Query cancelled");
     
     Statement stmt=null;
     ResultSet rs=null;
