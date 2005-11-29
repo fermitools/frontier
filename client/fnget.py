@@ -36,7 +36,7 @@ for a in sys.argv[1:]:
   if arg[0] == "--url":
     frontierUrl = arg[1]
   elif arg[0] == "--sql":
-    frontierQuery = arg[1]
+    frontierQuery = string.join(arg[1:], "=")
   elif arg[0] == "--no-decode":
     decodeFlag = False
   elif arg[0] == "--refresh-cache":
