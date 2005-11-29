@@ -3,7 +3,8 @@
 # Simple python frontier client.
 # encodes input sql query (standard encoding has to be slightly modified 
 # for url safety), retrieves data, and decodes results
-# 
+# Author: Sinisa Veseli November 2005
+# Update: Lee Lueking added --stats-only flag for perf testing
 #
 # example of usage
 # ./fnget.py --url=http://lxfs6043.cern.ch:8000/Frontier3D/Frontier 
@@ -31,6 +32,7 @@ frontierUrl = None
 frontierQuery = None
 decodeFlag = True
 refreshFlag = False
+statsFlag = False
 for a in sys.argv[1:]:
   arg = string.split(a, "=")
   if arg[0] == "--url":
@@ -41,6 +43,8 @@ for a in sys.argv[1:]:
     decodeFlag = False
   elif arg[0] == "--refresh-cache":
     refreshFlag = True
+  elif arg[0] == "--stats-only":
+    statsFlag = True
   else:
     print "Ignoring unrecognized argument: %s" % a
 
@@ -48,18 +52,23 @@ if frontierUrl is None or frontierQuery is None:
   usage()
   sys.exit(1)    
   
-
-print "Using Frontier URL: ", frontierUrl
-print "Query: ", frontierQuery
-print "Decode results: ", decodeFlag
-print "Refresh cache: ", refreshFlag
+if statsFlag:
+  pass
+else:
+  print "Using Frontier URL: ", frontierUrl
+  print "Query: ", frontierQuery
+  print "Decode results: ", decodeFlag
+  print "Refresh cache: ", refreshFlag
 
 # encode query
 encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".")
 
 # frontier request
 frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=%s" % (frontierUrl, encQuery)
-print "\nFrontier Request:\n", frontierRequest 
+if statsFlag:
+  pass
+else:
+  print "\nFrontier Request:\n", frontierRequest 
 
 # add refresh header if needed
 request = urllib2.Request(frontierRequest)
@@ -68,13 +77,22 @@ if refreshFlag:
 
 # start and time query
 queryStart = time.localtime()
-print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S", queryStart)
+if statsFlag:
+  pass
+else:
+  print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S", queryStart)
+
 t1 = time.time()
 result = urllib2.urlopen(request).read()
 t2 = time.time()
 queryEnd = time.localtime()
-print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S", queryEnd)
-print "Query time: %s [seconds]\n" % (t2-t1)
+if statsFlag:
+  duration=(t2-t1)
+  size=len(result)
+  print duration,size,size/duration
+else:
+  print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S", queryEnd)
+  print "Query time: %s [seconds]\n" % (t2-t1)
 
 if decodeFlag:
   print "Query result:\n", result
