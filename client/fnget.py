@@ -77,7 +77,7 @@ print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S", queryEnd)
 print "Query time: %s [seconds]\n" % (t2-t1)
 
 if decodeFlag:
-  #print "Query result:\n", result
+  print "Query result:\n", result
   dom = parseString(result)
   dataList = dom.getElementsByTagName("data")
   # Control characters represent records, but I won't bother with that now,

@@ -77,6 +77,7 @@ xml_startElement(void *userData,const char *name,const char **atts)
        }            
       if(strcmp(atts[i],"records")==0)
        {
+	printf("Number of records: %d\n", atoi(atts[i+1]));
         fr->payload[fr->payload_num-1]->nrec=atoi(atts[i+1]);
 	continue;
        }

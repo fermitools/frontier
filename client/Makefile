@@ -28,9 +28,10 @@ FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
 CXX		=	c++
 CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
-CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS
+CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS 
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR)
+LINK		=	ar cr libfrontier_client.a
 
 INC		=	-I${EXPAT_DIR}/include -I./include -I.
 LIBDIR		=
@@ -118,6 +119,7 @@ libfrontier_client.so: $(OBJ) http/.libs
 	if [ -d ./expat/local/lib_objects ]; then cp ./expat/local/lib_objects/*.o .libs; fi
 	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
+	#$(LINK) .libs/*.o
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR)
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so
 

@@ -6,7 +6,9 @@
 
 int main(int argc, char **argv)
  {
-  char str[]="select aaa from table";
+  //char str[]="select aaa from table";
+  //char str[]="select name,version from frontier_descriptors";
+  char str[] = "SELECT POS, ID_ID, MITEMS_HCALPEDESTALS_ITEM_MID, MITEMS_HCALPEDESTALS_ITEM_MV_1, MITEMS_HCALPEDESTALS_ITEM_MID, MITEMS_HCALPEDESTALS_ITEM_MV_2, MITEMS_HCALPEDESTALS_ITEM_MID, MITEMS_HCALPEDESTALS_ITEM_MV_3, MITEMS_HCALPEDESTALS_ITEM_MV_4 FROM CMS_VAL_HCAL_POOL_OWNER.HCALPEDESTAL_MITEMS WHERE ID_ID = 1 ORDER BY POS";
   char *buf;
   int len;
   
