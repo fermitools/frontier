@@ -10,13 +10,13 @@
     </session-config>
 
     <servlet>
-      <servlet-name>Frontier</servlet-name>
+      <servlet-name>FrontierCMS</servlet-name>
       <servlet-class>gov.fnal.frontier.FrontierServlet</servlet-class>
       <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-      <servlet-name>Frontier</servlet-name>
+      <servlet-name>FrontierCMS</servlet-name>
       <url-pattern>/Frontier</url-pattern>
     </servlet-mapping>
 
@@ -25,7 +25,7 @@
             This is the refererence to the Oracle data source we
             use to talk to the database configured in server.xml.
         </description>
-        <res-ref-name>jdbc/frontier</res-ref-name>
+        <res-ref-name>jdbc/frontiercms</res-ref-name>
         <res-type>javax.sql.DataSource</res-type>
         <res-auth>Container</res-auth>
     </resource-ref>

@@ -112,7 +112,10 @@ public class Payload
      {
       case Command.CMD_GET:
        enc=new BlobTypedEncoder(out);
-       try { rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds); }
+       try { 
+	   rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds); 
+	   System.out.println("Number of records after fdo_get: " + rec_num);
+       }
        finally 
         { 
          enc.close(); 
@@ -122,7 +125,10 @@ public class Payload
       
       case Command.CMD_META:
        enc=new BlobTypedEncoder(out);
-       try { rec_num=fdo.fdo_meta(enc,cmd.method); }
+       try { 
+	   rec_num=fdo.fdo_meta(enc,cmd.method); 
+	   System.out.println("Number of records after fdo_meta: " + rec_num);
+       }
        finally 
         { 
          enc.close(); 
@@ -132,7 +138,10 @@ public class Payload
 
       case Command.CMD_WRITE:
        enc=new BlobTypedEncoder(out);
-       try { rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds); }
+       try { 
+	   rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds); 
+	   System.out.println("Number of records after fdo_write: " + rec_num);
+       }
        finally 
         { 
          enc.close(); 

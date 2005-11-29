@@ -90,7 +90,7 @@ public class PluginDataObject implements FrontierDataObject
    
   public int fdo_write(Encoder enc,String method,FrontierDataStream fds) throws Exception   
    {
-    System.out.println("Xsd2DataObject.fdo_write()");
+    System.out.println("PluginDataObject.fdo_write()");
     int rec_num=0;
     
     Connection con=null;

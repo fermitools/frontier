@@ -84,6 +84,7 @@ public class SQLPlugin implements FrontierPlugin
       rs=stmt.executeQuery(sql);
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
+      
       for(int i=1;i<=cnum;i++)
        {
         String n=rsmd.getColumnName(i);
@@ -93,8 +94,8 @@ public class SQLPlugin implements FrontierPlugin
        }
       enc.writeEOR();
             
-      while(rs.next())
-       {
+      while(rs.next()) {
+	row_count++;
         for(int i=1;i<=cnum;i++)
          {
           String s=rs.getString(i);
@@ -108,6 +109,7 @@ public class SQLPlugin implements FrontierPlugin
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
      }        
+    System.out.println("SQLPlugin.fp_get(): returning row_count="+row_count);
     return row_count;
    }
 
