@@ -39,7 +39,6 @@ static char *str_dup(const char *str)
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
  {
   FrontierConfig *cfg;
-  char *env_val;
   int i;
   char buf[ENV_BUF_SIZE];
   
@@ -47,65 +46,24 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
   if(!cfg) return cfg;
   bzero(cfg,sizeof(FrontierConfig));
   
-  // If server_url is set then use it and ignore environment settings
-  if(server_url && *server_url)
-   {
-    cfg->server[0]=str_dup(server_url);
-    cfg->server_num=1;
-    goto set_proxy;
-   }
-     
-  // Get environment settings
+  // First add configured server and proxy.
+  frontierConfig_addServer(cfg, server_url);
+  frontierConfig_addProxy(cfg, proxy_url);
+ 
+  // Add additional servers/proxies from env variables.
+  frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_SERVER));
+  frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_PROXY));
+  for(i = 0; i < FRONTIER_MAX_SERVERN; i++) {
+    snprintf(buf, ENV_BUF_SIZE, "%s%d", FRONTIER_ENV_SERVER, (i+1));
+    frontierConfig_addServer(cfg, getenv(buf));
+  }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Total %d servers", cfg->server_num);
   
-  // Foolresistance
-  env_val=getenv(FRONTIER_ENV_SERVER);
-  if(env_val)
-   {
-    cfg->server[cfg->server_num]=str_dup(env_val);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Server <%s>",cfg->server[cfg->server_num]);    
-    cfg->server_num++;
-   }
-  // Normal settings    
-  for(i=0;i<FRONTIER_MAX_SERVERN && cfg->server_num<=FRONTIER_MAX_SERVERN;i++)
-   {
-    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_SERVER,(i+1));
-    env_val=getenv(buf);
-    if(!env_val) continue; // Another foolresistance - should have break here
-    cfg->server[cfg->server_num]=str_dup(env_val);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Server <%s>",cfg->server[cfg->server_num]);    
-    cfg->server_num++;
-   }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
-  
-  // Proxy settings
-set_proxy:  
-  if(proxy_url) 
-   {
-    if(!*proxy_url) return cfg; // When proxy_url is "" do not use any proxy
-    cfg->proxy[0]=str_dup(proxy_url);
-    cfg->proxy_num=1;
-    return cfg;
-   }
-
-  // Foolresistance for proxy settings
-  env_val=getenv(FRONTIER_ENV_PROXY);
-  if(env_val)
-   {
-    cfg->proxy[cfg->proxy_num]=str_dup(env_val);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Proxy <%s>",cfg->proxy[cfg->proxy_num]);    
-    cfg->proxy_num++;
-   }
-  // Normal settings    
-  for(i=0;i<FRONTIER_MAX_PROXYN && cfg->proxy_num<=FRONTIER_MAX_PROXYN;i++)
-   {
-    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_PROXY,(i+1));
-    env_val=getenv(buf);
-    if(!env_val) continue;
-    cfg->proxy[cfg->proxy_num]=str_dup(env_val);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Proxy <%s>",cfg->proxy[cfg->proxy_num]);
-    cfg->proxy_num++;
-   }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);     
+  for(i = 0; i < FRONTIER_MAX_PROXYN; i++) {
+    snprintf(buf, ENV_BUF_SIZE, "%s%d", FRONTIER_ENV_PROXY, (i+1));
+    frontierConfig_addProxy(cfg, getenv(buf));
+  }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Total %d proxies", cfg->proxy_num);     
     
   return cfg;
  }
@@ -159,4 +117,54 @@ void frontierConfig_delete(FrontierConfig *cfg)
    
   frontier_mem_free(cfg);
  }
+
+int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
+ {
+  if(cfg->server_num >= FRONTIER_MAX_SERVERN) {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
+      "Reached limit of %d frontier servers", FRONTIER_MAX_SERVERN);    
+    return FRONTIER_ERROR_SERVER_LIMIT_REACHED;
+  }
+
+  if(!server_url) {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined server url.");    
+    return FRONTIER_ERROR_INVALID_SERVER_URL;
+  }
+  else {
+    if(!*server_url) {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty server url.");    
+      return FRONTIER_ERROR_INVALID_SERVER_URL;
+    }
+  }
+  cfg->server[cfg->server_num] = str_dup(server_url);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
+        "Added server <%s>", cfg->server[cfg->server_num]);    
+  cfg->server_num++;
+  return FRONTIER_SUCCESS;
+ } 
+
+int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
+ {
+  if(cfg->proxy_num >= FRONTIER_MAX_PROXYN) {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
+      "Reached limit of %d frontier proxies", FRONTIER_MAX_PROXYN);    
+    return FRONTIER_ERROR_PROXY_LIMIT_REACHED;
+  }
+
+  if(!proxy_url) {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined proxy url.");    
+    return FRONTIER_ERROR_INVALID_PROXY_URL;
+  }
+  else {
+    if(!*proxy_url) {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty proxy url.");    
+      return FRONTIER_ERROR_INVALID_PROXY_URL;
+    }
+  }
+  cfg->proxy[cfg->proxy_num] = str_dup(proxy_url);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
+        "Added proxy <%s>", cfg->proxy[cfg->proxy_num]);    
+  cfg->proxy_num++;
+  return FRONTIER_SUCCESS;
+ } 
 

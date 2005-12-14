@@ -16,6 +16,18 @@
 
 #define FRONTIER_ID_SIZE 128
 
+# define FRONTIER_SUCCESS 0
+# define FRONTIER_FAILURE 1
+
+/* error codes */
+typedef enum {
+  FRONTIER_ERROR = 1,
+  FRONTIER_ERROR_SERVER_LIMIT_REACHED = 2,
+  FRONTIER_ERROR_INVALID_SERVER_URL = 3,
+  FRONTIER_ERROR_PROXY_LIMIT_REACHED = 4,
+  FRONTIER_ERROR_INVALID_PROXY_URL = 5
+} FrontierErrorCode;
+
 struct s_FrontierMemData
  {
   size_t size;
@@ -93,6 +105,8 @@ const char *frontierConfig_getProxyUrl(FrontierConfig *cfg);
 int frontierConfig_nextServer(FrontierConfig *cfg);
 int frontierConfig_nextProxy(FrontierConfig *cfg);
 void frontierConfig_delete(FrontierConfig *cfg);
+int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
+int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url);
 
 
 struct s_Channel
