@@ -1,10 +1,6 @@
 /*
- * FroNTier client API
+ * Frontier configuration.
  * 
- * Author: Sergey Kosyakov
- *
- * $Header$
- *
  * $Id$
  *
  */
@@ -17,8 +13,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#include "frontier_client/frontier.h"
-#include "fn-internal.h"
+
+#include "frontier_client/frontier_config.h"
+#include "frontier_client/frontier_log.h"
+#include "frontier_client/frontier_error.h"
 
 #define ENV_BUF_SIZE	1024
 
@@ -29,12 +27,12 @@ static char *str_dup(const char *str)
  {
   char *ret;
   size_t len=strlen(str);
-  
+
   ret=frontier_mem_alloc(len+1);
   bcopy(str,ret,len+1);
   return ret;
  }
- 
+
 
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
  {
@@ -140,7 +138,7 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
         "Added server <%s>", cfg->server[cfg->server_num]);    
   cfg->server_num++;
-  return FRONTIER_SUCCESS;
+  return FRONTIER_OK;
  } 
 
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
@@ -165,6 +163,6 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
         "Added proxy <%s>", cfg->proxy[cfg->proxy_num]);    
   cfg->proxy_num++;
-  return FRONTIER_SUCCESS;
+  return FRONTIER_OK;
  } 
 

@@ -12,11 +12,12 @@
 #ifndef __HEADER_HTTP_H_FN_HTCLIENT_H
 #define __HEADER_HTTP_H_FN_HTCLIENT_H
 
-#include <frontier_client/frontier.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include "frontier_client/frontier.h"
+#include "frontier_client/frontier_error.h"
 
 int frontier_socket();
 void frontier_socket_close(int s);

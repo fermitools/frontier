@@ -13,10 +13,11 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 extern "C"
  {
-#include <frontier_client/frontier.h>
+#include "frontier_client/frontier.h"
  };
 
 namespace frontier{
@@ -149,7 +150,10 @@ class DataSource
    std::string err_msg;
    
    explicit DataSource(const std::string& server_url="",const std::string* proxy_url=NULL);
-   
+
+   // This constructor allows initialization with multiple server/proxies.
+   explicit DataSource(const std::list<std::string>& serverUrlList, const std::list<std::string>& proxyUrlList);
+  
    // If reload!=0 then all requested objects will be refreshed at all caches
    // New object copy will be obtained directly from server
    void setReload(int reload);

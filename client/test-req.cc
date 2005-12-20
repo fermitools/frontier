@@ -8,7 +8,8 @@
  * $Id$
  *
  */
-#include <frontier_client/frontier-cpp.h>
+#include "frontier_client/frontier-cpp.h"
+#include "frontier_client/FrontierException.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -124,7 +125,11 @@ int do_main(int argc, char **argv)
     std::string param=frontier::Request::encodeParam(sql);
     std::cout<<"Param ["<<param<<"]\n";
           
-    frontier::DataSource ds;        
+    std::list<std::string> serverList;
+    serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
+    std::list<std::string> proxyList;
+    //frontier::DataSource ds;        
+    frontier::DataSource ds(serverList, proxyList);
     frontier::Request req(req_data,frontier::BLOB);
     req.addKey("p1",param);
 
@@ -145,54 +150,73 @@ int do_main(int argc, char **argv)
     // Let's go over all fields:
     std::string name,type;
     
-    while(!ds.isEOR())
-     {
+    while(!ds.isEOR()) {
       ds.assignString(&name);
       ds.assignString(&type);
       ++field_num;
       std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
-     }
+    }
          
     int nrec=ds.getNumberOfRecords();
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
-    while(ds.next())
-     {
-      for(int k=0;k<field_num;k++)
-       {
+    while(ds.next()) {
+      for(int k=0;k<field_num;k++) {
         ds.getAnyData(&ad);
-        switch(ad.type())
-         {
+        switch(ad.type()) {
           //case frontier::BLOB_TYPE_BYTE:       vc=ds.getByte(); break;
-          case frontier::BLOB_TYPE_INT4:       vi=ad.getInt(); std::cout<<vi; break;
-          case frontier::BLOB_TYPE_INT8:       vl=ad.getLongLong(); std::cout<<vl; break;
-          case frontier::BLOB_TYPE_FLOAT:      vf=ad.getFloat(); std::cout<<vf; break;
-          case frontier::BLOB_TYPE_DOUBLE:     vd=ad.getDouble(); std::cout<<vd; break;
-          case frontier::BLOB_TYPE_TIME:       vl=ad.getLongLong(); std::cout<<vl; break;
+          case frontier::BLOB_TYPE_INT4:       
+            vi=ad.getInt(); 
+            std::cout<<vi; 
+            break;
+          case frontier::BLOB_TYPE_INT8:       
+            vl=ad.getLongLong(); 
+            std::cout<<vl; 
+            break;
+          case frontier::BLOB_TYPE_FLOAT:      
+            vf=ad.getFloat(); 
+            std::cout<<vf; 
+            break;
+          case frontier::BLOB_TYPE_DOUBLE:     
+            vd=ad.getDouble(); 
+            std::cout<<vd; 
+            break;
+          case frontier::BLOB_TYPE_TIME:       
+            vl=ad.getLongLong(); 
+            std::cout<<vl; 
+            break;
           case frontier::BLOB_TYPE_ARRAY_BYTE: 
-                   vs=ad.getString(); 
-                   if(!vs) {std::cout<<"NULL";}
-                   else
-                    {
-                     str_escape_quota(vs);
-                     std::cout<<'\''<<(*vs)<<'\''; 
-                     delete vs;
-                    }
-                   break;	  
-          default: std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; exit(1);
-         }
-        if(k+1<field_num) std::cout<<" ";
+            vs=ad.getString(); 
+            if(!vs) {
+              std::cout<<"NULL";
+            }
+            else {
+              str_escape_quota(vs);
+              std::cout<<'\''<<(*vs)<<'\''; 
+              delete vs;
+            }
+            break;	  
+          default: 
+            std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; 
+            exit(1);
+        }
+        if(k+1<field_num) {
+          std::cout<<" ";
+        }
         ad.clean();
-       }
+      }
       ad.clean();
       std::cout<<std::endl;
-     }
-    if(!ds.isEOF())
-     {
+    }
+    if(!ds.isEOF()) {
       std::cout<<"Error: must be EOF here\n";
       exit(1);
-     }
-   }
+    }
+  }
+  catch(const frontier::FrontierException& e) {
+    std::cout << "Frontier exception caught: " << e.what() << std::endl;
+    exit(1);
+  }
   catch(std::exception& e)
    {
     std::cout << "Error: " << e.what() << "\n";

@@ -38,9 +38,9 @@ LIBDIR		=
 LIBS		= -lz
 
 OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
-                        error.o fn-config.o fn-mem.o anydata.o frontier-cpp.o
-HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h
-HDRXX		=	include/frontier_client/frontier-cpp.h
+                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o
+HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
+HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp
 BINAPP		=	fn-any fn-req
 
 
@@ -151,11 +151,14 @@ rs-bin.o: rs-bin.c $(HDR)
 memdata.o: memdata.c $(HDR)
 	$(CC) $(COPT) $(INC) -c memdata.c
 
-error.o: error.c $(HDR)
-	$(CC) $(COPT) $(INC) -c error.c
+frontier_error.o: frontier_error.c include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
+	$(CC) $(COPT) $(INC) -c frontier_error.c
 
-fn-config.o: fn-config.c $(HDR)
-	$(CC) $(COPT) $(INC) -c fn-config.c
+frontier_log.o: frontier_log.c include/frontier_client/frontier_log.h 
+	$(CC) $(COPT) $(INC) -c frontier_log.c
+
+frontier_config.o: frontier_config.c $(HDR)
+	$(CC) $(COPT) $(INC) -c frontier_config.c
 
 main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c

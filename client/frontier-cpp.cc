@@ -9,9 +9,10 @@
  *
  */
 
-#include <frontier_client/frontier-cpp.h>
 #include <stdlib.h>
 #include <sstream>
+#include "frontier_client/frontier-cpp.h"
+#include "frontier_client/FrontierException.hpp"
 
 extern "C"
 {
@@ -111,6 +112,37 @@ DataSource::DataSource(const std::string& server_url,const std::string* proxy_ur
   if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not create frontier channel",ec);
   
  }
+
+DataSource::DataSource(const std::list<std::string>& serverUrlList,
+  const std::list<std::string>& proxyUrlList) {
+ 
+  first_row = 0;
+  
+  init();
+  
+  uri = NULL;
+  internal_data = NULL;
+  err_code = 0;
+  err_msg = "";
+ 
+  /*
+   * Create empty config struct and add server/proxies to it. 
+   */
+  FrontierConfig* config = frontierConfig_get("", ""); 
+  typedef std::list<std::string>::const_iterator LI;
+  for(LI i = serverUrlList.begin(); i != serverUrlList.end(); ++i) {
+    frontierConfig_addServer(config, i->c_str());
+  }
+  for(LI i = proxyUrlList.begin(); i != proxyUrlList.end(); ++i) {
+    frontierConfig_addProxy(config, i->c_str());
+  }
+  int error_code = FRONTIER_OK;
+  channel = frontier_createChannel2(config, &error_code);
+  if(error_code != FRONTIER_OK) {
+    throw ConfigurationError("Can not create frontier channel");
+  }
+  
+}
 
  
 void DataSource::setReload(int reload)

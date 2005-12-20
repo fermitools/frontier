@@ -19,15 +19,6 @@
 # define FRONTIER_SUCCESS 0
 # define FRONTIER_FAILURE 1
 
-/* error codes */
-typedef enum {
-  FRONTIER_ERROR = 1,
-  FRONTIER_ERROR_SERVER_LIMIT_REACHED = 2,
-  FRONTIER_ERROR_INVALID_SERVER_URL = 3,
-  FRONTIER_ERROR_PROXY_LIMIT_REACHED = 4,
-  FRONTIER_ERROR_INVALID_PROXY_URL = 5
-} FrontierErrorCode;
-
 struct s_FrontierMemData
  {
   size_t size;
@@ -78,36 +69,9 @@ void frontierResponse_delete(FrontierResponse *fr);
 int FrontierResponse_append(FrontierResponse *fr,char *buf,int len);
 int frontierResponse_finalize(FrontierResponse *fr);
 
-#define FRONTIER_MAX_SERVERN	4	// Max number of servers in FRONTIER_SERVER env. variable
-#define FRONTIER_MAX_PROXYN	4	// Max number of proxies in FRONTIER_PROXY env. variable
 
-#define FRONTIER_ENV_SERVER	"FRONTIER_SERVER"
-#define FRONTIER_ENV_PROXY	"FRONTIER_PROXY"
 #define FRONTIER_ENV_LOG_LEVEL	"FRONTIER_LOG_LEVEL"
 #define FRONTIER_ENV_LOG_FILE	"FRONTIER_LOG_FILE"
-
-//#define FRONTIER_MAX_REQUEST_URL	4096
-
-struct s_FrontierConfig
- {
-  char *server[FRONTIER_MAX_SERVERN];
-  char *proxy[FRONTIER_MAX_PROXYN];
-  int server_num;
-  int proxy_num;
-  int server_cur;
-  int proxy_cur;
-//  char buf[FRONTIER_MAX_REQUEST_URL];
- };
-typedef struct s_FrontierConfig FrontierConfig;
-FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url);
-const char *frontierConfig_getServerUrl(FrontierConfig *cfg);
-const char *frontierConfig_getProxyUrl(FrontierConfig *cfg);
-int frontierConfig_nextServer(FrontierConfig *cfg);
-int frontierConfig_nextProxy(FrontierConfig *cfg);
-void frontierConfig_delete(FrontierConfig *cfg);
-int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
-int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url);
-
 
 struct s_Channel
  {

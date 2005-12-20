@@ -203,6 +203,77 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
   return chn;
  }
 
+static Channel *channel_create2(FrontierConfig * config, int *ec)
+ {
+  Channel *chn;
+  int ret;
+  const char *p;
+
+  chn = frontier_mem_alloc(sizeof(Channel));
+  if(!chn) {
+    *ec = FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    return (void*)0;
+  }
+  bzero(chn, sizeof(Channel));
+
+  chn->cfg = config;
+  if(!chn->cfg) {
+    *ec = FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    channel_delete(chn);    
+    return (void*)0;
+  }
+  if(!chn->cfg->server_num) {
+    *ec = FRONTIER_ECFG;
+    frontier_setErrorMsg(__FILE__, __LINE__, "no servers configured");
+    channel_delete(chn);    
+    return (void*)0;
+  }
+  
+  chn->ht_clnt = frontierHttpClnt_create(ec);
+  if(!chn->ht_clnt || *ec) {
+    channel_delete(chn);    
+    return (void*)0;
+  }
+   
+  do {
+    p = frontierConfig_getServerUrl(chn->cfg);
+    if(!p) {
+      break;
+    }
+    ret = frontierHttpClnt_addServer(chn->ht_clnt,p);
+    if(ret) {
+      *ec = ret;
+      channel_delete(chn);    
+      return (void*)0;
+    }
+  } while(frontierConfig_nextServer(chn->cfg)==0);
+   
+  if(!chn->ht_clnt->total_server) {
+    *ec = FRONTIER_ECFG;
+    frontier_setErrorMsg(__FILE__, __LINE__, "no server configured");
+    channel_delete(chn);    
+    return (void*)0;
+  }
+
+  do {
+    p = frontierConfig_getProxyUrl(chn->cfg);
+    if(!p) {
+      break;
+    }
+    ret = frontierHttpClnt_addProxy(chn->ht_clnt,p);
+    if(ret) {
+      *ec = ret;
+      channel_delete(chn);    
+      return (void*)0;
+    }
+  } while(frontierConfig_nextProxy(chn->cfg)==0);
+        
+  chn->reload = 0;
+  *ec = FRONTIER_OK; 
+  return chn;
+}
 
 static void channel_delete(Channel *chn)
  {
@@ -219,6 +290,11 @@ FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec
   Channel *chn=channel_create(srv,proxy,ec);
   return (unsigned long)chn;
  }
+
+FrontierChannel frontier_createChannel2(FrontierConfig* config, int *ec) {
+  Channel *chn = channel_create2(config, ec);
+  return (unsigned long)chn;
+}
 
 
 void frontier_closeChannel(FrontierChannel fchn)

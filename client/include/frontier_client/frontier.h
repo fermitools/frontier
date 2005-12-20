@@ -13,30 +13,11 @@
 #define __HEADER_H_FRONTIER_H
 
 #include <sys/types.h>
-
-#define FRONTIER_LOGLEVEL_DEBUG		0
-#define FRONTIER_LOGLEVEL_WARNING	1
-#define FRONTIER_LOGLEVEL_INFO		FRONTIER_LOGLEVEL_WARNING
-#define FRONTIER_LOGLEVEL_ERROR		2
-#define FRONTIER_LOGLEVEL_NOLOG		3
-
-#define FRONTIER_OK		0
-#define FRONTIER_EIARG		-1	/*Invalid argument passed*/
-#define FRONTIER_EMEM		-2	/*mem_alloc failed*/
-#define FRONTIER_ECFG		-3	/*config error*/
-#define FRONTIER_ESYS		-4	/*system error*/
-#define FRONTIER_EUNKNOWN	-5	/*unknown error*/
-#define FRONTIER_ENETWORK	-6	/*error while communicating over network*/
-#define FRONTIER_EPROTO		-7	/*protocol level error (e.g. wrong response)*/
+#include "frontier_config.h"
+#include "frontier_log.h"
+#include "frontier_error.h"
 
 #define FRONTIER_MAX_PAYLOADNUM	32
-
-void frontier_setErrorMsg(const char *file, int line,const char *fmt,...);
-const char *frontier_get_err_desc(int err_num);
-const char *frontier_getErrorMsg();
-void frontier_log(int level,const char *file,int line,const char *fmt,...);
-
-#define FRONTIER_MSG(e) do{frontier_setErrorMsg(__FILE__,__LINE__,"error %d: %s",(e),frontier_get_err_desc(e));}while(0)
 
 typedef unsigned long FrontierChannel;
 
@@ -68,6 +49,7 @@ void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr));
 
 FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec);
+FrontierChannel frontier_createChannel2(FrontierConfig* config, int *ec);
 void frontier_closeChannel(FrontierChannel chn);
 void frontier_setReload(FrontierChannel u_channel,int reload);
 int frontier_getRawData(FrontierChannel chn,const char *uri);
