@@ -32,7 +32,6 @@ namespace frontier {
     std::string _error;
     int _errorCode;
   public:
-    FrontierException() : _error(), _errorCode(FrontierErrorCode_UndefinedError) { }
     ~FrontierException() throw() { }
     FrontierException(const std::string& err = "", int errorCode = FrontierErrorCode_UndefinedError) : _error(err), _errorCode(errorCode) { }
     virtual std::string getError() const throw() { return error(); }

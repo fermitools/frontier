@@ -13,6 +13,7 @@
 #include <sstream>
 #include "frontier_client/frontier-cpp.h"
 #include "frontier_client/FrontierException.hpp"
+#include "frontier_client/FrontierExceptionMap.hpp"
 
 extern "C"
 {
@@ -136,10 +137,10 @@ DataSource::DataSource(const std::list<std::string>& serverUrlList,
   for(LI i = proxyUrlList.begin(); i != proxyUrlList.end(); ++i) {
     frontierConfig_addProxy(config, i->c_str());
   }
-  int error_code = FRONTIER_OK;
-  channel = frontier_createChannel2(config, &error_code);
-  if(error_code != FRONTIER_OK) {
-    throw ConfigurationError("Can not create frontier channel");
+  int errorCode = FRONTIER_OK;
+  channel = frontier_createChannel2(config, &errorCode);
+  if(errorCode != FRONTIER_OK) {
+    FrontierExceptionMap::throwException(errorCode, frontier_getErrorMsg());
   }
   
 }

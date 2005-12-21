@@ -38,9 +38,9 @@ LIBDIR		=
 LIBS		= -lz
 
 OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
-                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o
+                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMap.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
-HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp
+HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMap.hpp
 BINAPP		=	fn-any fn-req
 
 
@@ -193,6 +193,9 @@ maintest.o: maintest.cc $(HDRXX)
 fn-maintest: maintest.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maintest maintest.o \
 	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+
+FrontierExceptionMap.o: FrontierExceptionMap.cpp $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c FrontierExceptionMap.cpp
 
 getcids.o: getcids.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
