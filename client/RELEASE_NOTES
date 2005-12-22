@@ -1,5 +1,9 @@
 $Id$
 
+v2_4_2_cms 10/25/2005 (sv)
+ - support for configuring client with multiple servers/proxies
+ - initial work on exceptions for the C++ api
+
 v2_4_1_cms 10/25/2005 (sv)
  - distribution changes: if external $EXPAT_DIR is provided, the expat
    files will not be included in the frontier library; however, client

@@ -9,7 +9,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	4.1
+FN_VER_MINOR	=	4.2
 COMPILER_TAG    =       gcc_3.2.3
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__src
@@ -55,7 +55,7 @@ all: htclient libexpat libfrontier_client.so $(BINAPP)
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
 distdir := $(shell pwd)/dist
-files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.so* ./include/frontier_client/*.h ./ups/*.table
+files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.so* ./include/frontier_client/*.* ./ups/*.table
 src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
 distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
 distfile_gz := $(distfile).gz
@@ -67,7 +67,7 @@ src_distfile_gz := $(src_distfile).gz
 all-dist: clean src-dist dist
 
 # Source distribution.
-src-dist: $(tmpdir)
+src-dist: clean $(tmpdir)
 	(cd expat && make clean)
 	(cd http && make clean)
 	tar cvf $(src_distfile) $(src_files)
@@ -87,6 +87,7 @@ dist: $(distfile_gz)
 $(distfile_gz): $(tmpdir) $(distdir) all
 	mkdir -p $(distdir)/lib
 	mkdir -p $(distdir)/bin
+	rm -f $(distdir)/lib/lib*.so*
 	cp libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) $(distdir)/lib
 	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR) )
 	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
