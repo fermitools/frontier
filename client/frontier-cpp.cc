@@ -3,8 +3,6 @@
  * 
  * Author: Sergey Kosyakov
  *
- * $Header$
- *
  * $Id$
  *
  */
@@ -21,21 +19,10 @@ extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *ptr);
 };
 
-// This chunk of code below is ugly, but this is the way things 
-// were done historically (C++/KCC and other junk); 
-// here is C++ in all its glory (incompatibility on binary objects level). 
-// So here is no even a tiny possibility to write a good code. I tried :-(
-
 static std::string create_err_msg(const char *str)
  {
   return std::string(str)+std::string(": ")+std::string(frontier_getErrorMsg());
  }
-
-#include <stdexcept>
-#define RUNTIME_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::runtime_error(o->err_msg);}while(0)
-#define LOGIC_ERROR(o,m,e,r) do{o->err_code=e; o->err_msg=create_err_msg(m); throw std::logic_error(o->err_msg);}while(0)
-#define RUNTIME_ERROR_NR(o,m,e) RUNTIME_ERROR(o,m,e,-1)
-#define LOGIC_ERROR_NR(o,m,e) LOGIC_ERROR(o,m,e,-1)
 
 using namespace frontier;
 
@@ -69,7 +56,7 @@ std::string Request::encodeParam(const std::string &value)
    {
     std::ostringstream oss;
     oss<<"Error "<<len<<" while encoding parameter ["<<value<<"]";
-    throw std::runtime_error(oss.str());
+    throw RuntimeError(oss.str());
    }
    
   std::string ret(buf,len);
@@ -88,7 +75,7 @@ int frontier::init()
 #else  
   ret=frontier_init(malloc,free);
 #endif //FN_MEMORY_DEBUG
-  if(ret) throw std::runtime_error(create_err_msg("Frontier initialization failed"));
+  if(ret) throw RuntimeError(create_err_msg("Frontier initialization failed"));
   return ret;
  }
 
