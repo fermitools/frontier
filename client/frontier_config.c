@@ -119,18 +119,18 @@ void frontierConfig_delete(FrontierConfig *cfg)
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
  {
   if(cfg->server_num >= FRONTIER_MAX_SERVERN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
       "Reached limit of %d frontier servers", FRONTIER_MAX_SERVERN);    
     return FRONTIER_ECFG;
   }
 
   if(!server_url) {
-    frontier_setErrorMsg(__FILE__, __LINE__, "Undefined server url.");    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined server url.");    
     return FRONTIER_ECFG;
   }
   else {
     if(!*server_url) {
-      frontier_setErrorMsg(__FILE__, __LINE__, "Empty server url.");    
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty server url.");    
       return FRONTIER_ECFG;
     }
   }
@@ -139,7 +139,7 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   int i;
   for(i = 0; i < cfg->server_num; ++i) {
     if(strcmp(cfg->server[i], server_url) == 0) {
-      frontier_setErrorMsg(__FILE__, __LINE__, "Duplicate server url: %s", server_url);    
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Duplicate server url: %s", server_url);    
       return FRONTIER_ECFG;
     }
   }
@@ -155,18 +155,18 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
  {
   if(cfg->proxy_num >= FRONTIER_MAX_PROXYN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
       "Reached limit of %d frontier proxies", FRONTIER_MAX_PROXYN);    
     return FRONTIER_ECFG;
   }
 
   if(!proxy_url) {
-    frontier_setErrorMsg(__FILE__, __LINE__, "Undefined proxy url.");    
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined proxy url.");    
     return FRONTIER_ECFG;
   }
   else {
     if(!*proxy_url) {
-      frontier_setErrorMsg(__FILE__, __LINE__, "Empty proxy url.");    
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty proxy url.");    
       return FRONTIER_ECFG;
     }
   }
@@ -175,7 +175,7 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
   int i;
   for(i = 0; i < cfg->proxy_num; ++i) {
     if(strcmp(cfg->proxy[i], proxy_url) == 0) {
-      frontier_setErrorMsg(__FILE__, __LINE__, "Duplicate server url: %s", proxy_url);    
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Duplicate server url: %s", proxy_url);    
       return FRONTIER_ECFG;
     }
   }

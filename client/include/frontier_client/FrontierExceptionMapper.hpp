@@ -16,9 +16,9 @@
 
 namespace frontier {
 
-  class FrontierExceptionMap {
+  class FrontierExceptionMapper {
   private:
-    FrontierExceptionMap() {}
+    FrontierExceptionMapper() {}
   public:
     static void throwException(int errorCode, const std::string& errorMessage);
   };

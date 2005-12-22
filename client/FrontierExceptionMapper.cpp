@@ -10,30 +10,26 @@
 #include <exception>
 
 #include "frontier_client/FrontierException.hpp"
-#include "frontier_client/FrontierExceptionMap.hpp"
+#include "frontier_client/FrontierExceptionMapper.hpp"
 
 namespace frontier {
 
-void FrontierExceptionMap::throwException(
+void FrontierExceptionMapper::throwException(
   int errorCode, const std::string& errorMessage) {
-  std::cout << "Here is my code..." << errorCode << std::endl;
   switch(errorCode) {
     case FrontierErrorCode_InvalidArgument:
-      break;
+      throw InvalidArgument(errorMessage);
     case FrontierErrorCode_MemoryAllocationFailed:
-      break;
+      throw MemoryAllocationFailed(errorMessage);
     case FrontierErrorCode_ConfigurationError:
-      std::cout << "Here is my arror..." << std::endl;
       throw ConfigurationError(errorMessage);
     case FrontierErrorCode_SystemError:
-      break;
-    case FrontierErrorCode_Unknown:
-      break;
+      throw SystemError(errorMessage);
     case FrontierErrorCode_NetworkProblem:
-      break;
+      throw NetworkProblem(errorMessage);
     case FrontierErrorCode_ProtocolError:
-      break;
-    case FrontierErrorCode_UndefinedError:
+      throw ProtocolError(errorMessage);
+    case FrontierErrorCode_UnknownError:
     default:
       throw FrontierException(errorMessage, errorCode);
   }

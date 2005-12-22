@@ -30,7 +30,7 @@ CXX		=	c++
 CXXOPT_LIB	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 CXXOPT_APP	=	-Wall -g -O2 -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS 
 COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR)
+LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
 INC		=	-I${EXPAT_DIR}/include -I./include -I.
@@ -38,9 +38,9 @@ LIBDIR		=
 LIBS		= -lz
 
 OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
-                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMap.o
+                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
-HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMap.hpp
+HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
 BINAPP		=	fn-any fn-req
 
 
@@ -165,14 +165,14 @@ main.o: main.c $(HDR)
 
 main: all main.o
 	$(CXX) -g -Ldist/lib ${EXPAT_LD_FLAGS} -o main main.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 test-b64url.o: test-b64url.c $(HDR)
 	$(CC) $(COPT) $(INC) -c test-b64url.c
 
 test-b64url: test-b64url.o
 	$(CXX) -g -L. ${EXPAT_LD_FLAGS} -o test-b64url test-b64url.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
     
 anydata.o: anydata.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
@@ -185,52 +185,52 @@ maincc.o: maincc.cc $(HDRXX)
 
 fn-maincc: maincc.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maincc maincc.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 maintest.o: maintest.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c maintest.cc
 
 fn-maintest: maintest.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maintest maintest.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
-FrontierExceptionMap.o: FrontierExceptionMap.cpp $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -I./include -c FrontierExceptionMap.cpp
+FrontierExceptionMapper.o: FrontierExceptionMapper.cpp $(HDRXX)
+	$(CXX) $(CXXOPT_APP) -I./include -c FrontierExceptionMapper.cpp
 
 getcids.o: getcids.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
 getcids: all getcids.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o getcids getcids.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 request_each.o: request_each.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
 request_each: all request_each.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o request_each request_each.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 test-pescalib.o: test-pescalib.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-pescalib.cc
 
 fn-pescalib: test-pescalib.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-pescalib test-pescalib.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 test-any.o: test-any.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-any.cc
 
 fn-any: test-any.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-any test-any.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 test-req.o: test-req.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-req.cc
 
 fn-req: test-req.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req test-req.o \
-	  $(LIBS) -lfrontier_client ${EXPAT_LIBS}
+	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
 clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)

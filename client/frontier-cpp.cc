@@ -13,7 +13,7 @@
 #include <sstream>
 #include "frontier_client/frontier-cpp.h"
 #include "frontier_client/FrontierException.hpp"
-#include "frontier_client/FrontierExceptionMap.hpp"
+#include "frontier_client/FrontierExceptionMapper.hpp"
 
 extern "C"
 {
@@ -110,7 +110,9 @@ DataSource::DataSource(const std::string& server_url,const std::string* proxy_ur
   if(proxy_url) proxy_url_c=proxy_url->c_str();
 
   channel=frontier_createChannel(server_url.c_str(),proxy_url_c,&ec);
-  if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not create frontier channel",ec);
+  if(ec!=FRONTIER_OK) {
+    FrontierExceptionMapper::throwException(ec, "Can not create frontier channel");
+  }
   
  }
 
@@ -140,7 +142,7 @@ DataSource::DataSource(const std::list<std::string>& serverUrlList,
   int errorCode = FRONTIER_OK;
   channel = frontier_createChannel2(config, &errorCode);
   if(errorCode != FRONTIER_OK) {
-    FrontierExceptionMap::throwException(errorCode, frontier_getErrorMsg());
+    FrontierExceptionMapper::throwException(errorCode, frontier_getErrorMsg());
   }
   
 }
@@ -170,7 +172,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
     switch(v_req[i]->enc)
      {
       case BLOB: enc="BLOB"; break;
-      default: LOGIC_ERROR_NR(this,"Unknown encoding requested",FRONTIER_EIARG);
+      default: throw InvalidArgument("Unknown encoding requested");
      }    
     if(v_req[i]->is_meta)
      {
@@ -196,22 +198,27 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
   //std::cout << "URL <" << *url << ">\n";
 
   ec=frontier_getRawData(channel,uri->c_str());
-  if(ec!=FRONTIER_OK) RUNTIME_ERROR_NR(this,"Can not get data",ec);
+  if(ec!=FRONTIER_OK) {
+    FrontierExceptionMapper::throwException(ec, "Can not get data");
+  }
  }
 
 
-void DataSource::setCurrentLoad(int n)
- {
+void DataSource::setCurrentLoad(int n) {
   int ec=FRONTIER_OK;
   first_row=0;
   FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR_NR(this,"Can not set current load",ec);
-  
+  if(ec!=FRONTIER_OK) {
+    FrontierExceptionMapper::throwException(ec, "Can not set current load");
+  }
+ 
   if(internal_data) frontierRSBlob_close(static_cast<FrontierRSBlob*>(internal_data),&ec); //Doesn't it look UGLY?
   
-  internal_data=rsb;
-  if(getCurrentLoadError()!=FRONTIER_OK) LOGIC_ERROR_NR(this,getCurrentLoadErrorMessage(),FRONTIER_EPROTO);
- }
+  internal_data = rsb;
+  if(getCurrentLoadError() != FRONTIER_OK) {
+    throw ProtocolError(getCurrentLoadErrorMessage());
+  }
+}
 
  
 int DataSource::getCurrentLoadError() const
@@ -230,7 +237,9 @@ const char* DataSource::getCurrentLoadErrorMessage() const
 
 unsigned int DataSource::getRecNum()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
+  if(!internal_data) {
+    throw InvalidArgument("Current load is not set");
+  }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->nrec;
  }
@@ -238,7 +247,7 @@ unsigned int DataSource::getRecNum()
 // Get number of records.
 unsigned int DataSource::getNumberOfRecords() {
   if(!internal_data) {
-    LOGIC_ERROR(this, "Current load is not set", FRONTIER_EIARG, 0);
+    throw InvalidArgument("Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->nrec;
@@ -247,7 +256,9 @@ unsigned int DataSource::getNumberOfRecords() {
  
 unsigned int DataSource::getRSBinarySize()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
+  if(!internal_data) {
+    throw InvalidArgument("Current load is not set");
+  }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->size;  
  }
@@ -255,7 +266,9 @@ unsigned int DataSource::getRSBinarySize()
  
 unsigned int DataSource::getRSBinaryPos()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
+  if(!internal_data) {
+    throw InvalidArgument("Current load is not set");
+  }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return rs->pos;  
  }
@@ -264,16 +277,22 @@ unsigned int DataSource::getRSBinaryPos()
 int DataSource::getAnyData(AnyData* buf,int not_eor)
  {
   buf->isNull=0;
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,-1);
+  if(!internal_data) {
+    throw InvalidArgument("Current load is not set");
+  }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   BLOB_TYPE dt;
   
-  if(not_eor && isEOR()) LOGIC_ERROR(this,"EOR has been reached",FRONTIER_EIARG,-1);
+  if(not_eor && isEOR()) {
+    throw InvalidArgument("EOR has been reached");
+  }
   
   dt=frontierRSBlob_getByte(rs,&ec);
   //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
-  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while getting type",ec,-1);
+  if(ec!=FRONTIER_OK) {
+    throw LogicError("getAnyData() failed while getting type", ec);
+  }
   last_field_type=dt;
    
   if(dt&BLOB_BIT_NULL)
@@ -300,8 +319,12 @@ int DataSource::getAnyData(AnyData* buf,int not_eor)
     case BLOB_TYPE_TIME: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
     case BLOB_TYPE_ARRAY_BYTE:
        len=frontierRSBlob_getInt(rs,&ec);
-       if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"can not get byte array length",ec,-1);
-       if(len<0) LOGIC_ERROR(this,"negative byte array length",ec,-1);
+       if(ec!=FRONTIER_OK) {
+	 throw LogicError("can not get byte array length", ec);
+       }
+       if(len<0) {
+         throw LogicError("negative byte array length", ec);
+       }
        p=new char[len+1];
        frontierRSBlob_getArea(rs,p,len,&ec); 
        p[len]=0; // To emulate C string
@@ -310,20 +333,26 @@ int DataSource::getAnyData(AnyData* buf,int not_eor)
     case BLOB_TYPE_EOR: buf->setEOR(); break;
     default: 
          //std::cout<<"Unknown type prefix "<<(int)dt<<'\n';
-         LOGIC_ERROR(this,"unknown type prefix",FRONTIER_EIARG,-1);
+         throw InvalidArgument("unknown type prefix");
    }
-  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"can not get AnyData value",ec,-1);
+  if(ec!=FRONTIER_OK) {
+    throw LogicError("can not get AnyData value", ec);
+  }
   return 0;
  }
  
  
 BLOB_TYPE DataSource::nextFieldType()
  {
-  if(!internal_data) LOGIC_ERROR(this,"Current load is not set",FRONTIER_EIARG,0);
+  if(!internal_data) {
+    throw InvalidArgument("Current load is not set");
+  }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   BLOB_TYPE dt=frontierRSBlob_checkByte(rs,&ec);
-  if(ec!=FRONTIER_OK) LOGIC_ERROR(this,"getAnyData() failed while checking type",ec,0);
+  if(ec!=FRONTIER_OK) {
+    throw LogicError("getAnyData() failed while checking type", ec);
+  }
   
   return dt;
  }
@@ -470,7 +499,7 @@ std::vector<int>* DataSource::getRawAsArrayInt()
   if(blob->size()%4) 
    {
     delete blob; 
-    LOGIC_ERROR(this,"Blob size is not multiple of 4 - can not convert to int[]",FRONTIER_EIARG,NULL);
+    throw InvalidArgument("Blob size is not multiple of 4 - can not convert to int[]");
    }
   int len=blob->size()/4;
   std::vector<int> *ret=new std::vector<int>(len);
@@ -490,7 +519,7 @@ std::vector<float>* DataSource::getRawAsArrayFloat()
   if(blob->size()%4) 
    {
     delete blob; 
-    LOGIC_ERROR(this,"Blob size is not multiple of 4 - can not convert to float[]",FRONTIER_EIARG,NULL);
+    throw InvalidArgument("Blob size is not multiple of 4 - can not convert to float[]");
    }
   int len=blob->size()/4;
   std::vector<float> *ret=new std::vector<float>(len);
@@ -510,7 +539,7 @@ std::vector<double>* DataSource::getRawAsArrayDouble()
   if(blob->size()%8) 
    {
     delete blob; 
-    LOGIC_ERROR(this,"Blob size is not multiple of 8 - can not convert to double[]",FRONTIER_EIARG,NULL);
+    throw InvalidArgument("Blob size is not multiple of 8 - can not convert to double[]");
    }
   int len=blob->size()/8;
   std::vector<double> *ret=new std::vector<double>(len);
@@ -530,7 +559,7 @@ std::vector<long>* DataSource::getRawAsArrayLong()
   if(blob->size()%4) 
    {
     delete blob; 
-    LOGIC_ERROR(this,"Blob size is not multiple of 4 - can not convert to int32[]",FRONTIER_EIARG,NULL);
+    throw InvalidArgument("Blob size is not multiple of 4 - can not convert to int32[]");
    }
   int len=blob->size()/4;
   std::vector<long> *ret=new std::vector<long>(len);

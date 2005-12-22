@@ -18,7 +18,6 @@
 #define FRONTIER_EUNKNOWN	-5	/*unknown error*/
 #define FRONTIER_ENETWORK	-6	/*error while communicating over network*/
 #define FRONTIER_EPROTO		-7	/*protocol level error (e.g. wrong response)*/
-#define FRONTIER_EUNDEFINED     -99	/* undefined error */
 
 void frontier_setErrorMsg(const char *file, int line,const char *fmt,...);
 const char *frontier_get_err_desc(int err_num);

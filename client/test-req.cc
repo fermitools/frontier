@@ -126,7 +126,7 @@ int do_main(int argc, char **argv)
     std::cout<<"Param ["<<param<<"]\n";
           
     std::list<std::string> serverList;
-    serverList.push_back("ttp://lxfs6043.cern.ch:8080/Frontier3D");
+    serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
     std::list<std::string> proxyList;
     //frontier::DataSource ds;        
     frontier::DataSource ds(serverList, proxyList);
