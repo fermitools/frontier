@@ -1,6 +1,6 @@
 $Id$
 
-v2_4_2_cms 10/25/2005 (sv)
+v2_4_2_cms 12/25/2005 (sv)
  - support for configuring client with multiple servers/proxies
  - initial work on exceptions for the C++ api
 
