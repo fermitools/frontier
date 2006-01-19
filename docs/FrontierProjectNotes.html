@@ -1,0 +1,486 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Frontier Project Notes</title>
+  </head>
+
+  <body>
+    <h1>Frontier Project Notes</h1>
+
+
+<h2>Required Products</h2>
+
+<ul>
+
+<li> <a href="http://java.sun.com/">Java</a>
+	<ul>
+	    <li> Note that I've  used <a href="http://java.sun.com/j2se/1.5.0/download.jsp">Java 1.5</a> for my tomcat installation and for building frontier servlet code. Recent CMS tests were done using Java 1.4.2.
+
+	</ul>
+
+<li> <a href="http://ant.apache.org">Ant</a>
+	<ul>
+	    <li> Version: 1.6.5 (binary distribution can be downloaded <a href=" http://ant.apache.org/bindownload.cgi"> here </a>.
+	    <li> This is needed for building frontier servlet code.
+
+	</ul>
+
+
+<li><a href="http://tomcat.apache.org">Tomcat</a>
+	<ul>
+	  <li> Version: <a href="http://tomcat.apache.org/download-55.cgi5">5.5.x series</a>
+	  <li>
+	  Installation: Fairly straightforward and described <a href="http://tomcat.apache.org/tomcat-5.5-doc/index.html">
+here</a>. Note, however, that there are several external jars required: 
+	    <ul>
+	      <li>
+	      <a href="http://xerces.apache.org/xerces2-j/">Xerces XML Java Parser </a> (<a href="http://www.apache.org/dist/xml/xerces-j">download</a>). Even though we've used one of the older (2.6.x) releases, the latest version (2.7.1) should be fine. Download the binary release and install xml-apis.jar and xercesImpl.jar  into tomcat's common/endorsed directory. 
+		<li>
+		<a href="http://www.oracle.com/technology/software/tech/java/sqlj_jdbc/index.html">Oracle JDBC Drivers</a>. The required library is ojdbc14_g.jar, and needs to be installed into tomcat's common/lib directory.
+
+	      </ul>
+
+
+	    <li> Frontier servlet deployment notes can be found <a href=" http://edge.fnal.gov:8888/frontier/">here</a>. In order to connect to the database, one has to to know the connect strings, frontier account username/password.
+
+	</ul>
+
+<li><a href="http://www.squid-cache.org/">Squid</a>
+
+	<ul>
+	  <li> Version: <a href="http://www.squid-cache.org/Versions/v2/2.5/">2.5.x series</a>
+	    <li> Note that for recent tests we used slightly older version which Sergey compiled. This version also comes with installation scripts and can be found <a href="http://edge.fnal.gov:8888/frontier/dist/frontier_squid-1.0rc4.tar.gz">here</a>.
+
+	    <li> Also useful are Sergey's and Lee's  
+ <a href="http://lynx.fnal.gov/ntier-wiki/SquidForCMS">notes<a/> on the <a href="http://lynx.fnal.gov/ntier-wiki"> Frontier Wiki<a> page.
+		    
+           <li> Frontier code can be tested/used without squid installation.
+
+	    </ul>
+
+	<li> Frontier
+
+	<ul>
+	  <li> The CVS package is <em>frontier</em> in cdcvs (CVSROOT="CVSROOT cvsuser@cdcvs.fnal.gov:/cvs/cd"), and anyone should be able to check it out. 
+
+	    <li> Notes about  servlet deployment and client installation, as well as the distribution of the latest client libraries can be found <a href=" http://edge.fnal.gov:8888/frontier/">here</a>. 
+
+	    <li> Client code requires the <a href="http://expat.sourceforge.net/"> Expat XML Parser</a>. A fairly recent version (1.95.8) is in the frontier CVS package, and has been working well. Note that the same version is used by CMS software at the moment, so that right now there is no need to update expat libraries.
+
+
+	  </ul>
+</ul>
+
+
+<h2>Building/Deploying Servlet </h2>
+    
+   
+    <ol>
+      <li> Install Java, Tomcat, and Ant
+      <li>Check out frontier CVS package
+      <li>Make sure ant/java are in your path
+	<li>Modify file <em>build.local</em>: set value for property <em>catalina.home</em> to point to the root directory of your tomcat installation. For example, un my build.local file I've got
+
+&lt property name="catalina.home"     value="/scratch/veseli/devel/tomcat"/ &gt
+
+<li>To build the servlet code: ant -f build.local
+<li>To build the servlet code and prepare war distribution file: ant -f build.local dist
+
+<li> Here is an example of a servlet configuration file which is working on Tomcat 5.5.x:
+
+<pre>
+
+svpc> pwd
+/scratch/veseli/devel/tomcat/conf/Catalina/localhost
+svpc> cat FrontierCMS.xml
+&lt ?xml version='1.0' encoding='utf-8'? &gt
+&lt Context debug="99" displayName="froNtier CMS Database Web Application" docBase="FrontierCMS" path="/FrontierCMS" reloadable="true" &gt
+  &lt Resource auth="Container" name="jdbc/frontiercms" type="javax.sql.DataSource" 
+  url="jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(PORT=1521)(HOST=uscmsdb03.fnal.gov))(CONNECT_DATA=(SID=cmscald)))" 
+  driverClassName="oracle.jdbc.driver.OracleDriver" validationQuery="select * from dual" maxIdle="1" 
+  maxActive="10" maxWait="-1" username="cms_reader" password="reader" logAbandoned="true" /&gt
+
+&lt /Context &gt
+
+</pre>
+
+Note that older versions of Tomcat/Java (i.e., the one deployed on edge.fnal.gov) have the Respource Parameters specified separately (as opposed to via node attributes). This file is usually deployed in <em>conf/Catalina/localhost</em> relative to the Tomcat root directory (in the above example, the Tomcat root directory is <em>/scratch/veseli/devel/tomcat</em>).
+
+
+<li> The other two configuration  files one has to worry about is the servlet deployment file <em>web.xml</em> (deployed in the <em>webapps/FrontierCMS/WEB-INF </em>), as well
+as the configuration file <em>config.properties</em> (deployed in <em>webapps/FrontierCMS/WEB-INF/classes</em>).
+
+<ul>
+<li> Working example for Frontier <em>web.xml</em> file:
+
+<pre>
+svpc> pwd
+/scratch/veseli/devel/tomcat/webapps/FrontierCMS/WEB-INF
+svpc> cat web.xml
+&lt !DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/dtd/web-app_2_3.dtd" &gt 
+
+&lt web-app &gt 
+    &lt display-name &gt Frontier 3&lt /display-name &gt 
+    &lt description &gt Frontier 3 - XSD v2, writing, finders, etc.&lt /description &gt 
+    &lt session-config &gt 
+     &lt session-timeout &gt 300&lt /session-timeout &gt     &lt !-- 300 minutes -- &gt 
+    &lt /session-config &gt 
+
+    &lt servlet &gt 
+      &lt servlet-name &gt FrontierCMS&lt /servlet-name &gt 
+      &lt servlet-class &gt gov.fnal.frontier.FrontierServlet&lt /servlet-class &gt 
+      &lt load-on-startup &gt 1&lt /load-on-startup &gt 
+    &lt /servlet &gt 
+
+    &lt servlet-mapping &gt 
+      &lt servlet-name &gt FrontierCMS&lt /servlet-name &gt 
+      &lt url-pattern &gt /Frontier&lt /url-pattern &gt 
+    &lt /servlet-mapping &gt 
+
+    &lt resource-ref &gt 
+        &lt description &gt 
+            This is the refererence to the Oracle data source we
+            use to talk to the database configured in server.xml.
+        &lt /description &gt 
+        &lt res-ref-name &gt jdbc/frontiercms&lt /res-ref-name &gt 
+        &lt res-type &gt javax.sql.DataSource&lt /res-type &gt 
+        &lt res-auth &gt Container&lt /res-auth &gt 
+    &lt /resource-ref &gt 
+&lt /web-app &gt 
+</pre>
+ 
+<li> Working example for Frontier <em>config.properties</em> file:
+
+<pre>
+svpc> pwd
+/scratch/veseli/devel/tomcat/webapps/FrontierCMS/WEB-INF/classes
+svpc> cat config.properties
+ServerName=FrontierCMS
+DataSourceName=jdbc/frontiercms
+XsdTableName=frontier_descriptors
+#MonitorNode=MonAlisa_server_node_name
+#MonitorMillisDelay=300000
+UseFdoCache=no
+
+</pre>
+
+</ul>
+
+</ol>
+
+<h2>Building Client Code </h2>
+    
+   
+    <ol>
+      <li>Client code is in the <em>client</em> directory of the frontier CVS package.
+	<li> If EXPAT_DIR environment variable is defined, building of the included expat sources will be skipped
+	
+
+<li>To build the client libraries and test executables: make (in the client source directory)
+<li>To prepare source code distribution file: make src-dist (will create tar file in the client/tmp directory)
+<li>To prepare library distribution file: make dist (will create tar file in the client/tmp directory)
+
+<li> C++ test executable is fn-req (file <em>test-req.cc</em>). There are three environemnt variables which can be used:
+<ul>
+<li>export FRONTIER_SERVER[1234]=&lt frontier server url &gt
+<li>export FRONTIER_PROXY[1234]= &lt proxy server url &gt
+<li>export FRONTIER_LOG_LEVEL={nolog,info,debug}
+
+<li> Client release notes have been maintained in file <em>client/RELEASE_NOTES</em>. 
+
+</ul>
+
+Here is an example of a query against the Frontier server running on edge.fnal.gov:
+
+<pre>
+
+svpc> echo $FRONTIER_SERVER1
+http://edge.fnal.gov:8000/FrontierCMS
+svpc> echo $FRONTIER_PROXY1
+http://lxfs6043.cern.ch:8000/Frontier3D
+svpc> echo $FRONTIER_LOG_LEVEL
+debug
+svpc> cat test_query.sql
+SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+svpc> ./fn-req -f test_query.sql
+Entered:
+SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+
+Param [eNoly7EKwjAQANC9X3FbN--AIbanDSa5cIkVpyO0KQiRQpv.v4L7ewENdhE6Mg-rxCmLcGWywCo6fafx5ImMEItV3mt3k78M8ByQEUbkoMmd23TU9ZPqe5I5L.koVZZ1k2FKxec57zWVvQXiHhkuL-AUdPw9aJovBVooHQ__]
+...
+
+Object fields:
+1 COLUMN_NAME VARCHAR2
+
+Result contains 0 objects.
+'ID'
+'POS'
+'POS'
+'MITEMS_HCALPEDESTALS_ITEM_MID'
+'MITEMS_HCALPEDESTALS_ITEM_MV_2'
+'MITEMS_HCALPEDESTALS_ITEM_MV_4'
+'MSORTED'
+'MITEMS_HCALPEDESTALS_ITEM_MV_3'
+'MITEMS_HCALPEDESTALS_ITEM_MV_1'
+'ID_ID'
+'ID_ID'
+svpc>
+
+</pre>
+
+
+	<li>In the past source code has been distributed from <a href=" http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier</a>.
+
+
+</ol>
+
+
+<h2>Python Client</h2>
+
+<ul>
+<li>
+Simple python frontier client <em> fnget.py</em> can be found in the frontier/client CVS directory. 
+<li>
+Example usage: 
+
+<pre>
+
+svpc> ./fnget.py --url=http://edge.fnal.gov:8000/FrontierCMS/Frontier --sql="SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION"
+Using Frontier URL:  http://edge.fnal.gov:8000/FrontierCMS/Frontier
+Query:  SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+Decode results:  True
+Refresh cache:  False
+
+Frontier Request:
+http://edge.fnal.gov:8000/FrontierCMS/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=eNoly8EKwjAMANBfyW03/8BDndEV26akdeIphK0DoTJw3f8reH8vocM.Q0/u7oME4xEuTB7Y5GBvNB4ikRNi8SZGG67ylwkeAzLCiJwshWOne1vf2l6TzGXRvTZZ1o8Mk9ZY5rI1rVsHxGdkOD0hUrL5976NEifp
+
+...
+
+Fields:
+     COLUMN_NAME     VARCHAR2
+
+Records:
+     ID
+     POS
+     POS
+    MITEMS_HCALPEDESTALS_ITEM_MID
+    MITEMS_HCALPEDESTALS_ITEM_MV_2
+    MITEMS_HCALPEDESTALS_ITEM_MV_4
+
+MSORTED
+    MITEMS_HCALPEDESTALS_ITEM_MV_3
+    MITEMS_HCALPEDESTALS_ITEM_MV_1
+    ID_ID
+    ID_ID
+svpc>
+
+</pre>
+
+</ul>
+
+
+<h2>Building and Testing Frontier Access Plugin </h2>
+
+The Frontier Access C++ Plugin is the primary means of accessing Frontier from the CMS framework software. The notes here include examples and scripts that work on the cmsuafng cluster. 
+
+<ol> 
+  
+<li> Prepare client source distribution as outlined above.
+
+<li> Copy/unpack the client distribution file in your work area on cmsuafng cluster:
+
+<pre>
+
+cmswn074> pwd
+/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier
+cmswn074> tar zxvf frontier_client__2.4.2_cms__src.tar.gz
+frontier_client__2.4.2_cms__src/
+...
+
+</pre>
+
+<li> Build client libraries by sourcing the appropriate setup script, and doing gmake
+in the client directory.
+
+<pre>
+cmswn074> cat frontier_build_setup.csh
+echo "Setting up environment"
+setenv LCG_BASE /afs/cern.ch/sw/lcg
+setenv LCGSPI_BASE ${LCG_BASE}/app/spi
+setenv PATH ${LCGSPI_BASE}/scram:${PATH}
+
+#setenv SCRAM_ARCH `scram arch`
+setenv SCRAM_ARCH slc3_ia32_gcc323_dbg
+setenv COMPILER_ARCH `echo $SCRAM_ARCH | sed 's/_dbg//g'`
+
+# expat setup
+setenv EXPAT_DIR ${LCG_BASE}/external/expat/1.95.8/${COMPILER_ARCH}
+echo "Will use expat from $EXPAT_DIR"
+
+setenv PATH /uscms/prod/sw/cms/lcg/external/cxxcompiler/3.2.3/${COMPILER_ARCH}/bin:${PATH}
+echo "Will use compiler: "`which gcc`
+gcc --version | head -1
+
+setenv LD_LIBRARY_PATH ".:${LD_LIBRARY_PATH}"
+
+cmswn074> source frontier_build_setup.csh
+Setting up environment
+Will use expat from /afs/cern.ch/sw/lcg/external/expat/1.95.8/slc3_ia32_gcc323
+Will use compiler: /uscms/prod/sw/cms/lcg/external/cxxcompiler/3.2.3/slc3_ia32_gcc323/bin/gcc
+gcc (GCC) 3.2.3 20030502 (Red Hat Linux 3.2.3-42)
+
+cmswn074> cd frontier_client__2.4.2_cms__src
+cmswn074> make
+(cd http && CC=gcc COPT="-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC" make all)
+...
+
+</pre>
+
+<li> Build frontier access plugin; example script which prepares build area, checks out necessary code, prepares environemnt, etc. is shown below.
+
+<pre>
+cmswn074> pwd
+/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier
+cmswn074> cat frontier_access_build_setup.csh
+#source /uscms/prod/sw/cms/setup/cshrc
+#setenv SCRAM_ARCH `scram arch`
+#setenv SCRAM_ARCH slc3_ia32_gcc323_dbg
+#scram project POOL ORCA_8_7_3
+
+set currentDir=`pwd`
+set defaultProject=POOL_2_2_4
+set project=$1
+if("$project" == "") then
+ set project=$defaultProject
+endif
+
+echo "Setting up environment"
+setenv LCG_BASE /afs/cern.ch/sw/lcg
+setenv LCGSPI_BASE ${LCG_BASE}/app/spi
+setenv PATH ${LCGSPI_BASE}/scram:${PATH}
+
+#setenv SCRAM_ARCH `scram arch`
+setenv SCRAM_ARCH slc3_ia32_gcc323_dbg
+setenv COMPILER_ARCH `echo $SCRAM_ARCH | sed 's/_dbg//g'`
+
+# expat setup
+setenv EXPAT_DIR ${LCG_BASE}/external/expat/1.95.8/${COMPILER_ARCH}
+
+setenv PATH /uscms/prod/sw/cms/lcg/external/cxxcompiler/3.2.3/${COMPILER_ARCH}/bin:${PATH}
+echo "Will use compiler: "`which gcc`
+gcc --version | head -1
+
+echo "Using project: $project"
+setenv CVSROOT :pserver:anonymous@POOL.cvs.cern.ch:/cvs/POOL
+scram project POOL $project
+cd $project/src
+cvs co pool/contrib/FrontierAccess
+cp -r pool/contrib/FrontierAccess .
+# To build: cd $project/src/FrontierAccess;  scram build
+# To make clean : cd $project/src/FrontierAccess;  scram build clean
+
+cd $currentDir
+
+# tests are in: slc3_ia32_gcc323_dbg/tests/bin relative to the release top directory
+# before running tests:
+echo "Preparing runtime environment"
+cd $project
+eval `scram runtime -csh`
+rehash
+setenv LD_LIBRARY_PATH ~/work/cms/frontier/frontier_client__2.4.2_cms__src/:${EXPAT_DIR}/lib:${LD_LIBRARY_PATH}
+
+#  ./unitTest_FrontierAccess_DomainAndSession
+
+cd $currentDir
+
+
+cmswn074> source frontier_access_build_setup.csh
+Setting up environment
+...
+
+</pre>
+
+<li> Once the above is done, one can build frontier access plugin using frontier libraries provided in the release. However, in order to test the plugin with the libraries built in your work area, one has to modify frontier setup files. 
+
+<pre>
+cmswn074> pwd /afs/fnal.gov/files/home/room2/veseli/work/cms/frontier
+cmswn074> cat frontier_client_2.4.1_cms.dat name:frontier_client:_sys
+version:2.4.1_cms:_sys
+url:cvs://SPITOOLS.cvs.cern.ch/cvs/SPITOOLS?auth=pserver&module=SCRAMToolBox/GridTools/frontier_client&user=anonymous&version=LCG_38_1:_sys
+lib:frontier_client:
+FRONTIER_CLIENT_BASE:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src:
+LIBDIR:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src:lib
+INCLUDE:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src/include:
+BINDIR:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src/bin:
+LD_LIBRARY_PATH:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src:runtime_path
+PATH:/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier/frontier_client__2.4.2_cms__src/bin:runtime_path
+cmswn074> cp frontier_client_2.4.1_cms.dat POOL_2_2_4/.SCRAM/slc3_ia32_gcc323_dbg/frontier_client_2.4.1_cms.dat
+
+</pre>
+
+<li> Build the frontier access plugin.
+
+<pre>
+cmswn074> pwd
+/afs/fnal.gov/files/home/room2/veseli/work/cms/frontier
+cmswn074> cd POOL_2_2_4/src/FrontierAccess/
+cmswn074> scram b
+Configuring Local Area
+...
+
+</pre>
+
+<li> The above should build the plugin library, as well as several unit tests, which should be in <em>slc3_ia32_gcc323_dbg/tests/bin</em> relative to the release top directory. In order to run those tests, one needs authorization.xml files which can be found in <em>src/FrontierAccess/tests</em> directory relative to the release top directory.
+
+</ol>
+
+
+<h2>Recent Code Changes</h2>
+
+The most recent code changes on the servlet side involve fixes for several bugs that were noticed during the latest round of testing. On the client side, the most notable changes were:
+<ul>
+<li> Build infrastructure change that allows external expat libraries to be used.
+<li> C++ client exception layer.
+<li> Client configuration changes, which allow for multiple frontier servers and proxies to be configured.
+</ul>
+
+<h2>Future Work</h2>
+
+Here is the list of things that need to be done in the near future:
+
+<ol>
+
+<li> Apply server code patch which send number precision to client:
+
+<pre>
+Insert at line 90 of src/gov/fnal/frontier/SQLPlugin.java as follows:
+
+for (int i = 1; i <= cnum; i++) {
+  String n = rsmd.getColumnName(i);
+  String t = rsmd.getColumnTypeName(i);
+
+  // NEW CODE START
+  // appends column precision to column type name (if column type is a number)
+  if ( t == "NUMBER" ) {
+    t += "(" + rsmd.getPrecision(i) + ")";
+  }
+  // NEW CODE END
+
+</pre> 
+
+<li> Add (optional) zipping of the xml contents in the server code, as well
+as unzipping on the client side (both python and C/C++).
+
+</ol>
+
+
+    <hr>
+    <address><a href="mailto:veseli@fnal.gov">Sinisa Veseli</a></address>
+<!-- Created: Tue Sep 13 15:27:11 CDT 2005 -->
+<!-- hhmts star -->
+Last modified: Wed Sep 28 11:03:44 CDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

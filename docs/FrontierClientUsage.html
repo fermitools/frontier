@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Frontier Client Usage</title>
+  </head>
+
+  <body>
+    <h1>Frontier Client Usage</h1>
+
+
+
+<h2>Building C/C++ Client Libraries and Test Executables </h2>
+    
+   
+    <ul>
+      <li>The latest Frontier client source code can be downloaded from <a href="http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier/</a>.
+
+      <li>The distribution contains everything necessary to build C/C++ Frontier clients, including a recent version of expat libraries.
+
+	<li> Note that if EXPAT_DIR environment variable is defined, building of the included expat sources will be skipped, and expat libraries from $EXPAT_DIR will be used.
+	
+
+<li>To build the client libraries and test executables one can simply execute <em>make</em> in the client source directory.
+
+<li> Client release notes have been maintained in file <em>RELEASE_NOTES</em>. 
+
+</ul>
+
+<h2>C++ Test Client Usage</h2>
+
+<ul>
+
+<li> Simple C++ test executable is fn-req (file <em>test-req.cc</em>). There are three environment variables which can be used:
+<ul>
+<li>export FRONTIER_SERVER[1234]=&lt frontier server url &gt
+<li>export FRONTIER_PROXY[1234]= &lt proxy server url &gt
+<li>export FRONTIER_LOG_LEVEL={nolog,info,debug}
+
+
+</ul>
+
+<li>
+Here is an example of a query against the Frontier server running on edge.fnal.gov:
+
+<pre>
+
+svpc> echo $FRONTIER_SERVER1
+http://edge.fnal.gov:8000/FrontierCMS
+svpc> echo $FRONTIER_PROXY1
+http://lxfs6043.cern.ch:8000/Frontier3D
+svpc> echo $FRONTIER_LOG_LEVEL
+debug
+svpc> cat test_query.sql
+SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+svpc> ./fn-req -f test_query.sql
+Entered:
+SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+
+Param [eNoly7EKwjAQANC9X3FbN--AIbanDSa5cIkVpyO0KQiRQpv.v4L7ewENdhE6Mg-rxCmLcGWywCo6fafx5ImMEItV3mt3k78M8ByQEUbkoMmd23TU9ZPqe5I5L.koVZZ1k2FKxec57zWVvQXiHhkuL-AUdPw9aJovBVooHQ__]
+...
+
+Object fields:
+1 COLUMN_NAME VARCHAR2
+
+Result contains 0 objects.
+'ID'
+'POS'
+'POS'
+'MITEMS_HCALPEDESTALS_ITEM_MID'
+'MITEMS_HCALPEDESTALS_ITEM_MV_2'
+'MITEMS_HCALPEDESTALS_ITEM_MV_4'
+'MSORTED'
+'MITEMS_HCALPEDESTALS_ITEM_MV_3'
+'MITEMS_HCALPEDESTALS_ITEM_MV_1'
+'ID_ID'
+'ID_ID'
+svpc>
+
+</pre>
+
+</ul>
+
+<h2> Writing C++ Clients</h2>
+
+<ul>
+
+<li> The C++ class which handles communication with Frontier servers and proxies is the <em>DataSource</em> class. Here is an example of creating an instance of DataSource:
+
+<pre>
+
+#include <string>
+#include <list>
+#include "frontier_client/frontier-cpp.h"
+...
+
+std::list<std::string> serverList;
+serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
+std::list<std::string> proxyList;
+frontier::DataSource dataSource(serverList, proxyList);
+...
+
+</pre>
+  
+Note that the DataSource object created via the default class constructor will be configured using the above mentioned environment variables (FRONTIER_SERVER[1,2,3,4], FRONTIER_PROXY[1,2,3,4]).
+
+<li>Frontier requests are handled via the <em>Request</em> class:
+
+<pre>
+...
+std::string sql("select 1 from dual");
+std::string parameter1 = frontier::Request::encodeParam(sql);
+
+frontier::Request request("FrontierTestRequest:1", frontier::BLOB);
+request.addKey("p1", parameter1);
+
+std::vector<const frontier::Request*> requestVector;
+requestVector.push_back(&request);
+
+</pre>
+
+<li>The DataSource object retrieves request data from the Frontier server, and provides iterator for going over the returned records:
+
+<pre>
+    
+// Retrieve data.
+dataSource.getData(requestVector);
+dataSource.setCurrentLoad(1);
+
+// Go over the object fields (metaData consists of one record with field names).
+int field_num=0;
+std::cout << "Object fields:" << std::endl;
+std::string name, type;
+dataSource.next();
+while(!dataSource.isEOR()) {
+  dataSource.assignString(&name);
+  dataSource.assignString(&type);
+  ++field_num;
+  std::cout << field_num << " " << (name) << " " << (type) << std::endl;
+}
+
+// Go over the actual records and extract them according to their type.
+std::cout << " \nResult contains "<< dataSource.getNumberOfRecords() <<" objects.\n";
+while(dataSource.next()) {
+  for(int k=0;k<field_num;k++) {
+    frontier::AnyData ad;
+    dataSource.getAnyData(&ad);
+    switch(ad.type()) {
+      case frontier::BLOB_TYPE_INT4:
+        int vi = ad.getInt();
+        std::cout << vi;
+        break;
+      case frontier::BLOB_TYPE_INT8:
+        long long vl = ad.getLongLong();
+        std::cout << vl;
+        break;
+      case frontier::BLOB_TYPE_FLOAT:
+        float vf = ad.getFloat();
+        std::cout << vf;
+        break;
+      case frontier::BLOB_TYPE_DOUBLE:
+        double vd = ad.getDouble();
+        std::cout << vd;
+        break;
+      case frontier::BLOB_TYPE_TIME:
+        long long vl=ad.getLongLong();
+        std::cout<<vl;
+        break;
+      case frontier::BLOB_TYPE_ARRAY_BYTE:
+        std::string *vs = ad.getString();
+        if(!vs) {
+          std::cout<<"NULL";
+        }
+        else {
+          str_escape_quota(vs);
+          std::cout << '\'' << (*vs) <<'\'';
+          delete vs;
+        }
+        break;
+      default:
+        std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n";
+        exit(1);
+    }
+  }
+}
+
+</pre>
+
+<li> All exceptions that can be thrown from the Frontier libraries inherit
+from the <em>FrontierException</em> class. Therefore, one should be able to enclose all Frontier calls into try/catch block as follows:
+
+<pre>
+try {
+  // Construct frontier objects and do something.
+}
+catch(const frontier::FrontierException& e) {
+  std::cout << "Frontier exception caught: " << e.what() << std::endl;
+  // Handle generic error.
+}
+
+</pre>
+
+All frontier exceptions (e.g., <em>ConfigurationError</em>, <em>InvalidArgument</em>, <em>NetworkProblem</em>, etc.)  are listed in the <em>include/frontier_client/FrontierException.hpp</em> file.
+
+
+<li> Working example of a frontier C++ client can be found in the file  <em>test-req.cc</em> in the source code distribution.
+
+</ul>
+
+
+
+
+
+<h2>Python Client Usage</h2>
+
+<ul>
+<li>
+Simple python frontier client <em> fnget.py</em> can be found in the frontier client distribution. 
+<li>
+Example usage: 
+
+<pre>
+
+svpc> ./fnget.py --url=http://edge.fnal.gov:8000/FrontierCMS/Frontier --sql="SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION"
+Using Frontier URL:  http://edge.fnal.gov:8000/FrontierCMS/Frontier
+Query:  SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+Decode results:  True
+Refresh cache:  False
+
+Frontier Request:
+http://edge.fnal.gov:8000/FrontierCMS/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=eNoly8EKwjAMANBfyW03/8BDndEV26akdeIphK0DoTJw3f8reH8vocM.Q0/u7oME4xEuTB7Y5GBvNB4ikRNi8SZGG67ylwkeAzLCiJwshWOne1vf2l6TzGXRvTZZ1o8Mk9ZY5rI1rVsHxGdkOD0hUrL5976NEifp
+
+...
+
+Fields:
+     COLUMN_NAME     VARCHAR2
+
+Records:
+     ID
+     POS
+     POS
+    MITEMS_HCALPEDESTALS_ITEM_MID
+    MITEMS_HCALPEDESTALS_ITEM_MV_2
+    MITEMS_HCALPEDESTALS_ITEM_MV_4
+
+MSORTED
+    MITEMS_HCALPEDESTALS_ITEM_MV_3
+    MITEMS_HCALPEDESTALS_ITEM_MV_1
+    ID_ID
+    ID_ID
+svpc>
+
+</pre>
+
+</ul>
+
+
+    <hr>
+    <address><a href="mailto:veseli@fnal.gov">Sinisa Veseli</a></address>
+<!-- Created: Tue Sep 13 15:27:11 CDT 2005 -->
+<!-- hhmts star -->
+Last modified: Wed Sep 28 11:03:44 CDT 2005
+<!-- hhmts end -->
+  </body>
+</html>
