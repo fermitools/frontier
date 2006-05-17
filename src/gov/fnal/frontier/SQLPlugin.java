@@ -89,6 +89,12 @@ public class SQLPlugin implements FrontierPlugin
        {
         String n=rsmd.getColumnName(i);
         String t=rsmd.getColumnTypeName(i);
+        if(t=="NUMBER")
+         {
+          // append column precision to column type name
+	  // this was requested by Luis Ramos at CERN
+          t+="("+rsmd.getPrecision(i)+")";
+	 }
         enc.writeString(n);
         enc.writeString(t);
        }
