@@ -18,7 +18,7 @@
 extern "C"
  {
 #include "frontier_client/frontier.h"
- };
+ }
 
 namespace frontier{
 
@@ -206,7 +206,7 @@ class DataSource
    virtual ~DataSource();
  };
 
-}; // namespace frontier
+} // namespace frontier
 
 
 #endif //__HEADER_H_FRONTIER_FRONTIER_CPP_H_
