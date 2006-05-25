@@ -64,8 +64,14 @@ char *frontier_str_copy(const char *str)
  
 
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
+{
+  return(frontier_initdebug(f_mem_alloc,f_mem_free,
+		getenv(FRONTIER_ENV_LOG_FILE),getenv(FRONTIER_ENV_LOG_LEVEL)));
+}
+
+int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr),
+			const char *logfilename, const char *loglevel)
  {
-  char *env;
   uid_t uid;
   struct passwd *pwent;
   pid_t pid;
@@ -78,37 +84,35 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
   frontier_mem_alloc=f_mem_alloc;
   frontier_mem_free=f_mem_free;
     
-  env=getenv(FRONTIER_ENV_LOG_LEVEL);
-  if(!env) 
+  if(!loglevel) 
    {
     frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
     frontier_log_file=(char*)0;
    }
   else
    {
-    if(strcasecmp(env,"warning")==0 || strcasecmp(env,"info")==0) frontier_log_level=FRONTIER_LOGLEVEL_WARNING;
-    else if(strcasecmp(env,"error")==0) frontier_log_level=FRONTIER_LOGLEVEL_ERROR;
-    else if(strcasecmp(env,"nolog")==0) frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
+    if(strcasecmp(loglevel,"warning")==0 || strcasecmp(loglevel,"info")==0) frontier_log_level=FRONTIER_LOGLEVEL_WARNING;
+    else if(strcasecmp(loglevel,"error")==0) frontier_log_level=FRONTIER_LOGLEVEL_ERROR;
+    else if(strcasecmp(loglevel,"nolog")==0) frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
     else frontier_log_level=FRONTIER_LOGLEVEL_DEBUG;
     
-    env=getenv(FRONTIER_ENV_LOG_FILE);
-    if(!env)
+    if(!logfilename)
      {
       frontier_log_file=(char*)0;
      }
     else
      {
-      int fd=open(env,O_CREAT|O_APPEND|O_WRONLY,0644);
+      int fd=open(logfilename,O_CREAT|O_APPEND|O_WRONLY,0644);
       if(fd<0) 
        {
-        printf("Can not open log file %s. Log is disabled.\n",env);
+        printf("Can not open log file %s. Log is disabled.\n",logfilename);
 	frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
         frontier_log_file=(char*)0;
        }
       else
        {
         close(fd);
-        frontier_log_file=frontier_str_copy(env);
+        frontier_log_file=frontier_str_copy(logfilename);
        }
      }
    }
