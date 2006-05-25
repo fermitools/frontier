@@ -79,6 +79,18 @@ int frontier::init()
   return ret;
  }
 
+int frontier::init(const std::string& logfilename, const std::string& loglevel)
+ {
+  int ret;
+
+#ifdef FN_MEMORY_DEBUG
+  ret=frontier_initdebug(frontier_malloc,frontier_free,logfilename.c_str(),loglevel.c_str());
+#else  
+  ret=frontier_initdebug(malloc,free,logfilename.c_str(),loglevel.c_str());
+#endif //FN_MEMORY_DEBUG
+  if(ret) throw RuntimeError(create_err_msg("Frontier initialization failed"));
+  return ret;
+ }
 
  
 DataSource::DataSource(const std::string& server_url,const std::string* proxy_url)
