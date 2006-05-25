@@ -46,6 +46,8 @@ double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);
 float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec);
 void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec);
 
+int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr),
+			const char *logfile, const char *loglevel);
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr));
 
 FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec);
