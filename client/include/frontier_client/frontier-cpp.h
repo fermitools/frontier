@@ -59,6 +59,10 @@ class MetaRequest : public Request
 
  
 int init();
+// loglevel can be "nolog", "error", "info" or "warning" (which are equivalent),
+//  or anything else (which is treated as "debug")
+// each level includes all messages at lower levels
+int init(const std::string& logfilename, const std::string& loglevel);
 
 // Enum sucks
 typedef unsigned char BLOB_TYPE;
