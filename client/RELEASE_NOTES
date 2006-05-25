@@ -1,5 +1,10 @@
 $Id$
 
+ - fixed a compile problem seen on amd64 in frontier-cpp.h
+ - added frontier_initdebug C function that accepts a debug log file name
+   and log level, and a frontier::init overloaded function that accepts
+   the same two parameters
+
 v2_4_2_cms 12/25/2005 (sv)
  - support for configuring client with multiple servers/proxies
  - initial work on exceptions for the C++ api
