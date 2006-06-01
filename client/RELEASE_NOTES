@@ -1,5 +1,6 @@
 $Id$
 
+v2_4_3_cms 06/01/2006 (dwd)
  - fixed a compile problem seen on amd64 in frontier-cpp.h
  - added frontier_initdebug C function that accepts a debug log file name
    and log level, and a frontier::init overloaded function that accepts
