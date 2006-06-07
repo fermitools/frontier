@@ -76,7 +76,8 @@ src-dist: clean $(tmpdir)
 	rm -f $(src_distfile)
 	(cd $(tmpdir) && tar zcvf $(src_distfile_gz) $(src_distdir))
 	rm -rf $(tmpdir)/$(src_distdir)
-	md5sum $(src_distfile_gz) >$(src_distfile_gz)-md5.txt
+	(cd `dirname $(src_distfile_gz)`;b=`basename $(src_distfile_gz)`; \
+	md5sum $$b >$$b-md5.txt)
 	
 	
 dist-clean: 
@@ -102,7 +103,8 @@ $(distfile_gz): $(tmpdir) $(distdir) all
 	@echo "Making $@"
 	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
 	rm -f $(distfile_gz); gzip $(distfile)
-	md5sum $(distfile_gz) >$(distfile_gz)-md5.txt
+	(cd `dirname $(distfile_gz)`;b=`basename $(distfile_gz)`; \
+	md5sum $$b >$$b-md5.txt)
 
 
 ### END KIT RELATED STUFF. 
