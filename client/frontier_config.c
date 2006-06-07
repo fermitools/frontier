@@ -50,7 +50,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url)
  
   // Add additional servers/proxies from env variables.
   frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_SERVER));
-  frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_PROXY));
+  frontierConfig_addProxy(cfg, getenv(FRONTIER_ENV_PROXY));
   for(i = 0; i < FRONTIER_MAX_SERVERN; i++) {
     snprintf(buf, ENV_BUF_SIZE, "%s%d", FRONTIER_ENV_SERVER, (i+1));
     frontierConfig_addServer(cfg, getenv(buf));
@@ -125,7 +125,6 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   }
 
   if(!server_url) {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined server url.");    
     return FRONTIER_ECFG;
   }
   else {
@@ -161,7 +160,6 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
   }
 
   if(!proxy_url) {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Undefined proxy url.");    
     return FRONTIER_ECFG;
   }
   else {
