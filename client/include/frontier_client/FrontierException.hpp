@@ -14,7 +14,7 @@
 
 extern "C" {
 #include "frontier_client/frontier_error.h"
-};
+}
 
 
 
@@ -70,7 +70,7 @@ namespace frontier {
   // Logic error.
   class LogicError : public FrontierException {
   public:
-    LogicError(const std::string& err = "", int errorCode = FrontierErrorCode_UnknownError) : FrontierException(err) { }
+    LogicError(const std::string& err = "", int errorCode = FrontierErrorCode_UnknownError) : FrontierException(err, errorCode) { }
   };
 
   // Invalid argument.
