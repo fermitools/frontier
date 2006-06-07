@@ -64,7 +64,7 @@ else:
 encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".")
 
 # frontier request
-frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=%s" % (frontierUrl, encQuery)
+frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=%s" % (frontierUrl, encQuery)
 if statsFlag:
   pass
 else:
@@ -104,6 +104,7 @@ if decodeFlag:
     if data.firstChild is not None:
 
       row = base64.decodestring(data.firstChild.data)
+      row = zlib.decompress(row)
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d'  ]:
         row = row.replace(c, ' ')
 
