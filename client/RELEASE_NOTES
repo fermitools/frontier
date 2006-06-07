@@ -1,5 +1,10 @@
 $Id$
 
+ - added optional zipping of the retrieved payload.  The C++ API is
+   Request::setRetrieveZipLevel(level) where 0 is off, 1 is fastest,
+   5 is normal, and 9 is best compression.  Default is 5.  Requires
+   corresponding update in frontier servelet, version 3.1 or greater.
+
 v2_4_3_cms 06/01/2006 (dwd)
  - fixed a compile problem seen on amd64 in frontier-cpp.h
  - added frontier_initdebug C function that accepts a debug log file name
