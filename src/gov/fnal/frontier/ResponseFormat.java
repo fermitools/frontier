@@ -18,6 +18,24 @@ public class ResponseFormat
     StringBuffer b=new StringBuffer(msg);
     while(true)
      {
+      int pos=b.indexOf("&");
+      if(pos<0) break;
+      b.replace(pos,pos+1,"&amp;");
+     }
+    while(true)
+     {
+      int pos=b.indexOf("'");
+      if(pos<0) break;
+      b.replace(pos,pos+1,"&apos;");
+     }
+    while(true)
+     {
+      int pos=b.indexOf("\"");
+      if(pos<0) break;
+      b.replace(pos,pos+1,"&quot;");
+     }
+    while(true)
+     {
       int pos=b.indexOf(">");
       if(pos<0) break;
       b.replace(pos,pos+1,"&gt;");
