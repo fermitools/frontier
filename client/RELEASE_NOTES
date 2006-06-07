@@ -4,6 +4,11 @@ $Id$
    Request::setRetrieveZipLevel(level) where 0 is off, 1 is fastest,
    5 is normal, and 9 is best compression.  Default is 5.  Requires
    corresponding update in frontier servelet, version 3.1 or greater.
+ - eliminated another header file compile problem in FrontierException.hpp
+   just like the one recently fixed in frontier-cpp.h, and eliminated
+   a compile error seen when the inline LogicError constructor from
+   the same file is used
+ - eliminated some compiler warnings in frontier-cpp.h
 
 v2_4_3_cms 06/01/2006 (dwd)
  - fixed a compile problem seen on amd64 in frontier-cpp.h
