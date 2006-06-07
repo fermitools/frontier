@@ -34,13 +34,14 @@ int frontierMemData_append(FrontierMemData *md,const char *buf,size_t size);
 struct s_FrontierPayload
  {
   int id;
-  int encoding;
+  char *encoding;
   int error;
   int error_code;
   char *error_msg;
   char *blob;
   int blob_size;
   unsigned int nrec;
+  long full_size;
   unsigned char md5[16];
   char md5_str[36];
   char srv_md5_str[36];
@@ -61,6 +62,7 @@ struct s_FrontierResponse
   int error_payload_ind;
   void *parser;
   int p_state;
+  int zipped;
   FrontierPayload *payload[FRONTIER_MAX_PAYLOADNUM];
  };
 typedef struct s_FrontierResponse FrontierResponse;
