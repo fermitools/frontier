@@ -35,6 +35,7 @@ class Request
    std::vector<std::string> *v_key;
    std::vector<std::string> *v_val;
    int is_meta;
+   static int retrieve_zip_level;
 
   public:
    Request(const std::string& name,
@@ -45,6 +46,10 @@ class Request
    virtual ~Request();   
    
    static std::string encodeParam(const std::string &value);   
+   // set the zip level of retrieved data
+   // level 0 is off, level 1 is fast, level 5 is normal, level 9 is best
+   // default is 5
+   static void setRetrieveZipLevel(int level);
  };
 
  
