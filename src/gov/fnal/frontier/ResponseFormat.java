@@ -89,7 +89,7 @@ public class ResponseFormat
    }
 
    
-  static void payload_end(ServletOutputStream out,int err_code,String err_msg,String md5,int rec_num) throws Exception
+  static void payload_end(ServletOutputStream out,int err_code,String err_msg,String md5,int rec_num,long full_size) throws Exception
    {
     out.print("</data>\n");
     out.print("   <quality error=\"");
@@ -109,6 +109,8 @@ public class ResponseFormat
       out.print("\" records=\"");
       out.print(rec_num);
      }
+    out.print("\" full_size=\"");
+    out.print(full_size);
     out.print("\"/>\n");
     out.print("  </payload>");
    }
