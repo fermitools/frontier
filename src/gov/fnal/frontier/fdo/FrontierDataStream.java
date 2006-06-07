@@ -43,10 +43,10 @@ public class FrontierDataStream
    
   public String getString(String key) throws Exception
    {
-    if(mode!=BY_NAME) throw new Exception("Wromg mode");
+    if(mode!=BY_NAME) throw new Exception("Wrong mode");
     
     String ret=(String)mapParam.get(key);
-    if(ret==null) throw new Exception("Required parameter "+key+" is not defiled.");
+    if(ret==null) throw new Exception("Required parameter "+key+" is not defined.");
     return ret;
    }
  }
