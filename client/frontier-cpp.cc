@@ -65,6 +65,16 @@ std::string Request::encodeParam(const std::string &value)
  }
  
  
+int Request::retrieve_zip_level = 5;
+
+void Request::setRetrieveZipLevel(int level)
+ {
+  if (level < 0)
+    level = 0;
+  if (level > 9)
+    level = 9;
+  retrieve_zip_level = level;
+ }
  
 int frontier::init()
  {
@@ -167,7 +177,7 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
  
   for(std::vector<const Request*>::size_type i=0;i<v_req.size();i++)
    {
-    const char *enc;
+    std::string enc;
     switch(v_req[i]->enc)
      {
       case BLOB: enc="BLOB"; break;
@@ -182,6 +192,8 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
       oss << delim << "type=" << v_req[i]->obj_name; delim='&';
      }
     oss << delim << "encoding=" << enc;
+    if (Request::retrieve_zip_level > 0)
+      oss << "zip" << Request::retrieve_zip_level;
     
     if(v_req[i]->v_key)
      {
