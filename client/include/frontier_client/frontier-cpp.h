@@ -58,7 +58,7 @@ class MetaRequest : public Request
   public:
    MetaRequest(const std::string& name,
                const encoding_t& encoding):Request(name,encoding) {is_meta=1;}
-   virtual void addKey(const std::string& key,const std::string& value){}
+   virtual void addKey(const std::string&,const std::string&){}
    virtual ~MetaRequest(){}
  };
 
@@ -125,7 +125,7 @@ class AnyData
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
    inline void set(float f){t=BLOB_TYPE_FLOAT;v.f=f;type_error=FRONTIER_OK;}
    inline void set(double d){t=BLOB_TYPE_DOUBLE;v.d=d;type_error=FRONTIER_OK;}
-   inline void set(long long t,int time){t=BLOB_TYPE_TIME;v.i8=t;type_error=FRONTIER_OK;}
+   inline void set(long long t,int /*time*/){t=BLOB_TYPE_TIME;v.i8=t;type_error=FRONTIER_OK;}
    inline void set(unsigned int size,char *ptr){t=BLOB_TYPE_ARRAY_BYTE;v.str.s=size;v.str.p=ptr;type_error=FRONTIER_OK;}
    inline void setEOR(){t=BLOB_TYPE_EOR;type_error=FRONTIER_OK;}
    inline BLOB_TYPE type() const{return t;}
