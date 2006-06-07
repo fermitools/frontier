@@ -50,6 +50,14 @@ xml_startElement(void *userData,const char *name,const char **atts)
     fr->payload_num++;
     fr->payload[fr->payload_num-1]=frontierPayload_create();
     fr->p_state=FNTR_WITHIN_PAYLOAD;
+    for(i=0;atts[i];i+=2)
+     {
+      if(strcmp(atts[i],"encoding")==0)
+       {
+        fr->payload[fr->payload_num-1]->encoding=frontier_str_copy(atts[i+1]);
+	continue;
+       }      
+     }
     return;
    }
 
@@ -77,8 +85,13 @@ xml_startElement(void *userData,const char *name,const char **atts)
        }            
       if(strcmp(atts[i],"records")==0)
        {
-	printf("Number of records: %d\n", atoi(atts[i+1]));
+	//printf("Number of records: %d\n", atoi(atts[i+1]));
         fr->payload[fr->payload_num-1]->nrec=atoi(atts[i+1]);
+	continue;
+       }
+      if(strcmp(atts[i],"full_size")==0)
+       {
+        fr->payload[fr->payload_num-1]->full_size=atoi(atts[i+1]);
 	continue;
        }
       if(strcmp(atts[i],"md5")==0)
