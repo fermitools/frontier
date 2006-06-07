@@ -1,5 +1,6 @@
 $Id$
 
+v2_4_4_cms 06/07/2006 (dwd)
  - added optional zipping of the retrieved payload.  The C++ API is
    Request::setRetrieveZipLevel(level) where 0 is off, 1 is fastest,
    5 is normal, and 9 is best compression.  Default is 5.  Requires
