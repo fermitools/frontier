@@ -408,6 +408,29 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
   available=buf_len>available?available:buf_len;
   bcopy(c->buf+c->data_pos,buf,available);
   c->data_pos+=available;
+
+#if 0
+   {
+    /* print the beginning of the data in the block */
+    char savech;
+    int lineno;
+    char *p = buf;
+    for (lineno = 0; lineno < 15; lineno++)
+     {
+      if ((lineno+1) * 40 >= available)
+       {
+	break;
+       }
+      savech = p[40];
+      p[40] = '\0';
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"data [%s]",p);
+      p[40] = savech;
+      p+=40;
+     }
+     if (lineno == 15)
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"(more data not logged)");
+   }
+#endif
     
   return available;
  }
