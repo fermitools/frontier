@@ -26,6 +26,7 @@ public class Payload
   public String err_msg;
   public String md5;
   public int rec_num;
+  public long full_size;
   
   protected Payload(Command a_cmd,DbConnectionMgr a_dbm) throws Exception
    {
@@ -39,6 +40,7 @@ public class Payload
     err_msg="";
     md5="";
     rec_num=0;
+    full_size=0;
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
@@ -107,11 +109,21 @@ public class Payload
    {
     Encoder enc=null;
     rec_num=0;
+
+    if ((cmd.encoder.length() < 4) ||
+	(!cmd.encoder.substring(0,4).equals("BLOB")))
+     {
+      throw new Exception("Unsupported encoder: "+cmd.encoder);
+     }
+
+    String encparam = "";
+    if (cmd.encoder.length() > 4)
+	encparam=cmd.encoder.substring(4);
     
     switch(cmd.cmd_domain)
      {
       case Command.CMD_GET:
-       enc=new BlobTypedEncoder(out);
+       enc=new BlobTypedEncoder(out,encparam);
        try { 
 	   rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds); 
 	   System.out.println("Number of records after fdo_get: " + rec_num);
@@ -120,11 +132,12 @@ public class Payload
         { 
          enc.close(); 
          md5=md5Digest(enc);
+	 full_size=enc.getOutputSize();
         }
        return;
       
       case Command.CMD_META:
-       enc=new BlobTypedEncoder(out);
+       enc=new BlobTypedEncoder(out,encparam);
        try { 
 	   rec_num=fdo.fdo_meta(enc,cmd.method); 
 	   System.out.println("Number of records after fdo_meta: " + rec_num);
@@ -137,7 +150,7 @@ public class Payload
        return;
 
       case Command.CMD_WRITE:
-       enc=new BlobTypedEncoder(out);
+       enc=new BlobTypedEncoder(out,encparam);
        try { 
 	   rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds); 
 	   System.out.println("Number of records after fdo_write: " + rec_num);
