@@ -1,5 +1,8 @@
 $Id$
 
+ - prevent the attempted build of the internal expat from deleting
+   $(EXPAT_DIR) if it is passed in as an external directory
+
 v2_4_4_cms 06/07/2006 (dwd)
  - added optional zipping of the retrieved payload.  The C++ API is
    Request::setRetrieveZipLevel(level) where 0 is off, 1 is fastest,
