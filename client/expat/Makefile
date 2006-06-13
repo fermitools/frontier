@@ -5,7 +5,9 @@
 #
 
 # The purpose here is to build expat only if it is not already provided.
-ifndef EXPAT_DIR
+ifdef EXPAT_DIR
+all clean:
+else
   EXPAT_DIR=local
   EXPAT_INCLUDE_DIR=${EXPAT_DIR}/include
   EXPAT_LIB_DIR=${EXPAT_DIR}/lib
@@ -13,9 +15,6 @@ ifndef EXPAT_DIR
   EXPAT_SRC_DIR=expat-1.95.8
   EXPAT_SRC_TAR=${EXPAT_SRC_DIR}.tar.gz
   EXPAT_SOLIB_NAME=libfn-expat.so
-else
-  EXPAT_SOLIB_NAME=libexpat.so
-endif
 
 all: ${EXPAT_DIR}/lib/${EXPAT_SOLIB_NAME}
 
@@ -36,3 +35,4 @@ clean:
 	rm -rf ${EXPAT_SRC_DIR} 
 	rm -rf local
 
+endif
