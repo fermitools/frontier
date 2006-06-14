@@ -167,9 +167,9 @@ int frontierPayload_finalize(FrontierPayload *fpl)
 	sprintf(&hexdata[i*3],"%02x\n",(unsigned char)bin_data[i]);
     hexdata[i*3]='\0';
 
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Pre-uncompressed %d-byte (full size %d) payload: %s",bin_size,fpl->full_size,hexdata);
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"pre-uncompressed %d byte (full size %d) payload: %s",bin_size,fpl->full_size,hexdata);
 #else
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Uncompressing %d-byte (full size %d) payload",bin_size,fpl->full_size);
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"uncompressing %d byte (full size %d) payload",bin_size,fpl->full_size);
 #endif
 
     fpl->blob=(char*)frontier_mem_alloc(fpl->full_size);
