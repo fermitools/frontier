@@ -45,6 +45,22 @@ xml_startElement(void *userData,const char *name,const char **atts)
     return;
    }  
 
+  if(strcmp(name,"frontier")==0)
+   {
+    char buf[80];
+    int i;
+    size_t l=0;
+    buf[0] = '\0';
+    for(i=0;atts[i];i+=2)
+     {
+      l+=snprintf(&buf[l],sizeof(buf)-l," %s=%s",atts[i],atts[i+1]);
+      if (l>=sizeof(buf))
+	break;
+     }
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"frontier server%s",buf);
+    return;
+   }
+
   if(strcmp(name,"payload")==0)
    {
     fr->payload_num++;
