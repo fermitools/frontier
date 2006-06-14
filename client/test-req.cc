@@ -126,10 +126,12 @@ int do_main(int argc, char **argv)
     std::cout<<"Param ["<<param<<"]\n";
           
     std::list<std::string> serverList;
-    serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
+    //serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
     std::list<std::string> proxyList;
     //frontier::DataSource ds;        
     frontier::DataSource ds(serverList, proxyList);
+    ds.setReload(do_reload);
+
     frontier::Request req(req_data,frontier::BLOB);
     req.addKey("p1",param);
 
