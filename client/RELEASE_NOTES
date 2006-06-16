@@ -1,7 +1,10 @@
 $Id$
 
+v2_4_5_cms 06/16/2006 (dwd)
  - prevent the attempted build of the internal expat from deleting
-   $(EXPAT_DIR) if it is passed in as an external directory
+   $(EXPAT_DIR) if it is passed on the make command line, and from
+   installing the internal expat into the external $(EXPAT_DIR).
+ - add showing the server version in the debug log
 
 v2_4_4_cms 06/07/2006 (dwd)
  - added optional zipping of the retrieved payload.  The C++ API is
