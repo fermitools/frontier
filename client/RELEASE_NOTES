@@ -1,5 +1,8 @@
 $Id$
 
+ - Add support of ZLIB_DIR for the make command line to point to an
+   external zlib package different than the standard zlib
+
 v2_4_5_cms 06/16/2006 (dwd)
  - prevent the attempted build of the internal expat from deleting
    $(EXPAT_DIR) if it is passed on the make command line, and from
