@@ -44,7 +44,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
   bzero(fui,sizeof(FrontierUrlInfo));
   
   fui->url=frontier_str_copy(url);
-  if(!fui)
+  if(!fui->url)
    {
     *ec=FRONTIER_EMEM;
     FRONTIER_MSG(*ec);
