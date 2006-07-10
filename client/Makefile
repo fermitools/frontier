@@ -23,6 +23,14 @@ else
   EXPAT_LIBS    =      -lexpat
 endif
 
+ifndef ZLIB_DIR
+  ZLIB_LD_FLAGS=
+  ZLIB_INC     =
+else
+  ZLIB_LD_FLAGS=      -L${ZLIB_DIR}/lib
+  ZLIB_INC     =      -I${ZLIB_DIR}/include
+endif
+
 # GCC settings
 FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
@@ -33,9 +41,9 @@ COPT		=	-Wall -g -O2 -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
-INC		=	-I${EXPAT_DIR}/include -I./include -I.
+INC		=	-I${EXPAT_DIR}/include ${ZLIB_INC} -I./include -I.
 LIBDIR		=
-LIBS		= -lz
+LIBS		= 	${ZLIB_LD_FLAGS} -lz
 
 OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
@@ -76,8 +84,6 @@ src-dist: clean $(tmpdir)
 	rm -f $(src_distfile)
 	(cd $(tmpdir) && tar zcvf $(src_distfile_gz) $(src_distdir))
 	rm -rf $(tmpdir)/$(src_distdir)
-	(cd `dirname $(src_distfile_gz)`;b=`basename $(src_distfile_gz)`; \
-	md5sum $$b >$$b-md5.txt)
 	
 	
 dist-clean: 
@@ -103,8 +109,6 @@ $(distfile_gz): $(tmpdir) $(distdir) all
 	@echo "Making $@"
 	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
 	rm -f $(distfile_gz); gzip $(distfile)
-	(cd `dirname $(distfile_gz)`;b=`basename $(distfile_gz)`; \
-	md5sum $$b >$$b-md5.txt)
 
 
 ### END KIT RELATED STUFF. 
