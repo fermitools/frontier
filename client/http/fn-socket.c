@@ -90,7 +90,9 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d in progress, preparing for select.",s);
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
-  tv.tv_sec=30;
+  /* the initial connect timeout should be quite short, to fail over to
+     the next if one of the servers is down */
+  tv.tv_sec=3;
   tv.tv_usec=0;
   ret=select(s+1,NULL,&wfds,NULL,&tv);
   if(ret<0) 
@@ -137,7 +139,9 @@ static int socket_write(int s,const char *buf, int len)
 
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
-  tv.tv_sec=30;
+  /* writes shouldn't take very long unless there is much queued,
+     which doesn't happen in the frontier client */
+  tv.tv_sec=5;
   tv.tv_usec=0;
   ret=select(s+1,NULL,&wfds,NULL,&tv);
   if(ret<0) 
@@ -201,7 +205,8 @@ int frontier_read(int s, char *buf, int size)
 
   FD_ZERO(&rfds);
   FD_SET(s,&rfds);
-  tv.tv_sec=30;
+  /* server should send some data at least every 5 seconds; allow for double */
+  tv.tv_sec=10;
   tv.tv_usec=0;
   ret=select(s+1,&rfds,NULL,NULL,&tv);
   if(ret<0) 
