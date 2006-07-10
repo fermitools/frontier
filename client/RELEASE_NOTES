@@ -1,6 +1,13 @@
 $Id$
 
- - Add support of ZLIB_DIR for the make command line to point to an
+ - Reduced network timeouts when talking to frontier server:
+    - connect from 30 to 3 seconds - initial connect should be quick
+        and don't want to wait too long in case a server is down
+    - writes from 30 to 5 seconds - writes should be quick unless
+        queues are large, which shouldn't happen
+    - reads from 30 to 10 seconds - server now sends keepalives
+        every 5 seconds if it isn't doing anything
+ - Added support of ZLIB_DIR for the make command line to point to an
    external zlib package different than the standard zlib
 
 v2_4_5_cms 06/16/2006 (dwd)
