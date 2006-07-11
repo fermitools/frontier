@@ -65,15 +65,9 @@ std::string Request::encodeParam(const std::string &value)
  }
  
  
-int Request::retrieve_zip_level = 5;
-
 void Request::setRetrieveZipLevel(int level)
  {
-  if (level < 0)
-    level = 0;
-  if (level > 9)
-    level = 9;
-  retrieve_zip_level = level;
+  frontierConfig_setDefaultRetrieveZipLevel(level);
  }
  
 int frontier::init()
@@ -140,20 +134,34 @@ DataSource::DataSource(const std::list<std::string>& serverUrlList,
   /*
    * Create empty config struct and add server/proxies to it. 
    */
-  FrontierConfig* config = frontierConfig_get("", ""); 
+  int errorCode = FRONTIER_OK;
+  FrontierConfig* config = frontierConfig_get("", "", &errorCode); 
+  if(errorCode != FRONTIER_OK) {
+    FrontierExceptionMapper::throwException(errorCode, "Can not get frontier config object");
+  }
   typedef std::list<std::string>::const_iterator LI;
   for(LI i = serverUrlList.begin(); i != serverUrlList.end(); ++i) {
-    frontierConfig_addServer(config, i->c_str());
+    errorCode = frontierConfig_addServer(config, i->c_str());
+    if(errorCode != FRONTIER_OK) {
+      std::ostringstream oss;
+      oss << "Error adding frontier server " << i->c_str();
+      FrontierExceptionMapper::throwException(errorCode, oss.str());
+    }
   }
   for(LI i = proxyUrlList.begin(); i != proxyUrlList.end(); ++i) {
-    frontierConfig_addProxy(config, i->c_str());
+    errorCode = frontierConfig_addProxy(config, i->c_str());
+    if(errorCode != FRONTIER_OK) {
+      std::ostringstream oss;
+      oss << "Error adding frontier proxy " << i->c_str();
+      FrontierExceptionMapper::throwException(errorCode, oss.str());
+    }
   }
-  int errorCode = FRONTIER_OK;
+  errorCode = FRONTIER_OK;
   channel = frontier_createChannel2(config, &errorCode);
   if(errorCode != FRONTIER_OK) {
-    FrontierExceptionMapper::throwException(errorCode, frontier_getErrorMsg());
+    FrontierExceptionMapper::throwException(errorCode, "Error creating frontier channel");
   }
-  
+
 }
 
  
@@ -192,8 +200,9 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
       oss << delim << "type=" << v_req[i]->obj_name; delim='&';
      }
     oss << delim << "encoding=" << enc;
-    if (Request::retrieve_zip_level > 0)
-      oss << "zip" << Request::retrieve_zip_level;
+    int ziplevel = frontier_getRetrieveZipLevel(channel);
+    if (ziplevel > 0)
+      oss << "zip" << ziplevel;
     
     if(v_req[i]->v_key)
      {
