@@ -1,5 +1,6 @@
 $Id$
 
+v2_4_6_cms 07/11/2006 (dwd)
  - Added support for handling complex server connection strings
    containing parenthesized keyword-value pairs.  This was added to
    make it straightforward for higher CMS software levels to pass a
