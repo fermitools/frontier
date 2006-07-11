@@ -56,6 +56,7 @@ void frontier_closeChannel(FrontierChannel chn);
 void frontier_setReload(FrontierChannel u_channel,int reload);
 int frontier_getRawData(FrontierChannel chn,const char *uri);
 int frontier_postRawData(FrontierChannel chn,const char *uri,const char *body);
+int frontier_getRetrieveZipLevel(FrontierChannel chn);
 
 int frontier_n2h_i32(const void* p);
 float frontier_n2h_f32(const void* p);
