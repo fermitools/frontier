@@ -1,5 +1,12 @@
 $Id$
 
+ - Added support for handling complex server connection strings
+   containing parenthesized keyword-value pairs.  This was added to
+   make it straightforward for higher CMS software levels to pass a
+   single string to specify one connection.   The format is
+   (keyword=value)...  where keyword is one of serverurl, proxyurl, or
+   retrieve-ziplevel.  Keywords can appear multiple times, and
+   anything between parenthesized components is ignored. 
  - Reduced network timeouts when talking to frontier server:
     - connect from 30 to 3 seconds - initial connect should be quick
         and don't want to wait too long in case a server is down
