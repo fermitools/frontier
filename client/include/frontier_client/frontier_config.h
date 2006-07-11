@@ -22,9 +22,10 @@ struct s_FrontierConfig
   int proxy_num;
   int server_cur;
   int proxy_cur;
+  int retrieve_zip_level;
  };
 typedef struct s_FrontierConfig FrontierConfig;
-FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url);
+FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode);
 const char *frontierConfig_getServerUrl(FrontierConfig *cfg);
 const char *frontierConfig_getProxyUrl(FrontierConfig *cfg);
 int frontierConfig_nextServer(FrontierConfig *cfg);
@@ -32,6 +33,9 @@ int frontierConfig_nextProxy(FrontierConfig *cfg);
 void frontierConfig_delete(FrontierConfig *cfg);
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url);
+int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg);
+void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level);
+void frontierConfig_setDefaultRetrieveZipLevel(int level);
 
 #endif /* FRONTIER_CONFIG_H */
 
