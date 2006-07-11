@@ -145,11 +145,9 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
    }
   bzero(chn,sizeof(Channel));
 
-  chn->cfg=frontierConfig_get(srv,proxy);
+  chn->cfg=frontierConfig_get(srv,proxy,ec);
   if(!chn->cfg)
    {
-    *ec=FRONTIER_EMEM;
-    FRONTIER_MSG(*ec);
     channel_delete(chn);    
     return (void*)0;
    }
@@ -359,6 +357,9 @@ static int get_data(Channel *chn,const char *uri,const char *body)
    {
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
     if(ret<=0) goto end;
+#if 0
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"read %d bytes from server",ret);
+#endif
     ret=write_data(chn->resp,buf,ret);
     if(ret!=FRONTIER_OK)  goto end;
    }
@@ -437,4 +438,10 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   return ret;
  }
 
+int frontier_getRetrieveZipLevel(FrontierChannel u_channel)
+ {
+  Channel *chn=(Channel*)u_channel;
+
+  return frontierConfig_getRetrieveZipLevel(chn->cfg);
+ }
 
