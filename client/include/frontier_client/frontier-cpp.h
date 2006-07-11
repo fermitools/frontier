@@ -35,7 +35,6 @@ class Request
    std::vector<std::string> *v_key;
    std::vector<std::string> *v_val;
    int is_meta;
-   static int retrieve_zip_level;
 
   public:
    Request(const std::string& name,
