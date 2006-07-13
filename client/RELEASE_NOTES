@@ -1,5 +1,12 @@
 $Id$
 
+v2_4_7_cms 07/12/2006 (dwd)
+ - Fixed bug that limited the maximum number of servers and proxies to
+    3 instead of the intended 4.  Also, increase the maximum number of
+    servers to 6.  Remove the code that eliminated duplicate servers
+    and proxies because we may want to deliberately include duplicates
+    as part of a retry strategy.
+
 v2_4_6_cms 07/11/2006 (dwd)
  - Added support for handling complex server connection strings
    containing parenthesized keyword-value pairs.  This was added to
