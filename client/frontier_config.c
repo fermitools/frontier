@@ -247,12 +247,6 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   if ((server_url != 0) && (strchr(server_url, '(') != NULL))
     return frontierConfig_parseComplexServerSpec(cfg, server_url);
 
-  if(cfg->server_num >= FRONTIER_MAX_SERVERN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
-      "Reached limit of %d frontier servers", FRONTIER_MAX_SERVERN);    
-    return FRONTIER_ECFG;
-  }
-
   if(!server_url) {
     return FRONTIER_OK;
   }
@@ -263,15 +257,13 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
     }
   }
 
-  /* Make sure there are no duplicates in the list. */
-  int i;
-  for(i = 0; i < cfg->server_num; ++i) {
-    if(strcmp(cfg->server[i], server_url) == 0) {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Duplicate server url skipped: %s", server_url);    
-      return FRONTIER_OK;
-    }
+  /* Ready to insert new server, make sure there's room */
+  if(cfg->server_num >= FRONTIER_MAX_SERVERN) {
+    frontier_setErrorMsg(__FILE__, __LINE__, 
+      "Reached limit of %d frontier servers", FRONTIER_MAX_SERVERN);    
+    return FRONTIER_ECFG;
   }
-  
+
   /* Everything ok, insert new server. */
   cfg->server[cfg->server_num] = str_dup(server_url);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
@@ -282,12 +274,6 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
 
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
  {
-  if(cfg->proxy_num >= FRONTIER_MAX_PROXYN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
-      "Reached limit of %d frontier proxies", FRONTIER_MAX_PROXYN);    
-    return FRONTIER_ECFG;
-  }
-
   if(!proxy_url) {
     return FRONTIER_OK;
   }
@@ -298,13 +284,11 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
     }
   }
 
-  /* Make sure there are no duplicates in the list. */
-  int i;
-  for(i = 0; i < cfg->proxy_num; ++i) {
-    if(strcmp(cfg->proxy[i], proxy_url) == 0) {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Duplicate server url skipped: %s", proxy_url);    
-      return FRONTIER_OK;
-    }
+  /* Ready to insert new proxy, make sure there's room */
+  if(cfg->proxy_num >= FRONTIER_MAX_PROXYN) {
+    frontier_setErrorMsg(__FILE__, __LINE__, 
+      "Reached limit of %d frontier proxies", FRONTIER_MAX_PROXYN);    
+    return FRONTIER_ECFG;
   }
 
   /* Everything ok, insert new proxy. */
