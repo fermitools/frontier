@@ -1,9 +1,24 @@
 $Id$
 
+v2_5_0_cms 07/26/2006 (dwd)
+ - Make uncompressing of zipped payload work with 64 bit compiler
+   (where a long is 8 bytes and int is still 4 bytes).
+ - Add notion of a "logical server" which is a server name that gets
+   ignored in favor of servers/proxies that have been set by other
+   means. 
+ - Add new C++ API class function DataSource::setDefaultParams which
+   takes parameters of a logical server name and a "parameter list"
+   which can be either a complex server connection string (see note
+   from v2_4_6_cms) or just a simple server string.  If this API is
+   not used, the values can come instead from optional environment
+   variables FRONTIER_LOGICALSERVER and FRONTIER_SERVER respectively.
+ - Added new optional environment variable FRONTIER_RETRIEVEZIPLEVEL
+   to set the retrieved zip level if it isn't set any other way.
+
 v2_4_7_cms 07/12/2006 (dwd)
  - Fixed bug that limited the maximum number of servers and proxies to
-    3 instead of the intended 4.  Also, increase the maximum number of
-    servers to 6.  Remove the code that eliminated duplicate servers
+    3 instead of the intended 4.  Also, increased the maximum number of
+    servers to 6.  Removed the code that eliminated duplicate servers
     and proxies because we may want to deliberately include duplicates
     as part of a retry strategy.
 
