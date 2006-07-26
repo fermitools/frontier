@@ -85,13 +85,11 @@ public class ResponseFormat
     out.print("\" encoding=\"");
     out.print(encoder);
     out.print("\">\n");
-    out.print("   <data>");
    }
 
    
   static void payload_end(ServletOutputStream out,int err_code,String err_msg,String md5,int rec_num,long full_size) throws Exception
    {
-    out.print("</data>\n");
     out.print("   <quality error=\"");
     out.print(err_code);
     if(err_msg.length()>0)
@@ -115,6 +113,21 @@ public class ResponseFormat
     out.print("  </payload>");
    }
          
+  static void data_start(ServletOutputStream out) throws Exception
+   {
+    out.print("   <data>");
+   }
+  
+  static void data_end(ServletOutputStream out) throws Exception
+   {
+    out.print("</data>\n");
+   }
+  
+  static void keepalive(ServletOutputStream out) throws Exception
+   {
+    out.print("   <keepalive />\n");
+    out.flush();
+   }
   
   static void putGlobalError(ServletOutputStream out,String msg)
    {
