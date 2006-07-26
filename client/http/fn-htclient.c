@@ -56,22 +56,22 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   FrontierUrlInfo *fui;
   int ec=FRONTIER_OK;
   
-  if(c->total_server+1>=FRONTIER_SRV_MAX_NUM) 
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server list is too long");
-    return FRONTIER_ECFG;
-   }
-  
   fui=frontier_CreateUrlInfo(url,&ec);
   if(!fui) return ec;
   
   if(!fui->path)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server %s: path is missing",fui->host);
+    frontier_DeleteUrlInfo(fui);    
+    return FRONTIER_OK;
+   }
+   
+  if(c->total_server>=(sizeof(c->server)/sizeof(c->server[0]))) 
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server list is too long");
     frontier_DeleteUrlInfo(fui);    
     return FRONTIER_ECFG;
    }
-   
+  
   c->server[c->total_server]=fui;
   c->total_server++;
   
@@ -84,15 +84,16 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
   FrontierUrlInfo *fui;
   int ec=FRONTIER_OK;
   
-  if(c->total_proxy+1>=FRONTIER_SRV_MAX_NUM)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server list is too long");
-    return FRONTIER_ECFG;
-   }
-    
   fui=frontier_CreateUrlInfo(url,&ec);
   if(!fui) return ec;
   
+  if(c->total_proxy>=(sizeof(c->proxy)/sizeof(c->proxy[0])))
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: proxy list is too long");
+    frontier_DeleteUrlInfo(fui);    
+    return FRONTIER_ECFG;
+   }
+    
   c->proxy[c->total_proxy]=fui;
   c->total_proxy++;
   
@@ -451,8 +452,10 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   
   if(!c) return;
   
-  for(i=0;i<FRONTIER_SRV_MAX_NUM; i++) frontier_DeleteUrlInfo(c->server[i]);
-  for(i=0;i<FRONTIER_SRV_MAX_NUM; i++) frontier_DeleteUrlInfo(c->proxy[i]);
+  for(i=0;i<(sizeof(c->server)/sizeof(c->server[0])); i++)
+    frontier_DeleteUrlInfo(c->server[i]);
+  for(i=0;i<(sizeof(c->proxy)/sizeof(c->proxy[0])); i++)
+    frontier_DeleteUrlInfo(c->proxy[i]);
   
   if(c->socket>=0) frontierHttpClnt_close(c);
   
