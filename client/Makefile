@@ -53,7 +53,7 @@ BINAPP		=	fn-any fn-req
 
 
 
-all: htclient libexpat libfrontier_client.so $(BINAPP)
+all: htclient libexpat libfrontier_client.so $(BINAPP) fn-req.static
 
 
 
@@ -243,8 +243,14 @@ fn-req: test-req.o $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req test-req.o \
 	  -lfrontier_client ${EXPAT_LIBS} $(LIBS)
 
+# staticly linked app works better in gdb
+fn-req.static: libfrontier_client.so fn-req
+	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req.static test-req.o \
+	  .libs/*.o ${EXPAT_LIBS} $(LIBS)
+
+
 clean:
-	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP)
+	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP) fn-req.static
 	(cd expat && make clean)
 	(cd http && make clean)
 	rm -rf .libs
