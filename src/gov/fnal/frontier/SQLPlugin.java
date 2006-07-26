@@ -28,7 +28,7 @@ public class SQLPlugin implements FrontierPlugin
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
     
     String param=fds.getString("p1");
-    System.out.println("Got param ["+param+"]");
+    //System.out.println("Got param ["+param+"]");
     
     StringBuffer sb=new StringBuffer(param);
     int len=param.length();
@@ -45,7 +45,7 @@ public class SQLPlugin implements FrontierPlugin
      }
     sb.append('\n');
     param=sb.toString();
-    System.out.println("Pre param ["+param+"]");
+    //System.out.println("Pre param ["+param+"]");
     
     byte[] bascii=param.getBytes("US-ASCII");
     
@@ -112,10 +112,11 @@ public class SQLPlugin implements FrontierPlugin
      }
     finally
      {
+      enc.flush();
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
      }        
-    System.out.println("SQLPlugin.fp_get(): returning row_count="+row_count);
+    //System.out.println("SQLPlugin.fp_get(): returning row_count="+row_count);
     return row_count;
    }
 
