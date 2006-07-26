@@ -6,6 +6,11 @@ import javax.naming.NamingException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Timer;
+import java.util.TimerTask;
+import javax.servlet.ServletOutputStream;
 
 /**
  * Singleton class which provides database connections.  The specific
@@ -44,18 +49,50 @@ public class DbConnectionMgr
     if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
    }
 
-  
-  public Connection acquire() throws Exception 
+  private class KeepAliveTimerTask extends java.util.TimerTask
+   {
+   ServletOutputStream sos=null;
+   boolean shuttingDown=false;
+   public KeepAliveTimerTask(ServletOutputStream os)
+    {
+     sos = os;
+    }
+   public synchronized void run()
+    {
+      if (!shuttingDown)
+       {
+        try {ResponseFormat.keepalive(sos);}catch(Exception e){}
+        System.out.println("DB mgr acquire sent keepalive");
+       }
+    }
+   public synchronized void shutdown()
+    {
+     // set this boolean to avoid further output in case the
+     // run function has already been set to go
+     shuttingDown=true;
+     cancel();
+    }
+   }
+
+  public Connection acquire(ServletOutputStream sos) throws Exception 
    {
     Connection connection;
+    Timer timer=new Timer();
+    KeepAliveTimerTask timerTask=new KeepAliveTimerTask(sos);
+    timer.schedule(timerTask,5000,5000);
     connection=dataSource.getConnection();
+    timer.cancel();
+    timerTask.shutdown();
+    System.out.println("DB mgr connection acquired");
+    ResponseFormat.data_start(sos);
     return connection;
    }
 
  
-  public void release(Connection dbConnection) throws Exception 
+  public void release(Connection dbConnection,ServletOutputStream sos) throws Exception 
    {
     if(dbConnection!=null) dbConnection.close();
+    if (sos!=null) ResponseFormat.data_end(sos);
    }
    
    
