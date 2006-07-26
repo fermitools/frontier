@@ -105,7 +105,7 @@ public class BlobTypedEncoder implements Encoder
      }
     else if (param.length() != 0)
      throw new Exception("Unrecognized BLOB sub-encoding "+param);
-    System.out.println("BLOB zip level ["+ziplevel+"]");
+    //System.out.println("BLOB zip level ["+ziplevel+"]");
 
     if (ziplevel > 0)
      {
