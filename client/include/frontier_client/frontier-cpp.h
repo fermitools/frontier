@@ -210,8 +210,23 @@ class DataSource
    inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOF(){return (getRSBinarySize()==getRSBinaryPos());} // End Of File
    int next();
-      
+
    virtual ~DataSource();
+
+   // Set default parameters for later-created DataSource objects.
+   //  "logicalServer" is the default logical server URL.  Any time
+   //  that URL is requested, it will be ignored and instead any other
+   //  servers or proxies specified will be used.  "parameterList" is
+   //  a concatenated list of parenthesized keyword=value pairs where
+   //  keyword is serverurl, proxyurl, or retrieve-ziplevel.  (To be
+   //  precise, parameterList may also be just a server URL; this
+   //  string and any DataSource serverURL other than the
+   //  logicalServer are treated exactly the same, as either a single
+   //  server if there's no parentheses or as a list of keyword=value
+   //  pairs if there are parentheses).  These are added after any
+   //  servers or proxies passed to the DataSource constructor.
+   static void setDefaultParams(const std::string& logicalServer,
+   		const std::string& parameterList);
  };
 
 } // namespace frontier
