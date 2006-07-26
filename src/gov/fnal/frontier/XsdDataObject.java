@@ -6,6 +6,7 @@ import org.xml.sax.helpers.*;
 import gov.fnal.frontier.fdo.*;
 import java.util.*;
 import java.sql.*;
+import javax.servlet.ServletOutputStream;
 
 
 
@@ -141,7 +142,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    
      
    
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
    {
     //System.out.println("XsdDataObject.fdo_get()");
     int rec_num=0;
@@ -169,7 +170,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     
     try
      {
-      con=dbm.acquire();
+      con=dbm.acquire(sos);
       stmt=con.prepareStatement(sql.toString());
       for(int i=0;i<wc.aParams.size();i++)
        {
@@ -210,7 +211,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
      {
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
-      if(con!=null) try{dbm.release(con);}catch(Exception e){}
+      if(con!=null) try{dbm.release(con,sos);}catch(Exception e){}
      }
     return rec_num;
    }
@@ -231,7 +232,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }
      
   
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
    {
     throw new Exception("XSD v1 does not support writes");
    }   

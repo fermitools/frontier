@@ -4,6 +4,7 @@ import java.io.*;
 import gov.fnal.frontier.fdo.*;
 import java.util.*;
 import java.sql.*;
+import javax.servlet.ServletOutputStream;
 
 
 
@@ -44,7 +45,7 @@ public class Xsd2DataObject implements FrontierDataObject
    }
      
    
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
    {
     System.out.println("Xsd2DataObject.fdo_get()");
     int rec_num=0;
@@ -64,7 +65,7 @@ public class Xsd2DataObject implements FrontierDataObject
     
     try
      {
-      con=dbm.acquire();
+      con=dbm.acquire(sos);
       stmt=con.prepareStatement(sql);
       for(int i=0;i<mi.aParams.size();i++)
        {
@@ -105,7 +106,7 @@ public class Xsd2DataObject implements FrontierDataObject
      {
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
-      if(con!=null) try{dbm.release(con);}catch(Exception e){}
+      if(con!=null) try{dbm.release(con,sos);}catch(Exception e){}
      }
     return rec_num;
    }
@@ -137,7 +138,7 @@ public class Xsd2DataObject implements FrontierDataObject
    }
    
    
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds) throws Exception   
+  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception   
    {
     System.out.println("Xsd2DataObject.fdo_write()");
     int rec_num=0;
@@ -157,7 +158,7 @@ public class Xsd2DataObject implements FrontierDataObject
     
     try
      {
-      con=dbm.acquire();
+      con=dbm.acquire(sos);
       stmt=con.prepareStatement(sql);
       for(int i=0;i<mi.aParams.size();i++)
        {
@@ -175,7 +176,7 @@ public class Xsd2DataObject implements FrontierDataObject
      {
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
-      if(con!=null) try{dbm.release(con);}catch(Exception e){}
+      if(con!=null) try{dbm.release(con,sos);}catch(Exception e){}
      }
     return rec_num;
    }
