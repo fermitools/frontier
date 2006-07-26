@@ -41,13 +41,12 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec);
 int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 
-#define FRONTIER_SRV_MAX_NUM	16
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 
 struct s_FrontierHttpClnt
  {
-  FrontierUrlInfo *proxy[FRONTIER_SRV_MAX_NUM+1]; // +1 to support "no-proxy"
-  FrontierUrlInfo *server[FRONTIER_SRV_MAX_NUM];
+  FrontierUrlInfo *proxy[FRONTIER_MAX_PROXYN];
+  FrontierUrlInfo *server[FRONTIER_MAX_SERVERN];
   int cur_proxy;
   int cur_server;
   int total_proxy;
