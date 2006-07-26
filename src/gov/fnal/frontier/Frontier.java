@@ -134,8 +134,11 @@ public final class Frontier
    
   private void logClientDesc(HttpServletRequest req) throws Exception
    {
-    String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); StringBuffer client_desc=new StringBuffer("");
-    client_desc.append("start threads:");
+    String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); 
+    StringBuffer client_desc=new StringBuffer("");
+    client_desc.append("servlet_version:");
+    client_desc.append(FrontierServlet.frontierVersion());
+    client_desc.append(" start threads:");
     client_desc.append(count_current);
     client_desc.append(" query ");
     client_desc.append(queryString);
