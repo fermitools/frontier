@@ -1,6 +1,7 @@
 package gov.fnal.frontier.fdo;
 
 import java.io.*;
+import javax.servlet.ServletOutputStream;
 
 /**
  * Interface to Frontier Data Object. Any DataObject implementation
@@ -16,7 +17,7 @@ public interface FrontierDataObject
  {
   public void fdo_init(byte[] body) throws Exception;
   public MethodDesc fdo_getMethodDesc(String method) throws Exception;
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds) throws Exception;
+  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream os) throws Exception;
   public int fdo_meta(Encoder enc,String method) throws Exception;
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds) throws Exception;
+  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream os) throws Exception;
  }
