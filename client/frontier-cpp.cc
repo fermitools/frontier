@@ -592,3 +592,10 @@ std::vector<long>* DataSource::getRawAsArrayLong()
   return ret; 
  }
 
+void DataSource::setDefaultParams(const std::string& logicalServer,
+	    const std::string& parameterList)
+ {
+  frontier::init();
+  frontierConfig_setDefaultLogicalServer(logicalServer.c_str());
+  frontierConfig_setDefaultServerList(parameterList.c_str());
+ }
