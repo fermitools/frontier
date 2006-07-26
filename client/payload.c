@@ -85,6 +85,8 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   int i;
   int zipped=0;
   int bin_size;
+  /* uLongf needed for 64-bit uncompress! */
+  uLongf blob_size;
   char *bin_data = 0;
   
   fpl->blob = 0;
@@ -179,8 +181,8 @@ int frontierPayload_finalize(FrontierPayload *fpl)
       fpl->error=FRONTIER_EMEM;
       goto errcleanup;
      }
-    fpl->blob_size=fpl->full_size;
-    switch(uncompress(fpl->blob,&fpl->blob_size,bin_data,bin_size))
+    blob_size=fpl->full_size;
+    switch(uncompress(fpl->blob,&blob_size,bin_data,bin_size))
      {
       case Z_OK:
 	break;
@@ -203,6 +205,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
      }
     frontier_mem_free(bin_data);
     bin_data=0;
+    fpl->blob_size = (int) blob_size;
    }
   else
    {
