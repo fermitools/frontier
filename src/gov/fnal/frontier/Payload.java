@@ -5,6 +5,7 @@ import java.io.*;
 import gov.fnal.frontier.codec.*;
 import gov.fnal.frontier.fdo.*;
 import java.util.*;
+import javax.servlet.ServletOutputStream;
 
 public class Payload
  {
@@ -100,12 +101,12 @@ public class Payload
      {
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
-      if(con!=null) try{dbm.release(con);}catch(Exception e){}
+      if(con!=null) try{dbm.release(con,null);}catch(Exception e){}
      }     
    }
    
    
-  public void send(OutputStream out) throws Exception
+  public void send(ServletOutputStream out) throws Exception
    {
     Encoder enc=null;
     rec_num=0;
@@ -125,14 +126,15 @@ public class Payload
       case Command.CMD_GET:
        enc=new BlobTypedEncoder(out,encparam);
        try { 
-	   rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds); 
-	   System.out.println("Number of records after fdo_get: " + rec_num);
+	   rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds,out); 
+	   // System.out.println("Number of records after fdo_get: " + rec_num);
        }
        finally 
         { 
          enc.close(); 
          md5=md5Digest(enc);
 	 full_size=enc.getOutputSize();
+         System.out.println("Full uncompressed payload size: " + full_size);
         }
        return;
       
@@ -140,7 +142,7 @@ public class Payload
        enc=new BlobTypedEncoder(out,encparam);
        try { 
 	   rec_num=fdo.fdo_meta(enc,cmd.method); 
-	   System.out.println("Number of records after fdo_meta: " + rec_num);
+	   // System.out.println("Number of records after fdo_meta: " + rec_num);
        }
        finally 
         { 
@@ -152,8 +154,8 @@ public class Payload
       case Command.CMD_WRITE:
        enc=new BlobTypedEncoder(out,encparam);
        try { 
-	   rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds); 
-	   System.out.println("Number of records after fdo_write: " + rec_num);
+	   rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds,out); 
+	   // System.out.println("Number of records after fdo_write: " + rec_num);
        }
        finally 
         { 
