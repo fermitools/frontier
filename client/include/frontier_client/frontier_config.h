@@ -12,6 +12,7 @@
 #define FRONTIER_MAX_PROXYN	4	// Max number of proxies in FRONTIER_PROXY env. variable
 
 #define FRONTIER_ENV_LOGICALSERVER	"FRONTIER_LOGICALSERVER"
+#define FRONTIER_ENV_PHYSICALSERVERS	"FRONTIER_PHYSICALSERVERS"
 #define FRONTIER_ENV_SERVER		"FRONTIER_SERVER"
 #define FRONTIER_ENV_PROXY		"FRONTIER_PROXY"
 #define FRONTIER_ENV_RETRIEVEZIPLEVEL	"FRONTIER_RETRIEVEZIPLEVEL"
@@ -20,7 +21,6 @@ struct s_FrontierConfig
  {
   char *server[FRONTIER_MAX_SERVERN];
   char *proxy[FRONTIER_MAX_PROXYN];
-  char *logical_server;
   int server_num;
   int proxy_num;
   int server_cur;
@@ -40,10 +40,10 @@ int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg);
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level);
 void frontierConfig_setDefaultRetrieveZipLevel(int level);
 int frontierConfig_getDefaultRetrieveZipLevel();
-void frontierConfig_setDefaultLogicalServer(const char *logicalserver);
+void frontierConfig_setDefaultLogicalServer(const char *logical_server);
 char *frontierConfig_getDefaultLogicalServer();
-void frontierConfig_setDefaultServerList(const char *serverlist);
-char *frontierConfig_getDefaultServerList();
+void frontierConfig_setDefaultPhysicalServers(const char *physical_servers);
+char *frontierConfig_getDefaultPhysicalServers();
 
 #endif /* FRONTIER_CONFIG_H */
 
