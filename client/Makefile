@@ -9,7 +9,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	5.0
+FN_VER_MINOR	=	5.1
 COMPILER_TAG    =       gcc_3.2.3
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)_cms__src
