@@ -21,7 +21,7 @@
 /* default configuration variables */
 static int default_retrieve_zip_level = -1;
 static char *default_logical_server = 0;
-static char *default_server_list = 0;
+static char *default_physical_servers = 0;
 
 #define ENV_BUF_SIZE	1024
 
@@ -54,25 +54,19 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
    }
   bzero(cfg,sizeof(FrontierConfig));
 
-  cfg->retrieve_zip_level = frontierConfig_getDefaultRetrieveZipLevel();
-  /* keep a local, duplicated, copy of the logical server name for the
-     unlikely possibility that somebody wants to set it to something else
-     for another connection while this config object is still active */
-  cfg->logical_server = frontierConfig_getDefaultLogicalServer();
-  if (cfg->logical_server != 0)
-   {
-    cfg->logical_server = str_dup(cfg->logical_server);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Set logical server to %s", cfg->logical_server);
-   }
-  
-  // First add configured server and proxy.
+
+  // Set initial retrieve zip level first because it may be overridden
+  //  by a complex server string next.
+  frontierConfig_setRetrieveZipLevel(cfg, frontierConfig_getDefaultRetrieveZipLevel());
+
+  // Add configured server and proxy.
   *errorCode = frontierConfig_addServer(cfg, server_url);
   if (*errorCode != FRONTIER_OK) goto cleanup;
   *errorCode = frontierConfig_addProxy(cfg, proxy_url);
   if (*errorCode != FRONTIER_OK) goto cleanup;
  
   // Add additional servers/proxies from env variables.
-  *errorCode = frontierConfig_addServer(cfg, frontierConfig_getDefaultServerList());
+  *errorCode = frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_SERVER));
   if (*errorCode != FRONTIER_OK) goto cleanup;
   *errorCode = frontierConfig_addProxy(cfg, getenv(FRONTIER_ENV_PROXY));
   if (*errorCode != FRONTIER_OK) goto cleanup;
@@ -146,9 +140,6 @@ void frontierConfig_delete(FrontierConfig *cfg)
     frontier_mem_free(cfg->proxy[i]);
    }
 
-  if (cfg->logical_server != 0)
-    frontier_mem_free(cfg->logical_server);
-   
   frontier_mem_free(cfg);
  }
 
@@ -211,28 +202,28 @@ char *frontierConfig_getDefaultLogicalServer()
   return default_logical_server;
  }
 
-void frontierConfig_setDefaultServerList(const char *server_list)
+void frontierConfig_setDefaultPhysicalServers(const char *physical_servers)
  {
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default server list to %s", server_list);     
-  if (default_server_list != 0)
-    frontier_mem_free(default_server_list);
-  if (server_list != 0)
-    default_server_list = str_dup(server_list);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default physical servers to %s", physical_servers);     
+  if (default_physical_servers != 0)
+    frontier_mem_free(default_physical_servers);
+  if (physical_servers != 0)
+    default_physical_servers = str_dup(physical_servers);
   else
-    default_server_list = 0;
+    default_physical_servers = 0;
  }
 
-char *frontierConfig_getDefaultServerList()
+char *frontierConfig_getDefaultPhysicalServers()
  {
-  if (default_server_list == 0)
+  if (default_physical_servers == 0)
    {
     /* try the environment */
-   frontierConfig_setDefaultServerList(getenv(FRONTIER_ENV_SERVER));
+   frontierConfig_setDefaultPhysicalServers(getenv(FRONTIER_ENV_PHYSICALSERVERS));
    }
-  return default_server_list;
+  return default_physical_servers;
  }
 
-int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
+static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
  {
   char *str = str_dup(server_spec);
   char *p = str-1;
@@ -244,7 +235,25 @@ int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* serve
 
   if (str == NULL)
     return FRONTIER_EMEM;
-   
+
+  if ((keyp = strstr(server_spec, "(logicalserverurl=")) != NULL)
+   {
+    // save all but this keyword as the default physical servers for
+    //  later connections
+    char *nextp = strchr(keyp,')');
+    if (nextp != NULL)
+     {
+      char *cp = (char *)frontier_mem_alloc(strlen(server_spec));
+      if (cp != NULL)
+       {
+        strncpy(cp,server_spec,keyp-server_spec);
+        strcpy(cp+(keyp-server_spec),nextp+1);
+        frontierConfig_setDefaultPhysicalServers(cp);
+        frontier_mem_free(cp);
+       }
+     }
+   }
+
   while (*++p)
    {
     switch(*p)
@@ -290,6 +299,8 @@ int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* serve
 	  ret = frontierConfig_addProxy(cfg, valp);
 	else if (strcmp(keyp, "retrieve-ziplevel") == 0)
 	  frontierConfig_setRetrieveZipLevel(cfg, atoi(valp));
+	else if (strcmp(keyp, "logicalserverurl") == 0)
+	  frontierConfig_setDefaultLogicalServer(valp);
 	else
 	 {
 	 /* else ignore unrecognized keys */
@@ -318,6 +329,8 @@ cleanup:
 
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
  {
+  const char *logical_server;
+
   if ((server_url != 0) && (strchr(server_url, '(') != NULL))
     return frontierConfig_parseComplexServerSpec(cfg, server_url);
 
@@ -331,10 +344,12 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
     }
   }
   
-  if ((cfg->logical_server != 0) && (strcmp(server_url,cfg->logical_server) == 0))
+  logical_server = frontierConfig_getDefaultLogicalServer();
+  if ((logical_server != 0) && (strcmp(server_url,logical_server) == 0))
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Matched logical server %s", server_url);
-    /* just ignore it when there's a logical server match */
+    /* replace it with the physical servers */
+    frontierConfig_addServer(cfg, frontierConfig_getDefaultPhysicalServers());
     return FRONTIER_OK;
    }
 
