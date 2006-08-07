@@ -597,5 +597,5 @@ void DataSource::setDefaultParams(const std::string& logicalServer,
  {
   frontier::init();
   frontierConfig_setDefaultLogicalServer(logicalServer.c_str());
-  frontierConfig_setDefaultServerList(parameterList.c_str());
+  frontierConfig_setDefaultPhysicalServers(parameterList.c_str());
  }
