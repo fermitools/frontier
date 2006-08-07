@@ -61,8 +61,9 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   
   if(!fui->path)
    {
-    frontier_DeleteUrlInfo(fui);    
-    return FRONTIER_OK;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server %s: servelet path is missing",fui->host);
+    frontier_DeleteUrlInfo(fui);
+    return FRONTIER_ECFG;
    }
    
   if(c->total_server>=(sizeof(c->server)/sizeof(c->server[0]))) 
