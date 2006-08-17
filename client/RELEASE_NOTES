@@ -3,10 +3,10 @@ $Id$
 v2_5_1_cms 08/07/2006 (dwd)
  - Instead of overloading $FRONTIER_SERVER to mean both a list of
    servers and the physical servers that correspond to the logical
-   server name, add environment variable $FRONTIER_PHYSICAL_SERVERS to
+   server name, add environment variable $FRONTIER_PHYSICALSERVERS to
    mean the latter.  If the DataSource::setDefaultParams API is not
    used, its values now can come from FRONTIER_LOGICALSERVER and
-   FRONTIER_PHYSICAL_SERVERS.  Also, instead of ignoring the logical
+   FRONTIER_PHYSICALSERVERS.  Also, instead of ignoring the logical
    server name when it is seen, the physical servers are now
    substituted in its place (which is a little more intuitive).
  - Added new keyword for complex parenthesized connection strings
