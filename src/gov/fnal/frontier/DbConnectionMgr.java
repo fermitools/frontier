@@ -80,9 +80,15 @@ public class DbConnectionMgr
     Timer timer=new Timer();
     KeepAliveTimerTask timerTask=new KeepAliveTimerTask(sos);
     timer.schedule(timerTask,5000,5000);
-    connection=dataSource.getConnection();
-    timer.cancel();
-    timerTask.shutdown();
+    try
+     {
+      connection=dataSource.getConnection();
+     }
+    finally
+     {
+      timer.cancel();
+      timerTask.shutdown();
+     }
     System.out.println("DB mgr connection acquired");
     ResponseFormat.data_start(sos);
     return connection;
