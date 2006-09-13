@@ -1,5 +1,12 @@
 $Id$
 
+v2_5_2_cms 09/13/2006 (dwd)
+ - Add debug messages for pre-encoded query, the beginning of the
+   post-decoded result, and the number of keepalives received (if any).
+ - Make the destructor of the FrontierException class be virtual
+   because Radovan Chytracek said it was causing stack corruption
+   when an exception occurred.
+
 v2_5_1_cms 08/07/2006 (dwd)
  - Instead of overloading $FRONTIER_SERVER to mean both a list of
    servers and the physical servers that correspond to the logical
