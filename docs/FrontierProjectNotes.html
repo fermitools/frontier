@@ -436,48 +436,47 @@ Configuring Local Area
 
 </ol>
 
+<h2>Client release procedure</h2>
 
-<h2>Recent Code Changes</h2>
-
-The most recent code changes on the servlet side involve fixes for several bugs that were noticed during the latest round of testing. On the client side, the most notable changes were:
-<ul>
-<li> Build infrastructure change that allows external expat libraries to be used.
-<li> C++ client exception layer.
-<li> Client configuration changes, which allow for multiple frontier servers and proxies to be configured.
-</ul>
-
-<h2>Future Work</h2>
-
-Here is the list of things that need to be done in the near future:
+These are the steps to release the client:
 
 <ol>
 
-<li> Apply server code patch which send number precision to client:
-
-<pre>
-Insert at line 90 of src/gov/fnal/frontier/SQLPlugin.java as follows:
-
-for (int i = 1; i <= cnum; i++) {
-  String n = rsmd.getColumnName(i);
-  String t = rsmd.getColumnTypeName(i);
-
-  // NEW CODE START
-  // appends column precision to column type name (if column type is a number)
-  if ( t == "NUMBER" ) {
-    t += "(" + rsmd.getPrecision(i) + ")";
-  }
-  // NEW CODE END
-
-</pre> 
-
-<li> Add (optional) zipping of the xml contents in the server code, as well
-as unzipping on the client side (both python and C/C++).
+<li>
+Update the RELEASE_NOTES with everything that has changed since the last version
+<li>
+Update the version number in Makefile
+<li>
+Check everything in to CVS
+<li>
+Set the cvs tag in the format <tt>v2_5_2_cms</tt>
+<li>
+<tt>make all-dist</tt>
+<li>
+<tt>scp tmp/* frontier@edge:frontier_web</tt>
+<li>
+<tt>ssh frontier@edge</tt> and edit frontier_web/index.html with the new
+version numbers for the client sources and binary
+<li>
+<tt>scp tmp/*src* lxplus.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
+<li>
+Fill out 
+<a href=https://spi.cern.ch/login/requestAfsSpaceForm.php>
+CERN Request AFS space for an external package</a>,
+external package name <tt>frontier_client</tt>, version
+of the form <tt>2.5.2_cms</tt>, and volume name of the
+form <tt>fnclnt252</tt>.
+<li>
+Send an email to <a href=mailto:project-lcg-peb-spi-support@cern.ch>
+project-lcg-peb-spi-support@cern.ch</a> and ask them to build the
+new frontier_client release and give them a copy of the release notes
+for the new version.
 
 </ol>
 
 
     <hr>
-    <address><a href="mailto:veseli@fnal.gov">Sinisa Veseli</a></address>
+    <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- Created: Tue Sep 13 15:27:11 CDT 2005 -->
 <!-- hhmts star -->
 Last modified: Wed Sep 28 11:03:44 CDT 2005
