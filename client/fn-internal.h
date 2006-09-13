@@ -60,6 +60,7 @@ struct s_FrontierResponse
   int error;
   int payload_num;
   int error_payload_ind;
+  int keepalives;
   void *parser;
   int p_state;
   int zipped;
