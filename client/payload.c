@@ -16,9 +16,11 @@
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
+#include <ctype.h>
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *ptr);
+extern int frontier_log_level;
 
 
 FrontierPayload *frontierPayload_create()
@@ -124,8 +126,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
      zipped=1;
    }
 
-  
-  /* space for binary data is not larger than original data */
+  /* binary data is not larger than base64-encoded data */
   bin_data=(char*)frontier_mem_alloc(fpl->md->len);
   if(!bin_data)
    {
@@ -141,7 +142,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     fpl->error=FRONTIER_EPROTO;
     goto errcleanup;
    }
-  
+
   md5_ctx=frontier_mem_alloc(frontier_md5_get_ctx_size());
   if(!md5_ctx) 
    {
@@ -205,14 +206,44 @@ int frontierPayload_finalize(FrontierPayload *fpl)
      }
     frontier_mem_free(bin_data);
     bin_data=0;
-    fpl->blob_size = (int) blob_size;
+    fpl->blob_size=(int) blob_size;
    }
   else
    {
-    fpl->blob_size = bin_size;
-    fpl->blob = bin_data;
+    fpl->blob_size=bin_size;
+    fpl->blob=bin_data;
    }
 
+  if(frontier_log_level>=FRONTIER_LOGLEVEL_DEBUG)
+   {
+    unsigned char dumpdata[80*5+1];
+    int n=0;
+    unsigned char c;
+    for(i=0;(i<fpl->blob_size)&&(n<(sizeof(dumpdata)-sizeof("%00")));i++)
+     {
+      c=fpl->blob[i];
+      if(c==0x07)
+       {
+        /* 0x07 separates records */
+        dumpdata[n++]='\n';
+       }
+      else if(c<=26)
+       {
+	dumpdata[n++]='^';
+	if(c==0)
+          dumpdata[n++]='@';
+	else
+          dumpdata[n++]=c+'a'-1;
+       }
+      else if(isprint(c))
+        dumpdata[n++]=c;
+      else
+        n+=sprintf(&dumpdata[n],"%%%02x",c);
+     }
+    dumpdata[n]='\0';
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"start of decoded response: %s",dumpdata);
+   }
+  
   if (fpl->blob_size != fpl->full_size)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"BLOB decoded size %d did not match expected size %d",fpl->blob_size,fpl->full_size);
