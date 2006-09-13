@@ -34,6 +34,8 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   char *abuf=0;
   
   if(size>MAX_STR2URL_SIZE) return FN_ZLIB_E_TOOBIG;
+
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"encoding request [%s]",str);
   
   zsize=(int)(((double)size)*1.001+12);
   zbuf=frontier_mem_alloc(zsize);
