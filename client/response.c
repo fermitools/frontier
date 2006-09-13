@@ -37,6 +37,14 @@ xml_startElement(void *userData,const char *name,const char **atts)
   FrontierResponse *fr=(FrontierResponse*)userData;
 
   //printf("xml_start %s\n",name);
+
+  if(strcmp(name,"keepalive")==0)
+    fr->keepalives++;
+  else if(fr->keepalives!=0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"received %d keepalives",fr->keepalives);
+    fr->keepalives=0;
+   }
   
   if(strcmp(name,"global_error")==0)
    {
@@ -162,6 +170,7 @@ FrontierResponse *frontierResponse_create(int *ec)
   fr->error=0;
   fr->payload_num=0;
   fr->error_payload_ind=-1;
+  fr->keepalives=0;
 
   fr->parser=XML_ParserCreate(NULL);
   if(!fr->parser)
