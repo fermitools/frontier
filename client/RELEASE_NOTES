@@ -1,5 +1,10 @@
 $Id$
 
+v2_6_0_cms 09/18/2006 (dwd)
+ - Change only the version number because the binary API changed in
+   an incompatible way in v2_5_2_cms and that means a new second-level
+   version number should be started.
+
 v2_5_2_cms 09/13/2006 (dwd)
  - Add debug messages for pre-encoded query, the beginning of the
    post-decoded result, and the number of keepalives received (if any).
