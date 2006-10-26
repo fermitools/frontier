@@ -8,7 +8,7 @@ import java.util.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.3";
+  private static final String frontierVersion="3.4";
   private static final String xmlVersion="1.0";
   
   public static String frontierVersion() {return frontierVersion;}
@@ -40,7 +40,7 @@ public final class FrontierServlet extends HttpServlet
       try
        {
         frontier=new Frontier(request,response);
-        response.setDateHeader("Expires",java.lang.System.currentTimeMillis()+frontier.time_expire);
+        response.setDateHeader("Expires",frontier.time_expire);
         if(frontier.noCache) response.setHeader("Pragma","no-cache");
        }
       catch(Exception e)
