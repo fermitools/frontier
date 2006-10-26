@@ -65,7 +65,7 @@ public class Monitor extends Thread
        {
         if(fail_count>MAX_FAIL)
          {
-          Frontier.Log("gov.fnal.fromtier.Monitor:run() aborts due to "+fail_count+" fails in a row");
+          Frontier.Log("gov.fnal.frontier.Monitor:run() aborts due to "+fail_count+" fails in a row");
           return;
          }
         Thread.sleep(delay);
