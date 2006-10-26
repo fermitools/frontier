@@ -7,6 +7,8 @@
  */
 package gov.fnal.frontier.fdo;
 
+import java.io.InputStream;
+
 public interface Encoder
  {
   public void writeEOR() throws Exception;  // Writes End Of Record marker
@@ -17,6 +19,7 @@ public interface Encoder
   public void writeFloat(float v) throws Exception;
   public void writeString(String v) throws Exception;
   public void writeBytes(byte[] v) throws Exception;
+  public void writeStream(InputStream is,int len) throws Exception;
   public void writeDate(java.util.Date v) throws Exception;
   public long getOutputSize();
   public byte[] getMD5Digest() throws Exception;
