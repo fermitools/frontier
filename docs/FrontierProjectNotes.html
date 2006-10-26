@@ -447,9 +447,9 @@ Update the RELEASE_NOTES with everything that has changed since the last version
 <li>
 Update the version number in Makefile
 <li>
-Check everything in to CVS
+Commit all your changes to CVS
 <li>
-Set the cvs tag in the format <tt>v2_5_2_cms</tt>
+Set the cvs tag in client source directory in the format <tt>v2_5_2_cms</tt>
 <li>
 <tt>make all-dist</tt>
 <li>
@@ -474,6 +474,53 @@ for the new version.
 
 </ol>
 
+<h2>Server release procedure</h2>
+
+These are the steps to release the server:
+
+<ol>
+
+<li>
+Update src/gov/fnal/frontier/RELEASE_NOTES with everything that has
+changed since the last version
+<li>
+Update the version number in src/gov/fnal/frontier/FrontierServlet.java
+<li>
+Commit all your changes to CVS
+<li>
+Set a cvs tag at the level (above src and client) in the format
+<tt>servlet_3_4</tt>.  This will unnecessarily add tags in the client
+directory, which can optionally be removed with cvs tag -d in the
+client directory.
+<li>
+Create a new scratch temporary directory, and with 
+CVSROOT set to cvsuser@cdcvs.fnal.gov:/cvs/cd do
+<br>
+<tt>cvs co -t servlet_3_4 frontier</tt>
+<li>
+Create another scratch directory ../Frontier_3_4 and remove the CVS
+and client portions with
+<br>
+<tt>rsync -a --cvs-exclude --exclude /client . ../Frontier_3_4</tt>
+<li>
+Without going to that new source directory, build binaries with
+<br>
+<tt>ant -f build.local clean</tt>
+<br>
+<tt>ant -f build.local dist</tt>
+<li>
+<tt>scp dist/Frontier.war frontier@edge:frontier_web</tt>
+<li>
+<tt>cd ..</tt>
+<br>
+<tt>tar zcf Front_servlet__3.4__src.tar.gz Frontier_3_4</tt>
+<br>
+<tt>scp Frontier_servlet__3.4__src.tar.gz frontier@edge:frontier_web</tt>
+<li>
+ssh frontier@edge and edit frontier_web/index.html with the new
+version number for the server sources and binary
+
+</ol>
 
     <hr>
     <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
