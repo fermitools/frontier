@@ -18,7 +18,7 @@ public final class Frontier
   private static String conf_ds_name;
   private static String conf_xsd_table;
   private static String conf_cache_expire_hourofday; // hour of day to expire
-  private static String conf_cache_expire_millis; // milliseconds to expire
+  private static String conf_cache_expire_seconds;   // seconds to expire
   
   private static String conf_monitor_node;  // MonAlisa stuff, node address events to be sent to
   private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
@@ -62,7 +62,7 @@ public final class Frontier
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
     conf_cache_expire_hourofday=getPropertyString(prb,"CacheExpireHourOfDay");
-    conf_cache_expire_millis=getPropertyString(prb,"CacheExpireMillis");
+    conf_cache_expire_seconds=getPropertyString(prb,"CacheExpireSeconds");
 
     conf_monitor_node=getPropertyString(prb,"MonitorNode");
     conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");
@@ -125,10 +125,11 @@ public final class Frontier
         if(p.time_expire<time_expire) time_expire=p.time_expire;
         aPayloads.add(p);
        }
-      if(conf_cache_expire_millis!=null)
+      if(conf_cache_expire_seconds!=null)
        {
-        //if set, use configured expiration milliseconds instead of Payload's
-	time_expire=Long.parseLong(conf_cache_expire_millis);
+        //if set, use configured expiration seconds instead of Payload's
+	//milliseconds
+	time_expire=Long.parseLong(conf_cache_expire_seconds)*1000;
        }
       Calendar cal=Calendar.getInstance();
       long now=cal.getTimeInMillis();
