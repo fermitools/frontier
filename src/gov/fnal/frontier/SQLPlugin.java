@@ -93,7 +93,7 @@ public class SQLPlugin implements FrontierPlugin
          {
           // append column precision to column type name if non-zero
 	  // this was requested by Luis Ramos at CERN
-          int colPrec = rsmd.getPrecision(i);
+          int colPrec=rsmd.getPrecision(i);
           if(colPrec!=0)
             t+="("+colPrec+")";
 	 }
@@ -106,8 +106,19 @@ public class SQLPlugin implements FrontierPlugin
 	row_count++;
         for(int i=1;i<=cnum;i++)
          {
-          String s=rs.getString(i);
-          enc.writeString(s);
+          String t=rsmd.getColumnTypeName(i);
+	  if (t=="BLOB")
+	   {
+	    Blob blob=rs.getBlob(i);
+	    //byte[] b=blob.getBytes((long)1,(int)blob.length());
+	    //enc.writeBytes(b);
+	    enc.writeStream(blob.getBinaryStream(),(int)blob.length());
+	   }
+	  else
+	   {
+            String s=rs.getString(i);
+            enc.writeString(s);
+	   }
          }
         enc.writeEOR();
        }
