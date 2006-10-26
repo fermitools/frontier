@@ -1,0 +1,39 @@
+$Id$
+
+3.4 2006/10/26 (dwd)
+    - Added support for oracle BLOB (Binary Large OBject) types
+    - Added two optional parameters to WEB-INF/classes/config.properties:
+	CacheExpireSeconds - number of seconds after queries in which
+	  the caching of the query should expire.  Default is 7 days of
+	  seconds, 604800.
+	CacheExpireHourOfDay - the hour of the day at which all
+	  query caching should expire, if less than CacheExpireSeconds.
+	  For example, if it is set to "23", all items will expire at
+	  11:00 p.m. in the local time of the server.  Default is
+	  to use CacheExpireSeconds instead.
+
+3.3 2006/09/05 (dwd)
+    - Fixed bug where the keepalive message task wasn't shut down if
+      the database connection failed
+    - Added a refinement to Luis Ramos' patch of 3.1: don't add the
+      parenthesized precision after the NUMBER data type if the
+      precision is zero
+
+3.2 2006/07/26 (dwd)
+    - Added sending a keepalive message to the client every 5 seconds
+      while waiting to acquire a database connection, to avoid client
+      timeouts under heavy load
+    - Added sending the servlet version to the catalina log and the
+      client
+    - Reduced non-useful debugging output to the catalina log and
+      improved some others
+
+3.1 2006/06/07 (dwd)
+    - Added feature to zip the retrieved payload using gzip levels 0-9
+      where level 0 is no zipping, level 1 is fastest but least
+      compressed, and level 9 is slowest but most compressed
+    - Added precision in parentheses to the NUMBER data type.  Requested
+      by Luis Ramos of CERN and patch supplied by him
+    - Cleaned up some exception message typos
+
+3.0 and earlier releases did not have release notes
