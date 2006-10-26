@@ -17,6 +17,8 @@ public final class Frontier
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
   private static String conf_xsd_table;
+  private static String conf_cache_expire_hourofday; // hour of day to expire
+  private static String conf_cache_expire_millis; // milliseconds to expire
   
   private static String conf_monitor_node;  // MonAlisa stuff, node address events to be sent to
   private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
@@ -58,6 +60,9 @@ public final class Frontier
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
+
+    conf_cache_expire_hourofday=getPropertyString(prb,"CacheExpireHourOfDay");
+    conf_cache_expire_millis=getPropertyString(prb,"CacheExpireMillis");
 
     conf_monitor_node=getPropertyString(prb,"MonitorNode");
     conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");
@@ -120,6 +125,27 @@ public final class Frontier
         if(p.time_expire<time_expire) time_expire=p.time_expire;
         aPayloads.add(p);
        }
+      if(conf_cache_expire_millis!=null)
+       {
+        //if set, use configured expiration milliseconds instead of Payload's
+	time_expire=Long.parseLong(conf_cache_expire_millis);
+       }
+      Calendar cal=Calendar.getInstance();
+      long now=cal.getTimeInMillis();
+      if(conf_cache_expire_hourofday!=null)
+       {
+        //use expiration hour-of-day if it is set and sooner
+	int hourofday=Integer.parseInt(conf_cache_expire_hourofday);
+	if(hourofday<=cal.get(Calendar.HOUR_OF_DAY))
+	  cal.add(Calendar.DAY_OF_YEAR,1);
+	cal.set(Calendar.HOUR_OF_DAY,hourofday);
+	cal.set(Calendar.MINUTE,0);
+	cal.set(Calendar.SECOND,0);
+	long diff=cal.getTimeInMillis()-now;
+	if(diff<time_expire)
+	  time_expire=diff;
+       }
+      time_expire+=now;
      } 
     finally 
      {
