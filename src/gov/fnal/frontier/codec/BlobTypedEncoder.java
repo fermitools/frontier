@@ -205,6 +205,37 @@ public class BlobTypedEncoder implements Encoder
     if(baos.size()>=BUFFER_SIZE) dump();
    }
 
+  public void writeStream(InputStream is,int len) throws Exception
+   {
+    if(is==null)
+     {
+      os.writeByte(TYPE_ARRAY_BYTE | BIT_NULL);
+      out_size+=1;
+     }
+    else
+     {
+      os.writeByte(TYPE_ARRAY_BYTE);
+      os.writeInt(len);
+      out_size+=5;
+      int in_size=len;
+      byte[] b=new byte[BUFFER_SIZE];
+      while(in_size>0)
+       {
+        int read_size;
+	if(in_size>=BUFFER_SIZE)
+	  read_size=is.read(b,0,BUFFER_SIZE);
+	else
+	  read_size=is.read(b,0,in_size);
+	if(read_size<=0)
+	  throw new Exception("Blob read unexpectedly returned "+read_size);
+        os.write(b,0,read_size);
+	in_size-=read_size;
+        if(baos.size()>=BUFFER_SIZE) dump();
+       }
+      out_size+=len;
+     }
+   }
+
   public void writeDate(java.util.Date v) throws Exception
    {
     if(v==null)
