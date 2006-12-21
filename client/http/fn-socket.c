@@ -94,7 +94,10 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
      the next if one of the servers is down */
   tv.tv_sec=3;
   tv.tv_usec=0;
-  ret=select(s+1,NULL,&wfds,NULL,&tv);
+  do
+   {
+    ret=select(s+1,NULL,&wfds,NULL,&tv);
+   }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
@@ -208,7 +211,10 @@ int frontier_read(int s, char *buf, int size)
   /* server should send some data at least every 5 seconds; allow for double */
   tv.tv_sec=10;
   tv.tv_usec=0;
-  ret=select(s+1,&rfds,NULL,NULL,&tv);
+  do
+   {
+    ret=select(s+1,&rfds,NULL,NULL,&tv);
+   }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
