@@ -25,7 +25,7 @@ def usage():
   progName = os.path.basename(sys.argv[0])
   print "Usage:"
   print "  %s --url=<frontier url> --sql=<sql query> [--no-decode]" % progName
-  print "     [--refresh-cache]"
+  print "     [--refresh-cache] [--retrieve-ziplevel=N]"
   print " "
 
 frontierUrl = None
@@ -33,6 +33,7 @@ frontierQuery = None
 decodeFlag = True
 refreshFlag = False
 statsFlag = False
+retrieveZiplevel = "zip"
 for a in sys.argv[1:]:
   arg = string.split(a, "=")
   if arg[0] == "--url":
@@ -43,6 +44,11 @@ for a in sys.argv[1:]:
     decodeFlag = False
   elif arg[0] == "--refresh-cache":
     refreshFlag = True
+  elif arg[0] == "--retrieve-ziplevel":
+    level = string.join(arg[1:], "=")
+    retrieveZiplevel="zip%s" % (level)
+    if level == "0":
+      retrieveZiplevel = ""
   elif arg[0] == "--stats-only":
     statsFlag = True
   else:
@@ -64,7 +70,7 @@ else:
 encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".")
 
 # frontier request
-frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=%s" % (frontierUrl, encQuery)
+frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s" % (frontierUrl, retrieveZiplevel, encQuery)
 if statsFlag:
   pass
 else:
@@ -104,7 +110,8 @@ if decodeFlag:
     if data.firstChild is not None:
 
       row = base64.decodestring(data.firstChild.data)
-      row = zlib.decompress(row)
+      if retrieveZiplevel != "":
+        row = zlib.decompress(row)
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d'  ]:
         row = row.replace(c, ' ')
 
