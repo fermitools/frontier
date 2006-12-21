@@ -24,12 +24,12 @@ namespace frontier{
 
 enum encoding_t {BLOB};
 
-class DataSource;
+class Session;
 
 class Request
  {
   protected:
-   friend class DataSource;
+   friend class Session;
    std::string obj_name;
    encoding_t enc;
    std::vector<std::string> *v_key;
@@ -84,12 +84,12 @@ const BLOB_TYPE BLOB_TYPE_EOR=7;
 
 const char *getFieldTypeName(BLOB_TYPE t);  
 
-class DataSource;
+class Session;
  
 class AnyData
  {
   private:
-   friend class DataSource;
+   friend class Session;
    union
     {
      long long i8;
@@ -148,8 +148,44 @@ class AnyData
  };
  
 
+class Session;
  
-class DataSource
+class Connection
+ {
+  private:
+   friend class Session;
+   unsigned long channel;
+
+  public:
+   
+   explicit Connection(const std::string& server_url="",const std::string* proxy_url=NULL);
+
+   // This constructor allows initialization with multiple server/proxies.
+   explicit Connection(const std::list<std::string>& serverUrlList, const std::list<std::string>& proxyUrlList);
+
+   virtual ~Connection();
+  
+   // If reload!=0 then all requested objects will be refreshed at all caches
+   // New object copy will be obtained directly from server
+   void setReload(int reload);
+
+   // Set default parameters for later-created Connections.
+   //  "logicalServer" is the default logical server URL.  Any time
+   //  that URL is requested, it will be ignored and instead any other
+   //  servers or proxies specified will be used.  "parameterList" is
+   //  a concatenated list of parenthesized keyword=value pairs where
+   //  keyword is serverurl, proxyurl, or retrieve-ziplevel.  (To be
+   //  precise, parameterList may also be just a server URL; this
+   //  string and any Connection serverURL other than the
+   //  logicalServer are treated exactly the same, as either a single
+   //  server if there's no parentheses or as a list of keyword=value
+   //  pairs if there are parentheses).  These are added after any
+   //  servers or proxies passed to the Connection constructor.
+   static void setDefaultParams(const std::string& logicalServer,
+   		const std::string& parameterList);
+ };
+   
+class Session
  {
   private:
    unsigned long channel;
@@ -159,18 +195,11 @@ class DataSource
    int first_row;
 
   public:
-   int err_code;
-   std::string err_msg;
    
-   explicit DataSource(const std::string& server_url="",const std::string* proxy_url=NULL);
+   explicit Session(Connection *myconnection);
 
-   // This constructor allows initialization with multiple server/proxies.
-   explicit DataSource(const std::list<std::string>& serverUrlList, const std::list<std::string>& proxyUrlList);
-  
-   // If reload!=0 then all requested objects will be refreshed at all caches
-   // New object copy will be obtained directly from server
-   void setReload(int reload);
-   
+   virtual ~Session();
+
    // Get data for Requests
    void getData(const std::vector<const Request*>& v_req);
    
@@ -215,25 +244,21 @@ class DataSource
    inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOF(){return (getRSBinarySize()==getRSBinaryPos());} // End Of File
    int next();
-
-   virtual ~DataSource();
-
-   // Set default parameters for later-created DataSource objects.
-   //  "logicalServer" is the default logical server URL.  Any time
-   //  that URL is requested, it will be ignored and instead any other
-   //  servers or proxies specified will be used.  "parameterList" is
-   //  a concatenated list of parenthesized keyword=value pairs where
-   //  keyword is serverurl, proxyurl, or retrieve-ziplevel.  (To be
-   //  precise, parameterList may also be just a server URL; this
-   //  string and any DataSource serverURL other than the
-   //  logicalServer are treated exactly the same, as either a single
-   //  server if there's no parentheses or as a list of keyword=value
-   //  pairs if there are parentheses).  These are added after any
-   //  servers or proxies passed to the DataSource constructor.
-   static void setDefaultParams(const std::string& logicalServer,
-   		const std::string& parameterList);
  };
 
+// DataSource is a combined Session & Connection, for backward compatibility
+class DataSource: public Connection, public Session
+ {
+  public:
+   
+   explicit DataSource(const std::string& server_url="",const std::string* proxy_url=NULL);
+
+   // This constructor allows initialization with multiple server/proxies.
+   explicit DataSource(const std::list<std::string>& serverUrlList, const std::list<std::string>& proxyUrlList);
+
+   virtual ~DataSource();
+ };
+  
 } // namespace frontier
 
 
