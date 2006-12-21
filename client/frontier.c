@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -34,6 +35,7 @@ static int initialized=0;
 static char frontier_id[FRONTIER_ID_SIZE];
 static char frontier_api_version[]=FNAPI_VERSION;
 
+static chan_seqnum = 0;
 static void channel_delete(Channel *chn);
 
 char *frontier_str_ncopy(const char *str, size_t len)
@@ -145,6 +147,7 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
    }
   bzero(chn,sizeof(Channel));
 
+  chn->seqnum = ++chan_seqnum;
   chn->cfg=frontierConfig_get(srv,proxy,ec);
   if(!chn->cfg)
    {
@@ -219,6 +222,7 @@ static Channel *channel_create2(FrontierConfig * config, int *ec)
   }
   bzero(chn, sizeof(Channel));
 
+  chn->seqnum = ++chan_seqnum;
   chn->cfg = config;
   if(!chn->cfg) {
     *ec = FRONTIER_EMEM;
@@ -281,7 +285,7 @@ static void channel_delete(Channel *chn)
  {
   if(!chn) return;
   frontierHttpClnt_delete(chn->ht_clnt);
-  frontierResponse_delete(chn->resp);
+  if(chn->resp)frontierResponse_delete(chn->resp);
   frontierConfig_delete(chn->cfg);
   frontier_mem_free(chn);
  }
@@ -326,6 +330,7 @@ static int prepare_channel(Channel *chn)
   
   if(chn->resp) frontierResponse_delete(chn->resp);
   chn->resp=frontierResponse_create(&ec);  
+  chn->resp->seqnum = ++chn->response_seqnum;
   if(!chn->resp) return ec;
   
   return FRONTIER_OK;
@@ -349,8 +354,11 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,chn->reload);
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
   
+  ret=frontierHttpClnt_open(chn->ht_clnt);
+  if(ret) goto end;
+
   if(body) ret=frontierHttpClnt_post(chn->ht_clnt,uri,body);
-  else ret=frontierHttpClnt_open(chn->ht_clnt,uri);
+  else ret=frontierHttpClnt_get(chn->ht_clnt,uri);
   if(ret) goto end;
   
   while(1)
@@ -402,18 +410,25 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   
   while(1)
    {
+    time_t now;
+    now=time(NULL);
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,ctime(&now));
+
     ret=get_data(chn,uri,body);    
     if(ret==FRONTIER_OK) 
      {
       ret=frontierResponse_finalize(chn->resp);
+      now=time(NULL);
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,ctime(&now));
       if(ret==FRONTIER_OK) break;
      }
-    frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Request failed: %d %s",ret,frontier_getErrorMsg());
-    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request failed: %d %s",ret,frontier_getErrorMsg());
+    now=time(NULL);
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,ctime(&now),ret,frontier_getErrorMsg());
+    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed: %d %s",chn->resp->seqnum,chn->seqnum,ret,frontier_getErrorMsg());
     
     if(!chn->reload)
      {
-      frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Trying refresh cache");
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache");
       chn->reload=1;
       continue;
      }
@@ -422,13 +437,13 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if(clnt->cur_proxy<clnt->total_proxy)
      {
       clnt->cur_proxy++;
-      frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Trying next proxy (possibly direct connect)");
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy (possibly direct connect)");
       continue;
      }
     if(clnt->cur_server+1<clnt->total_server)
      {
       clnt->cur_server++;
-      frontier_log(FRONTIER_LOGLEVEL_INFO,__FILE__,__LINE__,"Trying next server");
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server");
       continue;      
      }    
     frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
