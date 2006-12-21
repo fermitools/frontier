@@ -94,70 +94,100 @@ float frontier_n2h_f32(const void* p){return n2h_f32(p);}
 long long frontier_n2h_i64(const void* p){return n2h_i64(p);}
 double frontier_n2h_d64(const void* p){return n2h_d64(p);}
 
+/*this function is for backward compatibility*/
 FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec)
+ {
+   return frontierRSBlob_open(u_channel,0,n,ec);
+ }
+
+FrontierRSBlob *frontierRSBlob_open(FrontierChannel u_channel,FrontierRSBlob *oldfrs,int n,int *ec)
  {
   Channel *chn=(Channel*)u_channel;
   FrontierResponse *resp;
   FrontierPayload *fp;
-  FrontierRSBlob *rs=(void*)0;
+  FrontierRSBlob *frs=(void*)0;
+  RSBlob *rs=(void*)0;
+  RSBlob *oldrs=(RSBlob *)oldfrs;
 
-  resp=chn->resp;
+  if(oldrs&&(oldrs->resp))
+   {
+    /*move the response from the old RSblob to here*/
+    resp=oldrs->resp;
+    oldrs->resp=0;
+   }
+  else
+   {
+    /*move the response from the channel to here*/
+    resp=chn->resp;
+    chn->resp=0;
+   }
   
   if(n>resp->payload_num)
    {
     *ec=FRONTIER_EIARG;
     frontier_setErrorMsg(__FILE__,__LINE__,"no such payload - total %d, requested %d",resp->payload_num,n);
-    return rs;
+    if(resp)frontierResponse_delete(resp);
+    return frs;
    }
+
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"parsing chan %d response %d payload %d",chn->seqnum,resp->seqnum,n);
 
   fp=resp->payload[n-1];
 
-  rs=frontier_mem_alloc(sizeof(FrontierRSBlob));
-  if(!rs)
+  rs=frontier_mem_alloc(sizeof(RSBlob));
+  frs=(FrontierRSBlob *)rs;
+  if(!frs)
    {
     *ec=FRONTIER_EMEM;
-    return rs;
+    if(resp)frontierResponse_delete(resp);
+    return frs;
    }
 
+  rs->resp=resp;
   rs->buf=fp->blob;
   rs->size=fp->blob_size;
   rs->pos=0;
   rs->nrec=fp->nrec;
+  rs->respnum=resp->seqnum; // for debugging
   
   rs->payload_error=fp->error_code;
   rs->payload_msg=fp->error_msg;
 
   *ec=FRONTIER_OK;
-  return rs;
+  return frs;
  }
 
  
  
-void frontierRSBlob_close(FrontierRSBlob *rs,int *ec)
+void frontierRSBlob_close(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob *rs=(RSBlob *)frs;
   *ec=FRONTIER_OK;
 
   if(!rs) return;
+  if(rs->resp)frontierResponse_delete(rs->resp);
   frontier_mem_free(rs);
  }
 
 
-void frontierRSBlob_rsctl(FrontierRSBlob *rs,int ctl_fn,void *data,int size,int *ec)
+void frontierRSBlob_rsctl(FrontierRSBlob *frs,int ctl_fn,void *data,int size,int *ec)
  {
   *ec=FRONTIER_OK;
  }
 
 
-void frontierRSBlob_start(FrontierRSBlob *rs,int *ec)
+void frontierRSBlob_start(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   *ec=FRONTIER_OK;
   rs->pos=0;
  }
 
  
  
-char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
+char frontierRSBlob_getByte(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   char ret;
 
   if(rs->pos>=rs->size)
@@ -173,8 +203,9 @@ char frontierRSBlob_getByte(FrontierRSBlob *rs,int *ec)
  }
  
  
-char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec)
+char frontierRSBlob_checkByte(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   char ret;
 
   if(rs->pos>=rs->size)
@@ -189,8 +220,9 @@ char frontierRSBlob_checkByte(FrontierRSBlob *rs,int *ec)
  }
  
  
-void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
+void frontierRSBlob_getArea(FrontierRSBlob *frs,char *p,unsigned int len,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   const char *buf;
   
   if(rs->pos>=rs->size-(len-1))
@@ -207,8 +239,9 @@ void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec)
  } 
 
 
-int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec)
+int frontierRSBlob_getInt(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   int ret;
 
   if(rs->pos>=rs->size-3)
@@ -224,8 +257,9 @@ int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec)
  }
 
 
-long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec)
+long long frontierRSBlob_getLong(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   long long ret;
 
   if(rs->pos>=rs->size-7)
@@ -241,8 +275,9 @@ long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec)
  }
 
 
-double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec)
+double frontierRSBlob_getDouble(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   double ret;
 
   if(rs->pos>=rs->size-7)
@@ -258,8 +293,9 @@ double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec)
  }
  
 
-float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec)
+float frontierRSBlob_getFloat(FrontierRSBlob *frs,int *ec)
  {
+  RSBlob* rs=(RSBlob *)frs;
   float ret;
 
   if(rs->pos>=rs->size-3)
@@ -275,5 +311,34 @@ float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec)
  }
  
 
+unsigned int frontierRSBlob_getRecNum(FrontierRSBlob *frs)
+ {
+  RSBlob* rs=(RSBlob *)frs;
+  return rs->nrec;
+ }
+
+unsigned int frontierRSBlob_getPos(FrontierRSBlob *frs)
+ {
+  RSBlob* rs=(RSBlob *)frs;
+  return rs->pos;
+ }
+
+unsigned int frontierRSBlob_getSize(FrontierRSBlob *frs)
+ {
+  RSBlob* rs=(RSBlob *)frs;
+  return rs->size;
+ }
+
+int frontierRSBlob_payload_error(FrontierRSBlob *frs)
+ {
+  RSBlob* rs=(RSBlob *)frs;
+  return rs->payload_error;
+ }
+
+const char *frontierRSBlob_payload_msg(FrontierRSBlob *frs)
+ {
+  RSBlob* rs=(RSBlob *)frs;
+  return rs->payload_msg;
+ }
 
 
