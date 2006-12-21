@@ -102,6 +102,7 @@ class AnyData
    int isNull;   // I do not use "bool" here because of compatibility problems [SSK]   
    int type_error;   
    BLOB_TYPE t;  // The data type
+   struct{char *p;unsigned int s;}strbuf;
 
    int castToInt();
    long long castToLongLong();
@@ -110,7 +111,11 @@ class AnyData
    std::string* castToString();
 
   public:     
-   AnyData(): isNull(0),type_error(FRONTIER_OK),t(BLOB_TYPE_NONE){}
+   AnyData()
+     :isNull(0)
+     ,type_error(FRONTIER_OK)
+     ,t(BLOB_TYPE_NONE)
+     {strbuf.p=0;strbuf.s=0;}
    
    long long getRawI8() const {return v.i8;}
    double getRawD() const {return v.d;}
@@ -119,6 +124,8 @@ class AnyData
    int getRawI4() const {return v.i4;}
    float getRawF() const {return v.f;}
    char getRawB() const {return v.b;}
+      
+   char *getStrBuf(unsigned int minsize);
       
    inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
@@ -136,10 +143,8 @@ class AnyData
    inline double getDouble(){if(isNull) return 0.0;if(t==BLOB_TYPE_DOUBLE) return v.d; return castToDouble();}
    std::string* getString();
    void assignString(std::string *s);
-   
-   inline void clean(){if(t==BLOB_TYPE_ARRAY_BYTE && v.str.p) {delete[] v.str.p; v.str.p=NULL;}} // Thou art warned!!!
-   
-   ~AnyData(){clean();} // Thou art warned!!!   
+   void clean();
+   ~AnyData();
  };
  
 
