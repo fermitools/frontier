@@ -30,13 +30,6 @@ extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
 
 #define PERSISTCONNECTION 
-#if 0
-#define LONGLIFESOCKET /* HACK TO KEEP SOCKET OPEN */
-#endif
-#ifdef LONGLIFESOCKET
-static int longlifesocket=-1;
-static int longlife_using_proxy;
-#endif
 
 FrontierHttpClnt *frontierHttpClnt_create(int *ec)
  {
@@ -55,21 +48,6 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->data_pos=0;
   c->data_size=0;
   c->content_length=-1;
-#ifdef LONGLIFESOCKET
-  if (longlifesocket!=-1)
-   {
-    if((read(longlifesocket,"",0)==-1)&&(errno==EBADF))
-     {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"skipping restore of long life socket s=%d for obj 0x%x, bad file descriptor",longlifesocket,(unsigned int)c);
-     }
-    else
-     {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"restoring long life socket s=%d for obj 0x%x",longlifesocket,(unsigned int)c);
-      c->socket=longlifesocket;
-      c->using_proxy=longlife_using_proxy;
-     }
-   }
-#endif
   
   *ec=FRONTIER_OK;
   return c;
@@ -299,15 +277,6 @@ static int open_connection(FrontierHttpClnt *c)
     addr=addr->ai_next;
    }while(addr);
    
-#ifdef LONGLIFESOCKET
-  if(ret==0)
-   {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"saving long life socket s=%d for obj 0x%x",c->socket,(unsigned int)c);
-
-    longlifesocket=c->socket;
-    longlife_using_proxy=c->using_proxy;
-   }
-#endif
   return ret;
 }
 
@@ -565,15 +534,11 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   for(i=0;i<(sizeof(c->proxy)/sizeof(c->proxy[0])); i++)
     frontier_DeleteUrlInfo(c->proxy[i]);
   
-#ifndef LONGLIFESOCKET
-  if(c->socket>=0) frontierHttpClnt_close(c);
-#else
   if(c->socket<0)
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"setting long life socket to -1 for obj 0x%x",(unsigned int)c);
     longlifesocket=-1;
    }
-#endif
   
   if(c->frontier_id) frontier_mem_free(c->frontier_id);
   
