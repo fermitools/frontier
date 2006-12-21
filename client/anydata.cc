@@ -135,8 +135,56 @@ void AnyData::assignString(std::string *s)
     return;
    }
 
-  std::string *tmp=castToString();
-  *s=*tmp;
-  delete tmp;
+  std::ostringstream oss;
+  switch(t)
+   {
+    case BLOB_TYPE_BYTE: oss<<v.b; break;
+    case BLOB_TYPE_INT4: oss<<v.i4; break;
+    case BLOB_TYPE_TIME:
+    case BLOB_TYPE_INT8: oss<<v.i8; break;
+    case BLOB_TYPE_FLOAT: oss<<v.f; break;
+    case BLOB_TYPE_DOUBLE: oss<<v.d; break;
+    default: break; // Just to make this geek gcc happy
+   }
+  s->assign(oss.str());
  }
 
+char *AnyData::getStrBuf(unsigned int minsize)
+ {
+  if(minsize<strbuf.s)return strbuf.p;	// existing is big enough
+
+  if(strbuf.p)
+   {
+    delete[] strbuf.p;
+    strbuf.p=0;
+    strbuf.s=0;
+   }
+
+  // keep doubling size to allocate until big enough
+  unsigned int allocsize=32; // minimum size
+  while(allocsize<minsize)
+    allocsize*=2;
+  strbuf.p=new char[allocsize];
+  if(strbuf.p)strbuf.s=allocsize;
+  return strbuf.p;
+ }
+
+void AnyData::clean()
+ {
+  // If cleaning an array type and it is not saved in strbuf then
+  // delete now.  This is for backward compatibility; the recommended,
+  // better-performing method is for the application to use getStrBuf()
+  // to avoid a new & delete for every piece of string data.
+  if((t==BLOB_TYPE_ARRAY_BYTE)&&v.str.p&&(v.str.p!=strbuf.p))
+   {
+    delete[] v.str.p;
+    v.str.p=NULL;
+   }
+ }
+
+AnyData::~AnyData()
+ {
+  clean();
+  if(strbuf.p)
+    delete[] strbuf.p;
+ }
