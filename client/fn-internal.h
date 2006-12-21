@@ -64,6 +64,7 @@ struct s_FrontierResponse
   void *parser;
   int p_state;
   int zipped;
+  int seqnum;
   FrontierPayload *payload[FRONTIER_MAX_PAYLOADNUM];
  };
 typedef struct s_FrontierResponse FrontierResponse;
@@ -84,8 +85,23 @@ struct s_Channel
   int http_resp_code;
   int reload; // Current reload flag
   int user_reload; // reload flag desired by user
+  int seqnum;      // sequence number for the channel
+  int response_seqnum; // next sequence number for responses using this channel
  };
 typedef struct s_Channel Channel;
+
+struct s_RSBlob
+ {
+  FrontierResponse *resp;
+  int payload_error;
+  const char *payload_msg;
+  const char *buf;
+  unsigned int size;
+  unsigned int pos;
+  unsigned int nrec;
+  int respnum;
+ };
+typedef struct s_RSBlob RSBlob;
 
 #endif /*__HEADER_H_FN_INTERNAL_H*/
 
