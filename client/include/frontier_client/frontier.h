@@ -20,21 +20,12 @@
 #define FRONTIER_MAX_PAYLOADNUM	32
 
 typedef unsigned long FrontierChannel;
+typedef void FrontierRSBlob;
 
 
-struct s_FrontierRSBlob
- {
-  int payload_error;
-  const char *payload_msg;
-  const char *buf;
-  unsigned int size;
-  unsigned int pos;
-  unsigned int nrec;
- };
-typedef struct s_FrontierRSBlob FrontierRSBlob;
-
-
+/*frontierRSBlob_get is deprecated, use frontierRSBlob_open instead*/
 FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec);
+FrontierRSBlob *frontierRSBlob_open(FrontierChannel u_channel,FrontierRSBlob *oldrs,int n,int *ec);
 void frontierRSBlob_close(FrontierRSBlob *rs,int *ec);
 void frontierRSBlob_rsctl(FrontierRSBlob *rs,int ctl_fn,void *data,int size,int *ec);
 void frontierRSBlob_start(FrontierRSBlob *rs,int *ec);
@@ -45,6 +36,11 @@ long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec);
 double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);
 float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec);
 void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec);
+unsigned int frontierRSBlob_getRecNum(FrontierRSBlob *rs);
+unsigned int frontierRSBlob_getPos(FrontierRSBlob *rs);
+unsigned int frontierRSBlob_getSize(FrontierRSBlob *rs);
+int frontierRSBlob_payload_error(FrontierRSBlob *rs);
+const char* frontierRSBlob_payload_msg(FrontierRSBlob *rs);
 
 int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr),
 			const char *logfile, const char *loglevel);
