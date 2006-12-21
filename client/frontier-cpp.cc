@@ -97,18 +97,12 @@ int frontier::init(const std::string& logfilename, const std::string& loglevel)
  }
 
  
-DataSource::DataSource(const std::string& server_url,const std::string* proxy_url)
+Connection::Connection(const std::string& server_url,const std::string* proxy_url)
  {
   int ec=FRONTIER_OK;
   const char *proxy_url_c=NULL;
-  first_row=0;
   
   init();
-  
-  uri=NULL;
-  internal_data=NULL;
-  err_code=0;
-  err_msg="";
   
   if(proxy_url) proxy_url_c=proxy_url->c_str();
 
@@ -116,21 +110,13 @@ DataSource::DataSource(const std::string& server_url,const std::string* proxy_ur
   if(ec!=FRONTIER_OK) {
     FrontierExceptionMapper::throwException(ec, "Can not create frontier channel");
   }
-  
  }
 
-DataSource::DataSource(const std::list<std::string>& serverUrlList,
+Connection::Connection(const std::list<std::string>& serverUrlList,
   const std::list<std::string>& proxyUrlList) {
  
-  first_row = 0;
-  
   init();
   
-  uri = NULL;
-  internal_data = NULL;
-  err_code = 0;
-  err_msg = "";
- 
   /*
    * Create empty config struct and add server/proxies to it. 
    */
@@ -163,15 +149,36 @@ DataSource::DataSource(const std::list<std::string>& serverUrlList,
   }
 
 }
-
  
-void DataSource::setReload(int reload)
+Connection::~Connection()
+ {
+  frontier_closeChannel(channel);
+ }
+
+void Connection::setReload(int reload)
  {
   frontier_setReload(channel,reload);
  }
  
 
-void DataSource::getData(const std::vector<const Request*>& v_req)
+void Connection::setDefaultParams(const std::string& logicalServer,
+	    const std::string& parameterList)
+ {
+  frontier::init();
+  frontierConfig_setDefaultLogicalServer(logicalServer.c_str());
+  frontierConfig_setDefaultPhysicalServers(parameterList.c_str());
+ }
+
+
+Session::Session(Connection *connection)
+ {
+  first_row=0;
+  uri=NULL;
+  internal_data=NULL;
+  channel=connection->channel;
+}
+  
+void Session::getData(const std::vector<const Request*>& v_req)
  {
   int ec;
 
@@ -224,15 +231,15 @@ void DataSource::getData(const std::vector<const Request*>& v_req)
  }
 
 
-void DataSource::setCurrentLoad(int n) {
+void Session::setCurrentLoad(int n) {
   int ec=FRONTIER_OK;
   first_row=0;
-  FrontierRSBlob *rsb=frontierRSBlob_get(channel,n,&ec);
+  FrontierRSBlob *oldrsb=(static_cast<FrontierRSBlob*>(internal_data));
+  FrontierRSBlob *rsb=frontierRSBlob_open(channel,oldrsb,n,&ec);
   if(ec!=FRONTIER_OK) {
     FrontierExceptionMapper::throwException(ec, "Can not set current load");
   }
- 
-  if(internal_data) frontierRSBlob_close(static_cast<FrontierRSBlob*>(internal_data),&ec); //Doesn't it look UGLY?
+  if(oldrsb) frontierRSBlob_close(oldrsb,&ec);
   
   internal_data = rsb;
   if(getCurrentLoadError() != FRONTIER_OK) {
@@ -241,60 +248,60 @@ void DataSource::setCurrentLoad(int n) {
 }
 
  
-int DataSource::getCurrentLoadError() const
+int Session::getCurrentLoadError() const
  {
   FrontierRSBlob *rsb=(FrontierRSBlob*)internal_data;
-  return rsb->payload_error;
+  return frontierRSBlob_payload_error(rsb);
  }
  
 
-const char* DataSource::getCurrentLoadErrorMessage() const
+const char* Session::getCurrentLoadErrorMessage() const
  {
   FrontierRSBlob *rsb=(FrontierRSBlob*)internal_data;
-  return rsb->payload_msg; 
+  return frontierRSBlob_payload_msg(rsb);
  }
  
 
-unsigned int DataSource::getRecNum()
+unsigned int Session::getRecNum()
  {
   if(!internal_data) {
     throw InvalidArgument("Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return rs->nrec;
+  return frontierRSBlob_getRecNum(rs);
  }
 
 // Get number of records.
-unsigned int DataSource::getNumberOfRecords() {
+unsigned int Session::getNumberOfRecords() {
   if(!internal_data) {
     throw InvalidArgument("Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return rs->nrec;
+  return frontierRSBlob_getRecNum(rs);
 }
 
  
-unsigned int DataSource::getRSBinarySize()
+unsigned int Session::getRSBinarySize()
  {
   if(!internal_data) {
     throw InvalidArgument("Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return rs->size;  
+  return frontierRSBlob_getSize(rs);
  }
 
  
-unsigned int DataSource::getRSBinaryPos()
+unsigned int Session::getRSBinaryPos()
  {
   if(!internal_data) {
     throw InvalidArgument("Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return rs->pos;  
+  return frontierRSBlob_getPos(rs);
  }
   
  
-int DataSource::getAnyData(AnyData* buf,int not_eor)
+int Session::getAnyData(AnyData* buf,int not_eor)
  {
   buf->isNull=0;
   if(!internal_data) {
@@ -345,7 +352,7 @@ int DataSource::getAnyData(AnyData* buf,int not_eor)
        if(len<0) {
          throw LogicError("negative byte array length", ec);
        }
-       p=new char[len+1];
+       p=buf->getStrBuf((unsigned int)len+1);
        frontierRSBlob_getArea(rs,p,len,&ec); 
        p[len]=0; // To emulate C string
        buf->set(len,p);
@@ -362,7 +369,7 @@ int DataSource::getAnyData(AnyData* buf,int not_eor)
  }
  
  
-BLOB_TYPE DataSource::nextFieldType()
+BLOB_TYPE Session::nextFieldType()
  {
   if(!internal_data) {
     throw InvalidArgument("Current load is not set");
@@ -378,7 +385,7 @@ BLOB_TYPE DataSource::nextFieldType()
  }
  
  
-int DataSource::getInt()
+int Session::getInt()
  {
   AnyData ad;
   
@@ -387,7 +394,7 @@ int DataSource::getInt()
  }
 
 
-long DataSource::getLong()
+long Session::getLong()
  {
   AnyData ad;
   if(getAnyData(&ad)) return -1;
@@ -397,7 +404,7 @@ long DataSource::getLong()
  }
  
 
-long long DataSource::getLongLong()
+long long Session::getLongLong()
  {
   AnyData ad;
   
@@ -407,7 +414,7 @@ long long DataSource::getLongLong()
  }
 
 
-double DataSource::getDouble()
+double Session::getDouble()
  {
   AnyData ad;
   
@@ -417,7 +424,7 @@ double DataSource::getDouble()
  }
  
  
-float DataSource::getFloat()
+float Session::getFloat()
  {
   AnyData ad;
   if(getAnyData(&ad)) return -1;  
@@ -426,7 +433,7 @@ float DataSource::getFloat()
  } 
 
  
-long long DataSource::getDate()
+long long Session::getDate()
  {
   AnyData ad;
   
@@ -436,7 +443,7 @@ long long DataSource::getDate()
  }
  
  
-std::string* DataSource::getString()
+std::string* Session::getString()
  {
   AnyData ad;
   
@@ -446,14 +453,14 @@ std::string* DataSource::getString()
  }
  
  
-std::string* DataSource::getBlob()
+std::string* Session::getBlob()
  {
   return getString();
  }
 
  
  
-void DataSource::assignString(std::string *s)
+void Session::assignString(std::string *s)
  {
   AnyData ad;
 
@@ -468,7 +475,7 @@ void DataSource::assignString(std::string *s)
 
 
 
-int DataSource::next()
+int Session::next()
  {
   AnyData ad;
 
@@ -489,16 +496,15 @@ int DataSource::next()
 
  
  
-DataSource::~DataSource()
+Session::~Session()
  {
   int ec;
   if(internal_data) {frontierRSBlob_close((FrontierRSBlob*)internal_data,&ec);internal_data=NULL;}
-  frontier_closeChannel(channel);
   if(uri) delete uri;
  }
 
 
-std::vector<unsigned char>* DataSource::getRawAsArrayUChar()
+std::vector<unsigned char>* Session::getRawAsArrayUChar()
  {
   std::string *blob=getBlob();
   int len=blob->size();
@@ -513,7 +519,7 @@ std::vector<unsigned char>* DataSource::getRawAsArrayUChar()
  }
 
 
-std::vector<int>* DataSource::getRawAsArrayInt()
+std::vector<int>* Session::getRawAsArrayInt()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 
@@ -533,7 +539,7 @@ std::vector<int>* DataSource::getRawAsArrayInt()
  }
  
    
-std::vector<float>* DataSource::getRawAsArrayFloat()
+std::vector<float>* Session::getRawAsArrayFloat()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 
@@ -553,7 +559,7 @@ std::vector<float>* DataSource::getRawAsArrayFloat()
  }
 
 
-std::vector<double>* DataSource::getRawAsArrayDouble()
+std::vector<double>* Session::getRawAsArrayDouble()
  {
   std::string *blob=getBlob();
   if(blob->size()%8) 
@@ -573,7 +579,7 @@ std::vector<double>* DataSource::getRawAsArrayDouble()
  }
 
 
-std::vector<long>* DataSource::getRawAsArrayLong()
+std::vector<long>* Session::getRawAsArrayLong()
  {
   std::string *blob=getBlob();
   if(blob->size()%4) 
@@ -592,10 +598,19 @@ std::vector<long>* DataSource::getRawAsArrayLong()
   return ret; 
  }
 
-void DataSource::setDefaultParams(const std::string& logicalServer,
-	    const std::string& parameterList)
+DataSource::DataSource(const std::string& server_url,const std::string* proxy_url)
+ : Connection(server_url, proxy_url), Session(this)
  {
-  frontier::init();
-  frontierConfig_setDefaultLogicalServer(logicalServer.c_str());
-  frontierConfig_setDefaultPhysicalServers(parameterList.c_str());
  }
+
+DataSource::DataSource(const std::list<std::string>& serverUrlList,
+  const std::list<std::string>& proxyUrlList) 
+ : Connection(serverUrlList, proxyUrlList), Session(this)
+ {
+ }
+ 
+DataSource::~DataSource()
+ {
+ // just a placeholder; parents automatically called
+ }
+
