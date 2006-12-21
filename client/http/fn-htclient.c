@@ -28,7 +28,16 @@
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
- 
+
+#define PERSISTCONNECTION 
+#if 0
+#define LONGLIFESOCKET /* HACK TO KEEP SOCKET OPEN */
+#endif
+#ifdef LONGLIFESOCKET
+static int longlifesocket=-1;
+static int longlife_using_proxy;
+#endif
+
 FrontierHttpClnt *frontierHttpClnt_create(int *ec)
  {
   FrontierHttpClnt *c;
@@ -45,6 +54,22 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->frontier_id=(char*)0;
   c->data_pos=0;
   c->data_size=0;
+  c->content_length=-1;
+#ifdef LONGLIFESOCKET
+  if (longlifesocket!=-1)
+   {
+    if((read(longlifesocket,"",0)==-1)&&(errno==EBADF))
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"skipping restore of long life socket s=%d for obj 0x%x, bad file descriptor",longlifesocket,(unsigned int)c);
+     }
+    else
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"restoring long life socket s=%d for obj 0x%x",longlifesocket,(unsigned int)c);
+      c->socket=longlifesocket;
+      c->using_proxy=longlife_using_proxy;
+     }
+   }
+#endif
   
   *ec=FRONTIER_OK;
   return c;
@@ -61,7 +86,7 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   
   if(!fui->path)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server %s: servelet path is missing",fui->host);
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: server %s: servlet path is missing",fui->host);
     frontier_DeleteUrlInfo(fui);
     return FRONTIER_ECFG;
    }
@@ -140,6 +165,7 @@ static int http_read(FrontierHttpClnt *c)
   //bzero(c->buf,FRONTIER_HTTP_BUF_SIZE);
   c->data_pos=0;  
   c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE);
+
   return c->data_size;
  }
 
@@ -203,23 +229,22 @@ static int read_line(FrontierHttpClnt *c,char *buf,int buf_len)
  }
    
   
-#define FN_REQ_BUF 8192
-
-static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
+static int open_connection(FrontierHttpClnt *c)
  {
   int ret;
-  int len;  
   struct sockaddr_in *sin;
   struct addrinfo *addr;
   FrontierUrlInfo *fui_proxy;
   FrontierUrlInfo *fui_server;
-  char buf[FN_REQ_BUF];
-  int is_proxy;
-  char *http_method;
   
-  http_method=is_post?"POST":"GET";
+  if(c->socket!=-1)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"reusing persisted connection s=%d",c->socket);
+    return 0;
+   }
 
-  
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"no persisted connection found, opening new");
+
   fui_proxy=c->proxy[c->cur_proxy];
   fui_server=c->server[c->cur_server];
   
@@ -231,24 +256,25 @@ static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
   
   if(fui_proxy)
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"using proxy %s",fui_proxy->host);
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connecting to proxy %s",fui_proxy->host);
     if(!fui_proxy->addr)
      {
       ret=frontier_resolv_host(fui_proxy);
       if(ret) return ret;
      }
     addr=fui_proxy->addr;
-    is_proxy=1;
+    c->using_proxy=1;
    }
   else
    {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connecting to server %s",fui_server->host);
     if(!fui_server->addr)
      {
       ret=frontier_resolv_host(fui_server);
       if(ret) return ret;
      }
     addr=fui_server->addr;
-    is_proxy=0;
+    c->using_proxy=0;
    }
      
   do
@@ -257,7 +283,7 @@ static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
     if(c->socket<0) return c->socket;
     
     sin=(struct sockaddr_in*)(addr->ai_addr);
-    if(is_proxy) 
+    if(c->using_proxy) 
      {
       sin->sin_port=htons((unsigned short)(fui_proxy->port));
      }
@@ -273,11 +299,36 @@ static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
     addr=addr->ai_next;
    }while(addr);
    
-  if(ret) return ret;
+#ifdef LONGLIFESOCKET
+  if(ret==0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"saving long life socket s=%d for obj 0x%x",c->socket,(unsigned int)c);
+
+    longlifesocket=c->socket;
+    longlife_using_proxy=c->using_proxy;
+   }
+#endif
+  return ret;
+}
+
+
+#define FN_REQ_BUF 8192
+
+static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
+{
+  int ret;
+  int len;  
+  char buf[FN_REQ_BUF];
+  FrontierUrlInfo *fui_server;
+  char *http_method;
+  
+  http_method=is_post?"POST":"GET";
+
+  fui_server=c->server[c->cur_server];
 
   bzero(buf,FN_REQ_BUF);
   
-  if(is_proxy)
+  if(c->using_proxy)
    {
     len=snprintf(buf,FN_REQ_BUF,"%s %s/%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,url,fui_server->host);
    }
@@ -291,7 +342,11 @@ static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
     return FRONTIER_EIARG;
    }
   
+#ifdef PERSISTCONNECTION
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nConnection: keep-alive\r\n",c->frontier_id);
+#else
   ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\n",c->frontier_id);
+#endif
   if(ret>=FN_REQ_BUF-len)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
@@ -326,16 +381,13 @@ static int get_connection(FrontierHttpClnt *c,const char *url,int is_post)
 static int read_connection(FrontierHttpClnt *c)
  {
   int ret;
+  int tot=0;
   char buf[FN_REQ_BUF];
   
   // Read status line
   ret=read_line(c,buf,FN_REQ_BUF);
-  if(ret<0) return ret;
-  if(ret==0)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
-    return FRONTIER_ENETWORK;    
-   }
+  if(ret<=0) return ret;
+  tot=ret;
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"status line <%s>",buf);
   if(strncmp(buf,"HTTP/1.0 200 ",13) && strncmp(buf,"HTTP/1.1 200 ",13))
    {
@@ -347,52 +399,75 @@ static int read_connection(FrontierHttpClnt *c)
    {   
     ret=read_line(c,buf,FN_REQ_BUF);
     if(ret<0) return ret;
+    tot+=ret;
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"got line <%s>",buf);
+    /* look for "content-length" header */
+#define CLHEAD "content-length: "
+#define CLLEN (sizeof(CLHEAD)-1)
+    if((c->content_length==-1)&&(ret>CLLEN)&&(strncasecmp(buf,CLHEAD,CLLEN)==0))
+      c->content_length=atoi(buf+CLLEN);
+#undef CLHEAD
+#undef CLLEN
    }while(*buf);
-            
-  return FRONTIER_OK; 
+
+  return tot; 
  }
  
 
-  
-int frontierHttpClnt_open(FrontierHttpClnt *c,const char *url)
+int frontierHttpClnt_open(FrontierHttpClnt *c)
  {
   int ret;
   
-  ret=get_connection(c,url,0);
-  if(ret) return ret;
-  
-  ret=read_connection(c);
+  ret=open_connection(c);
   return ret;
  }
  
  
- 
- 
+int frontierHttpClnt_get(FrontierHttpClnt *c,const char *url)
+ {
+  return frontierHttpClnt_post(c,url,0);
+ }
+
+
 int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
  {
   int ret;
-  int len;
+  int len=body?strlen(body):0;
+  int try=0;
+
+  for(try=0;try<2;try++)
+   {
+    ret=get_url(c,url,0);
+    if(ret) return ret;
   
-  ret=get_connection(c,url,1);
-  if(ret) return ret;
+    if(len>0)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
+      ret=frontier_write(c->socket,body,len);
+      if(ret<0) return ret;
+     }
 
-  len=body?strlen(body):0;
-  if(len>0)
-   {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
-    ret=frontier_write(c->socket,body,len);
-    if(ret<0) return ret;
-   }
-  else
-   {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"missing or empty body");
+    ret=read_connection(c);
+    if(ret==0)
+     {
+      if(try==0)
+       {
+        /*An empty response can happen on persisted connections after*/
+	/*long waits.  Close, reopen, and retry.*/
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"got empty response, re-connecting and retrying");
+        frontierHttpClnt_close(c);
+        frontierHttpClnt_open(c);
+	continue;
+       }
+      frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
+      return FRONTIER_ENETWORK;    
+     }
+    break;
    }
 
-  ret=read_connection(c);
-  return ret;   
- } 
- 
+  if(ret>0)return FRONTIER_OK;
+  return ret;
+ }
  
  
 int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
@@ -400,6 +475,12 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
   int ret;
   int available;
   
+#ifdef PERSISTCONNECTION
+  if(c->content_length==0)
+    /* no more data to read for this url */
+    return 0;
+#endif
+
   if(c->data_pos+1>c->data_size)
    {
     ret=http_read(c);
@@ -408,6 +489,17 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
    
   available=c->data_size-c->data_pos;
   available=buf_len>available?available:buf_len;
+#ifdef PERSISTCONNECTION
+  if(c->content_length>0)
+   {
+    if(available>c->content_length)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"More data available (%d bytes) than Content-Length (%d bytes) says should be there",available,c->content_length);
+      return -1;
+     }
+    c->content_length-=available;
+   }
+#endif
   bcopy(c->buf+c->data_pos,buf,available);
   c->data_pos+=available;
 
@@ -440,12 +532,27 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
  
 void frontierHttpClnt_close(FrontierHttpClnt *c)
  {
+#ifdef PERSISTCONNECTION
+  if(c->content_length<0)
+   {
+    /*there was no Content-Length header or this function was called twice*/
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection");
+    /*note that "Proxy-Connection: close" was probably also set*/
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
+  else
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"persisting connection s=%d",c->socket);
+   }
+#else
   frontier_socket_close(c->socket);
   c->socket=-1;
+#endif
   c->data_pos=0;
   c->data_size=0;  
+  c->content_length=-1;
  }
- 
  
 void frontierHttpClnt_delete(FrontierHttpClnt *c)
  {
@@ -458,7 +565,15 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   for(i=0;i<(sizeof(c->proxy)/sizeof(c->proxy[0])); i++)
     frontier_DeleteUrlInfo(c->proxy[i]);
   
+#ifndef LONGLIFESOCKET
   if(c->socket>=0) frontierHttpClnt_close(c);
+#else
+  if(c->socket<0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"setting long life socket to -1 for obj 0x%x",(unsigned int)c);
+    longlifesocket=-1;
+   }
+#endif
   
   if(c->frontier_id) frontier_mem_free(c->frontier_id);
   
