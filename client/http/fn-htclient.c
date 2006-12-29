@@ -534,12 +534,6 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   for(i=0;i<(sizeof(c->proxy)/sizeof(c->proxy[0])); i++)
     frontier_DeleteUrlInfo(c->proxy[i]);
   
-  if(c->socket<0)
-   {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"setting long life socket to -1 for obj 0x%x",(unsigned int)c);
-    longlifesocket=-1;
-   }
-  
   if(c->frontier_id) frontier_mem_free(c->frontier_id);
   
   frontier_mem_free(c);
