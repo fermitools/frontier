@@ -1,5 +1,40 @@
 $Id$
 
+v2_7_0 12/27/2006 (dwd)
+ Note that this release is not binary compatible, although it is
+ source compatible.
+ - Dropped the _cms designation from version numbers.
+ - Added a AnyData::getStrBuf() function to the c++ API to get access
+   to a re-usable string buffer for string types, to avoid having to
+   do a new and delete for every piece of data that's of type array.
+ - Changed AnyData::assignString() to avoid a string new/delete for
+   non-arrays.
+ - Added support for persistent connections that can be re-used for
+   multiple queries.  The C++ API is to use two new C++ classes called
+   Connection and Session instead of the previous DataSource (although
+   that still works for backward source compatibility with one object
+   per query).  Create one Connection object to hold connections to
+   the frontier proxies & servers for a long time and create one
+   Session object for each query.  Sometimes (when there's too much
+   time between queries and when query results are large) the actual
+   TCP connection does get dropped by the squid proxy, but it is
+   automatically reconnected, transparent to the C++ API.
+ - Keep track of sequence numbers on channels and on queries within a
+   channel for debugging purposes.
+ - Move messages that report connection problems and retries from the
+   debug FRONTIER_LOG_LEVEL to the warning FRONTIER_LOG_LEVEL.
+ - Changed the default connect timeout from 3 seconds to 5 seconds.
+ - Added the ability to change the connect, read, and write timeout
+   seconds via environment variables FRONTIER_CONNECTTIMEOUTSECS,
+   FRONTIER_READTIMEOUTSECS, and FRONTIER_WRITETIMEOUTSECS or via
+   the complex connection string entries connecttimeoutsecs,
+   readtimeoutsecs, or writetimeoutsecs.
+ - Re-try selects if they fail with EINTR (which can happen when
+   profiling).
+ - Added --retrieve-zip-level to fnget.py.
+ - Added fnget2.py which is like fnget.py only supports multiple
+   queries per connection.
+
 v2_6_0_cms 09/18/2006 (dwd)
  - Change only the version number because the binary API changed in
    an incompatible way in v2_5_2_cms and that means a new second-level
@@ -82,7 +117,7 @@ v2_4_4_cms 06/07/2006 (dwd)
  - added optional zipping of the retrieved payload.  The C++ API is
    Request::setRetrieveZipLevel(level) where 0 is off, 1 is fastest,
    5 is normal, and 9 is best compression.  Default is 5.  Requires
-   corresponding update in frontier servelet, version 3.1 or greater.
+   corresponding update in frontier servlet, version 3.1 or greater.
  - eliminated another header file compile problem in FrontierException.hpp
    just like the one recently fixed in frontier-cpp.h, and eliminated
    a compile error seen when the inline LogicError constructor from
