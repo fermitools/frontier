@@ -16,6 +16,9 @@
 #define FRONTIER_ENV_SERVER		"FRONTIER_SERVER"
 #define FRONTIER_ENV_PROXY		"FRONTIER_PROXY"
 #define FRONTIER_ENV_RETRIEVEZIPLEVEL	"FRONTIER_RETRIEVEZIPLEVEL"
+#define FRONTIER_ENV_CONNECTTIMEOUTSECS	"FRONTIER_CONNECTTIMEOUTSECS"
+#define FRONTIER_ENV_READTIMEOUTSECS	"FRONTIER_READTIMEOUTSECS"
+#define FRONTIER_ENV_WRITETIMEOUTSECS	"FRONTIER_WRITETIMEOUTSECS"
 
 struct s_FrontierConfig
  {
@@ -25,6 +28,9 @@ struct s_FrontierConfig
   int proxy_num;
   int server_cur;
   int proxy_cur;
+  int connect_timeout_secs;
+  int read_timeout_secs;
+  int write_timeout_secs;
   int retrieve_zip_level;
  };
 typedef struct s_FrontierConfig FrontierConfig;
@@ -36,8 +42,14 @@ int frontierConfig_nextProxy(FrontierConfig *cfg);
 void frontierConfig_delete(FrontierConfig *cfg);
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url);
-int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg);
+void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int level);
+int frontierConfig_getConnectTimeoutSecs(FrontierConfig *cfg);
+void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int level);
+int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg);
+void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int level);
+int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level);
+int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg);
 void frontierConfig_setDefaultRetrieveZipLevel(int level);
 int frontierConfig_getDefaultRetrieveZipLevel();
 void frontierConfig_setDefaultLogicalServer(const char *logical_server);
