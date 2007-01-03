@@ -21,7 +21,7 @@
 #include <string.h>
 
 //static int total_socket=0;
- 
+
 int frontier_socket()
  {
   int s;
@@ -60,7 +60,7 @@ void frontier_socket_close(int s)
  } 
  
 
-int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
+int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,int timeoutsecs)
  {
   int ret;
   fd_set wfds;
@@ -87,12 +87,10 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
    }
  
   /* non-blocking connect in progress here */
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d in progress, preparing for select.",s);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d waiting for response",s);
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
-  /* the initial connect timeout should be quite short, to fail over to
-     the next if one of the servers is down */
-  tv.tv_sec=3;
+  tv.tv_sec=timeoutsecs;
   tv.tv_usec=0;
   do
    {
@@ -105,7 +103,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"connect timed out");
+    frontier_setErrorMsg(__FILE__,__LINE__,"connect timed out after %d seconds",timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   
@@ -132,7 +130,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen)
  }
  
  
-static int socket_write(int s,const char *buf, int len)
+static int socket_write(int s,const char *buf, int len, int timeoutsecs)
  {
   int ret;
   fd_set wfds;
@@ -142,9 +140,7 @@ static int socket_write(int s,const char *buf, int len)
 
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
-  /* writes shouldn't take very long unless there is much queued,
-     which doesn't happen in the frontier client */
-  tv.tv_sec=5;
+  tv.tv_sec=timeoutsecs;
   tv.tv_usec=0;
   ret=select(s+1,NULL,&wfds,NULL,&tv);
   if(ret<0) 
@@ -154,7 +150,7 @@ static int socket_write(int s,const char *buf, int len)
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"write timed out");
+    frontier_setErrorMsg(__FILE__,__LINE__,"write timed out after %d seconds",timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   if(!FD_ISSET(s,&wfds))
@@ -177,7 +173,7 @@ static int socket_write(int s,const char *buf, int len)
  }
 
  
-int frontier_write(int s,const char *buf, int len)
+int frontier_write(int s,const char *buf, int len, int timeoutsecs)
  {
   int ret;
   int total;
@@ -188,7 +184,7 @@ int frontier_write(int s,const char *buf, int len)
   total=0;
   while(repeat--)
    {
-    ret=socket_write(s,buf+total,len-total);
+    ret=socket_write(s,buf+total,len-total,timeoutsecs);
     if(ret<0) return ret;
     total+=ret;
     if(total==len) return total;
@@ -200,7 +196,7 @@ int frontier_write(int s,const char *buf, int len)
 
  
 
-int frontier_read(int s, char *buf, int size)
+int frontier_read(int s, char *buf, int size, int timeoutsecs)
  {
   int ret;
   fd_set rfds;
@@ -208,8 +204,7 @@ int frontier_read(int s, char *buf, int size)
 
   FD_ZERO(&rfds);
   FD_SET(s,&rfds);
-  /* server should send some data at least every 5 seconds; allow for double */
-  tv.tv_sec=10;
+  tv.tv_sec=timeoutsecs;
   tv.tv_usec=0;
   do
    {
@@ -222,7 +217,7 @@ int frontier_read(int s, char *buf, int size)
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"read timed out");
+    frontier_setErrorMsg(__FILE__,__LINE__,"read timed out after %d seconds",timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   if(!FD_ISSET(s,&rfds))
