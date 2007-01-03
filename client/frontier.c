@@ -35,7 +35,7 @@ static int initialized=0;
 static char frontier_id[FRONTIER_ID_SIZE];
 static char frontier_api_version[]=FNAPI_VERSION;
 
-static chan_seqnum = 0;
+static int chan_seqnum=0;
 static void channel_delete(Channel *chn);
 
 char *frontier_str_ncopy(const char *str, size_t len)
@@ -131,8 +131,9 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
  }
 
 
-
-static Channel *channel_create(const char *srv,const char *proxy,int *ec)
+/* note that caller is responsible for creating config but channel_create2
+   or later call to channel_delete is responsible for deleting it */
+static Channel *channel_create2(FrontierConfig *config, int *ec)
  {
   Channel *chn;
   int ret;
@@ -143,14 +144,17 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
    {
     *ec=FRONTIER_EMEM;
     FRONTIER_MSG(*ec);
+    if(config)frontierConfig_delete(config);
     return (void*)0;
    }
   bzero(chn,sizeof(Channel));
 
-  chn->seqnum = ++chan_seqnum;
-  chn->cfg=frontierConfig_get(srv,proxy,ec);
+  chn->seqnum=++chan_seqnum;
+  chn->cfg=config;
   if(!chn->cfg)
    {
+    *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
     channel_delete(chn);    
     return (void*)0;
    }
@@ -163,7 +167,7 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
    }
   
   chn->ht_clnt=frontierHttpClnt_create(ec);
-  if(!chn->ht_clnt || *ec)
+  if(!chn->ht_clnt||*ec)
    {
     channel_delete(chn);    
     return (void*)0;
@@ -215,78 +219,13 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
   return chn;
  }
 
-static Channel *channel_create2(FrontierConfig * config, int *ec)
+static Channel *channel_create(const char *srv,const char *proxy,int *ec)
  {
-  Channel *chn;
-  int ret;
-  const char *p;
-
-  chn = frontier_mem_alloc(sizeof(Channel));
-  if(!chn) {
-    *ec = FRONTIER_EMEM;
-    FRONTIER_MSG(*ec);
+  FrontierConfig *cfg=frontierConfig_get(srv,proxy,ec);
+  if(!cfg) 
     return (void*)0;
-  }
-  bzero(chn, sizeof(Channel));
-
-  chn->seqnum = ++chan_seqnum;
-  chn->cfg = config;
-  if(!chn->cfg) {
-    *ec = FRONTIER_EMEM;
-    FRONTIER_MSG(*ec);
-    channel_delete(chn);    
-    return (void*)0;
-  }
-  if(!chn->cfg->server_num) {
-    *ec = FRONTIER_ECFG;
-    frontier_setErrorMsg(__FILE__, __LINE__, "no servers configured");
-    channel_delete(chn);    
-    return (void*)0;
-  }
-  
-  chn->ht_clnt = frontierHttpClnt_create(ec);
-  if(!chn->ht_clnt || *ec) {
-    channel_delete(chn);    
-    return (void*)0;
-  }
-   
-  do {
-    p = frontierConfig_getServerUrl(chn->cfg);
-    if(!p) {
-      break;
-    }
-    ret = frontierHttpClnt_addServer(chn->ht_clnt,p);
-    if(ret) {
-      *ec = ret;
-      channel_delete(chn);    
-      return (void*)0;
-    }
-  } while(frontierConfig_nextServer(chn->cfg)==0);
-   
-  if(!chn->ht_clnt->total_server) {
-    *ec = FRONTIER_ECFG;
-    frontier_setErrorMsg(__FILE__, __LINE__, "no server configured");
-    channel_delete(chn);    
-    return (void*)0;
-  }
-
-  do {
-    p = frontierConfig_getProxyUrl(chn->cfg);
-    if(!p) {
-      break;
-    }
-    ret = frontierHttpClnt_addProxy(chn->ht_clnt,p);
-    if(ret) {
-      *ec = ret;
-      channel_delete(chn);    
-      return (void*)0;
-    }
-  } while(frontierConfig_nextProxy(chn->cfg)==0);
-        
-  chn->reload = 0;
-  *ec = FRONTIER_OK; 
-  return chn;
-}
+  return channel_create2(cfg,ec);
+ }
 
 static void channel_delete(Channel *chn)
  {
@@ -337,7 +276,7 @@ static int prepare_channel(Channel *chn)
   
   if(chn->resp) frontierResponse_delete(chn->resp);
   chn->resp=frontierResponse_create(&ec);  
-  chn->resp->seqnum = ++chn->response_seqnum;
+  chn->resp->seqnum=++chn->response_seqnum;
   if(!chn->resp) return ec;
   
   return FRONTIER_OK;
