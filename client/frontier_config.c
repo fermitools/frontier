@@ -19,6 +19,9 @@
 #include "frontier_client/frontier_error.h"
 
 /* default configuration variables */
+static int default_connect_timeout_secs = -1;
+static int default_read_timeout_secs = -1;
+static int default_write_timeout_secs = -1;
 static int default_retrieve_zip_level = -1;
 static char *default_logical_server = 0;
 static char *default_physical_servers = 0;
@@ -45,6 +48,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   FrontierConfig *cfg;
   int i;
   char buf[ENV_BUF_SIZE];
+  char *env;
 
   cfg=(FrontierConfig*)frontier_mem_alloc(sizeof(FrontierConfig));
   if(!cfg)
@@ -57,34 +61,78 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
 
   // Set initial retrieve zip level first because it may be overridden
   //  by a complex server string next.
-  frontierConfig_setRetrieveZipLevel(cfg, frontierConfig_getDefaultRetrieveZipLevel());
+  frontierConfig_setRetrieveZipLevel(cfg,frontierConfig_getDefaultRetrieveZipLevel());
+
+  // Likewise for the timeouts
+  if(default_connect_timeout_secs==-1)
+   {
+    if((env=getenv(FRONTIER_ENV_CONNECTTIMEOUTSECS))==0)
+     {
+      // The default connect timeout should be quite short, to fail over to
+      //   the next server if one of the servers is down.
+      default_connect_timeout_secs=5;
+     }
+    else
+     default_connect_timeout_secs=atoi(env);
+   }
+  frontierConfig_setConnectTimeoutSecs(cfg,default_connect_timeout_secs);
+
+  if(default_read_timeout_secs==-1)
+   {
+    if((env=getenv(FRONTIER_ENV_READTIMEOUTSECS))==0)
+     {
+      // Server should send data at least every 5 seconds; allow for double.
+      default_read_timeout_secs=10;
+     }
+    else
+     default_read_timeout_secs=atoi(env);
+   }
+  frontierConfig_setReadTimeoutSecs(cfg,default_read_timeout_secs);
+
+  if(default_write_timeout_secs==-1)
+   {
+    if((env=getenv(FRONTIER_ENV_WRITETIMEOUTSECS))==0)
+     {
+      // Writes shouldn't take very long unless there is much queued,
+      //   which doesn't happen in the frontier client.
+      default_write_timeout_secs=5;
+     }
+    else
+     default_write_timeout_secs=atoi(env);
+   }
+  frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
 
   // Add configured server and proxy.
-  *errorCode = frontierConfig_addServer(cfg, server_url);
-  if (*errorCode != FRONTIER_OK) goto cleanup;
-  *errorCode = frontierConfig_addProxy(cfg, proxy_url);
-  if (*errorCode != FRONTIER_OK) goto cleanup;
+  *errorCode=frontierConfig_addServer(cfg,server_url);
+  if(*errorCode!=FRONTIER_OK)goto cleanup;
+  *errorCode=frontierConfig_addProxy(cfg,proxy_url);
+  if(*errorCode!=FRONTIER_OK)goto cleanup;
  
   // Add additional servers/proxies from env variables.
-  *errorCode = frontierConfig_addServer(cfg, getenv(FRONTIER_ENV_SERVER));
-  if (*errorCode != FRONTIER_OK) goto cleanup;
-  *errorCode = frontierConfig_addProxy(cfg, getenv(FRONTIER_ENV_PROXY));
-  if (*errorCode != FRONTIER_OK) goto cleanup;
-  for(i = 0; i < FRONTIER_MAX_SERVERN; i++) {
-    snprintf(buf, ENV_BUF_SIZE, "%s%d", FRONTIER_ENV_SERVER, (i+1));
-    *errorCode = frontierConfig_addServer(cfg, getenv(buf));
-    if (*errorCode != FRONTIER_OK) goto cleanup;
-  }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Total %d servers", cfg->server_num);
+  *errorCode=frontierConfig_addServer(cfg,getenv(FRONTIER_ENV_SERVER));
+  if(*errorCode!=FRONTIER_OK)goto cleanup;
+  *errorCode=frontierConfig_addProxy(cfg,getenv(FRONTIER_ENV_PROXY));
+  if(*errorCode!=FRONTIER_OK)goto cleanup;
+  for(i=0;i<FRONTIER_MAX_SERVERN;i++)
+   {
+    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_SERVER,(i+1));
+    *errorCode=frontierConfig_addServer(cfg,getenv(buf));
+    if(*errorCode!=FRONTIER_OK)goto cleanup;
+   }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
   
-  for(i = 0; i < FRONTIER_MAX_PROXYN; i++) {
-    snprintf(buf, ENV_BUF_SIZE, "%s%d", FRONTIER_ENV_PROXY, (i+1));
-    *errorCode = frontierConfig_addProxy(cfg, getenv(buf));
-    if (*errorCode != FRONTIER_OK) goto cleanup;
-  }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Total %d proxies", cfg->proxy_num);     
+  for(i=0;i<FRONTIER_MAX_PROXYN;i++)
+   {
+    snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_PROXY,(i+1));
+    *errorCode=frontierConfig_addProxy(cfg,getenv(buf));
+    if(*errorCode!=FRONTIER_OK)goto cleanup;
+   }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);
     
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Retrieve zip level is %d", cfg->retrieve_zip_level);     
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Retrieve zip level is %d",cfg->retrieve_zip_level);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Connect timeoutsecs is %d",cfg->connect_timeout_secs);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Read timeoutsecs is %d",cfg->read_timeout_secs);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
 
   return cfg;
 
@@ -143,9 +191,34 @@ void frontierConfig_delete(FrontierConfig *cfg)
   frontier_mem_free(cfg);
  }
 
-int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg)
+void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
  {
-  return cfg->retrieve_zip_level;
+  cfg->connect_timeout_secs=timeoutsecs;
+ }
+
+int frontierConfig_getConnectTimeoutSecs(FrontierConfig *cfg)
+ {
+  return cfg->connect_timeout_secs;
+ }
+
+void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
+ {
+  cfg->read_timeout_secs=timeoutsecs;
+ }
+
+int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg)
+ {
+  return cfg->read_timeout_secs;
+ }
+
+void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
+ {
+  cfg->write_timeout_secs=timeoutsecs;
+ }
+
+int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg)
+ {
+  return cfg->write_timeout_secs;
  }
 
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level)
@@ -155,6 +228,11 @@ void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level)
   if (level > 9)
     level = 9;
   cfg->retrieve_zip_level = level;
+ }
+
+int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg)
+ {
+  return cfg->retrieve_zip_level;
  }
 
 void frontierConfig_setDefaultRetrieveZipLevel(int level)
@@ -297,10 +375,16 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  ret = frontierConfig_addServer(cfg, valp);
 	else if (strcmp(keyp, "proxyurl") == 0)
 	  ret = frontierConfig_addProxy(cfg, valp);
-	else if (strcmp(keyp, "retrieve-ziplevel") == 0)
-	  frontierConfig_setRetrieveZipLevel(cfg, atoi(valp));
 	else if (strcmp(keyp, "logicalserverurl") == 0)
 	  frontierConfig_setDefaultLogicalServer(valp);
+	else if (strcmp(keyp, "retrieve-ziplevel") == 0)
+	  frontierConfig_setRetrieveZipLevel(cfg, atoi(valp));
+	else if (strcmp(keyp, "connecttimeoutsecs") == 0)
+	  frontierConfig_setConnectTimeoutSecs(cfg, atoi(valp));
+	else if (strcmp(keyp, "readtimeoutsecs") == 0)
+	  frontierConfig_setReadTimeoutSecs(cfg, atoi(valp));
+	else if (strcmp(keyp, "writetimeoutsecs") == 0)
+	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
 	else
 	 {
 	 /* else ignore unrecognized keys */
