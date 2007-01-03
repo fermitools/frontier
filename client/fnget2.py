@@ -130,7 +130,7 @@ for frontierQuery in frontierQueries:
 
 	row = base64.decodestring(data.firstChild.data)
 	row = zlib.decompress(row)
-	for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d'  ]:
+        for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
 	  row = row.replace(c, ' ')
 
 	print "\nFields: "
