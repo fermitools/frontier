@@ -202,7 +202,14 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
       return (void*)0;
      }
    }while(frontierConfig_nextProxy(chn->cfg)==0);
-        
+
+  frontierHttpClnt_setConnectTimeoutSecs(chn->ht_clnt,
+  		frontierConfig_getConnectTimeoutSecs(chn->cfg));
+  frontierHttpClnt_setReadTimeoutSecs(chn->ht_clnt,
+  		frontierConfig_getReadTimeoutSecs(chn->cfg));
+  frontierHttpClnt_setWriteTimeoutSecs(chn->ht_clnt,
+  		frontierConfig_getWriteTimeoutSecs(chn->cfg));
+
   chn->reload=0;
   *ec=FRONTIER_OK; 
   return chn;
