@@ -53,6 +53,20 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   return c;
  }
  
+void frontierHttpClnt_setConnectTimeoutSecs(FrontierHttpClnt *c,int timeoutsecs)
+ {
+  c->connect_timeout_secs=timeoutsecs;
+ }
+ 
+void frontierHttpClnt_setReadTimeoutSecs(FrontierHttpClnt *c,int timeoutsecs)
+ {
+  c->read_timeout_secs=timeoutsecs;
+ }
+ 
+void frontierHttpClnt_setWriteTimeoutSecs(FrontierHttpClnt *c,int timeoutsecs)
+ {
+  c->write_timeout_secs=timeoutsecs;
+ }
  
 int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
  {
@@ -142,7 +156,7 @@ static int http_read(FrontierHttpClnt *c)
   //printf("\nhttp_read\n");
   //bzero(c->buf,FRONTIER_HTTP_BUF_SIZE);
   c->data_pos=0;  
-  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE);
+  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE,c->read_timeout_secs);
 
   return c->data_size;
  }
@@ -270,7 +284,7 @@ static int open_connection(FrontierHttpClnt *c)
       sin->sin_port=htons((unsigned short)(fui_server->port));
      }
        
-    ret=frontier_connect(c->socket,addr->ai_addr,addr->ai_addrlen);
+    ret=frontier_connect(c->socket,addr->ai_addr,addr->ai_addrlen,c->connect_timeout_secs);
     if(ret==0) break;
     
     close(c->socket);
@@ -341,7 +355,7 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
    
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"request <%s>",buf);
    
-  ret=frontier_write(c->socket,buf,len);
+  ret=frontier_write(c->socket,buf,len,c->write_timeout_secs);
   if(ret<0) return ret;
   return FRONTIER_OK;
  }
@@ -412,7 +426,7 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
     if(len>0)
      {
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
-      ret=frontier_write(c->socket,body,len);
+      ret=frontier_write(c->socket,body,len,c->write_timeout_secs);
       if(ret<0) return ret;
      }
 
