@@ -109,7 +109,8 @@ class AnyData
    float castToFloat();
    double castToDouble();
    std::string* castToString();
-
+   char *getStrBuf(unsigned int minsize);
+      
   public:     
    AnyData()
      :isNull(0)
@@ -124,8 +125,6 @@ class AnyData
    int getRawI4() const {return v.i4;}
    float getRawF() const {return v.f;}
    char getRawB() const {return v.b;}
-      
-   char *getStrBuf(unsigned int minsize);
       
    inline void set(int i4){t=BLOB_TYPE_INT4;v.i4=i4;type_error=FRONTIER_OK;}
    inline void set(long long i8){t=BLOB_TYPE_INT8;v.i8=i8;type_error=FRONTIER_OK;}
