@@ -1,6 +1,6 @@
 $Id$
 
-v2_7_0 12/27/2006 (dwd)
+v2_7_0 - 4 January 2007 (dwd)
  Note that this release is not binary compatible, although it is
  source compatible.
  - Dropped the _cms designation from version numbers.
