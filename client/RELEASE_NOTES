@@ -4,11 +4,15 @@ v2_7_0 12/27/2006 (dwd)
  Note that this release is not binary compatible, although it is
  source compatible.
  - Dropped the _cms designation from version numbers.
- - Added a AnyData::getStrBuf() function to the c++ API to get access
-   to a re-usable string buffer for string types, to avoid having to
-   do a new and delete for every piece of data that's of type array.
- - Changed AnyData::assignString() to avoid a string new/delete for
-   non-arrays.
+ - Changed AnyData::assignString() to avoid a new and delete for
+   non-"array" data types.  This is now preferred for client programs
+   to use in place of AnyData::getString() because it avoids a new and
+   delete for all data types.
+ - Added a AnyData::getStrBuf() function to the C++ API to get access
+   to a re-usable buffer for array types, to avoid having to do a new
+   and delete for every piece of data that's of type array.  This is
+   only intended to be used internally by Session::getAnyData();
+   AnyData::assignString() is better for client programs.
  - Added support for persistent connections that can be re-used for
    multiple queries.  The C++ API is to use two new C++ classes called
    Connection and Session instead of the previous DataSource (although
