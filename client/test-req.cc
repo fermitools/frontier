@@ -60,7 +60,9 @@ int do_main(int argc, char **argv)
   long long vl;
   float vf;
   double vd;
-  std::string *vs;
+  std::string stringBuf;
+  std::string *vs=&stringBuf;
+  frontier::AnyData ad;
   char *file_name=0;
   int arg_ind;
   int do_reload=0;
@@ -128,45 +130,44 @@ int do_main(int argc, char **argv)
     std::list<std::string> serverList;
     //serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
     std::list<std::string> proxyList;
-    //frontier::DataSource ds;        
-    frontier::DataSource ds(serverList, proxyList);
-    ds.setReload(do_reload);
+    //frontier::DataSource ds(serverList, proxyList);
+    frontier::Connection con(serverList, proxyList);
+    frontier::Session ses(&con);
+    con.setReload(do_reload);
 
     frontier::Request req(req_data,frontier::BLOB);
     req.addKey("p1",param);
 
     std::vector<const frontier::Request*> vrq;
     vrq.push_back(&req);
-    ds.getData(vrq);
+    ses.getData(vrq);
 
-    ds.setCurrentLoad(1);
+    ses.setCurrentLoad(1);
     
     int field_num=0;
     
     std::cout<<"\nObject fields:\n";
     
-    frontier::AnyData ad;
-    
-    ds.next();
+    ses.next();
     // MetaData consists of one record with filed names.
     // Let's go over all fields:
     std::string name,type;
     
-    while(!ds.isEOR()) {
-      ds.assignString(&name);
-      ds.assignString(&type);
+    while(!ses.isEOR()) {
+      ses.assignString(&name);
+      ses.assignString(&type);
       ++field_num;
       std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
     }
          
-    int nrec=ds.getNumberOfRecords();
+    int nrec=ses.getNumberOfRecords();
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
-    while(ds.next()) {
+    while(ses.next()) {
       for(int k=0;k<field_num;k++) {
-        ds.getAnyData(&ad);
+        ses.getAnyData(&ad);
         switch(ad.type()) {
-          //case frontier::BLOB_TYPE_BYTE:       vc=ds.getByte(); break;
+          //case frontier::BLOB_TYPE_BYTE:       vc=ses.getByte(); break;
           case frontier::BLOB_TYPE_INT4:       
             vi=ad.getInt(); 
             std::cout<<vi; 
@@ -195,7 +196,6 @@ int do_main(int argc, char **argv)
             else {
               str_escape_quota(vs);
               std::cout<<'\''<<(*vs)<<'\''; 
-              delete vs;
             }
             break;	  
           default: 
@@ -210,7 +210,7 @@ int do_main(int argc, char **argv)
       ad.clean();
       std::cout<<std::endl;
     }
-    if(!ds.isEOF()) {
+    if(!ses.isEOF()) {
       std::cout<<"Error: must be EOF here\n";
       exit(1);
     }
