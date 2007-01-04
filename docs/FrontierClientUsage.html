@@ -12,17 +12,28 @@
 <h2>Building C/C++ Client Libraries and Test Executables </h2>
     
    
-    <ul>
-      <li>The latest Frontier client source code can be downloaded from <a href="http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier/</a>.
+<ul>
+<li>The latest Frontier client source code can be downloaded from <a
+href="http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier/</a>.
 
-      <li>The distribution contains everything necessary to build C/C++ Frontier clients, including a recent version of expat libraries.
+<li>The distribution contains everything necessary to build C/C++ Frontier
+clients, including a recent version of expat libraries.
 
-	<li> Note that if EXPAT_DIR environment variable is defined, building of the included expat sources will be skipped, and expat libraries from $EXPAT_DIR will be used.
-	
+<li> Note that if EXPAT_DIR environment variable is defined, building of the
+included expat sources will be skipped, and expat libraries from $EXPAT_DIR
+will be used.
 
-<li>To build the client libraries and test executables one can simply execute <em>make</em> in the client source directory.
 
-<li> Client release notes have been maintained in file <em>RELEASE_NOTES</em>. 
+<li>To build the client libraries and test executables one can simply execute
+<em>make</em> in the client source directory.
+
+<li>To prepare source code distribution file: make src-dist (will create tar
+file in the client/tmp directory)
+
+<li>To prepare library distribution file: make dist (will create tar file in
+the client/tmp directory)
+
+<li> Client release notes have been maintained in the file <em>RELEASE_NOTES</em>. 
 
 </ul>
 
@@ -30,33 +41,35 @@
 
 <ul>
 
-<li> Simple C++ test executable is fn-req (file <em>test-req.cc</em>). There are three environment variables which can be used:
+<li> Simple C++ test executable is fn-req (file <em>test-req.cc</em>).
+There are these environment variables which can be used (actually there
+are more, but these are enough for now):
 <ul>
 <li>export FRONTIER_SERVER[1234]=&lt frontier server url &gt
 <li>export FRONTIER_PROXY[1234]= &lt proxy server url &gt
-<li>export FRONTIER_LOG_LEVEL={nolog,info,debug}
-
-
+<li>export FRONTIER_LOG_LEVEL={nolog,error,warning,debug}
+<li>export FRONTIER_LOG_FILE=filename.log
 </ul>
 
 <li>
-Here is an example of a query against the Frontier server running on edge.fnal.gov:
+Here is an example of a query against the Frontier server running on
+edge.fnal.gov:
 
 <pre>
 
-svpc> echo $FRONTIER_SERVER1
+$ echo $FRONTIER_SERVER1
 http://edge.fnal.gov:8000/FrontierCMS
-svpc> echo $FRONTIER_PROXY1
-http://lxfs6043.cern.ch:8000/Frontier3D
-svpc> echo $FRONTIER_LOG_LEVEL
+$ echo $FRONTIER_PROXY1
+http://cmssrv11.fnal.gov:3128
+$ echo $FRONTIER_LOG_LEVEL
 debug
-svpc> cat test_query.sql
+$ cat test_query.sql
 SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
-svpc> ./fn-req -f test_query.sql
+$ ./fn-req -f test_query.sql
 Entered:
 SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
 
-Param [eNoly7EKwjAQANC9X3FbN--AIbanDSa5cIkVpyO0KQiRQpv.v4L7ewENdhE6Mg-rxCmLcGWywCo6fafx5ImMEItV3mt3k78M8ByQEUbkoMmd23TU9ZPqe5I5L.koVZZ1k2FKxec57zWVvQXiHhkuL-AUdPw9aJovBVooHQ__]
+Param [eNoly7EKwjAQANC9X3FbN--AIbanDSa5cIkVpyO0KQiRQpv.v4L7ewENdhE6Mg-rxCmLcGWywCo6fafx5ImMEItV3mt3k78M8ByQEUbkoMmd23TU9ZPqe5I5L.koVZZ1k2FKxec57zWVvQXiHhkuL-AUdPy9pvkC3QIn-Q__]
 ...
 
 Object fields:
@@ -66,15 +79,15 @@ Result contains 0 objects.
 'ID'
 'POS'
 'POS'
-'MITEMS_HCALPEDESTALS_ITEM_MID'
-'MITEMS_HCALPEDESTALS_ITEM_MV_2'
-'MITEMS_HCALPEDESTALS_ITEM_MV_4'
+'MITEMS_HCALPEDESTAL_MID'
+'MITEMS_HCALPEDESTAL_MVALUE2'
+'MITEMS_HCALPEDESTAL_MVALUE4'
 'MSORTED'
-'MITEMS_HCALPEDESTALS_ITEM_MV_3'
-'MITEMS_HCALPEDESTALS_ITEM_MV_1'
+'MITEMS_HCALPEDESTAL_MVALUE3'
+'MITEMS_HCALPEDESTAL_MVALUE1'
 'ID_ID'
 'ID_ID'
-svpc>
+$
 
 </pre>
 
@@ -84,7 +97,11 @@ svpc>
 
 <ul>
 
-<li> The C++ class which handles communication with Frontier servers and proxies is the <em>DataSource</em> class. Here is an example of creating an instance of DataSource:
+<li> The C++ classes which handle communication with Frontier servers
+and proxies are the <em>Connection</em> and <em>Session</em> classes.
+A Connection object can be used to hold a connection open for multiple
+queries, and queries are done one per Session object.  Here is an
+example of creating an instance of each:
 
 <pre>
 
@@ -94,15 +111,19 @@ svpc>
 ...
 
 std::list<std::string> serverList;
-serverList.push_back("http://lxfs6043.cern.ch:8080/Frontier3D");
+serverList.push_back("http://edge.fnal.gov:8000/FrontierCMS");
 std::list<std::string> proxyList;
-frontier::DataSource dataSource(serverList, proxyList);
+frontier::Connection connection(serverList, proxyList);
+frontier::Session session(&connection);
 ...
 
 </pre>
   
-Note that the DataSource object created via the default class constructor will be configured using the above mentioned environment variables (FRONTIER_SERVER[1,2,3,4], FRONTIER_PROXY[1,2,3,4]).
+Note that the Connection object created via the default class
+constructor will be configured using the above mentioned environment
+variables (FRONTIER_SERVER[1,2,3,4], FRONTIER_PROXY[1,2,3,4]).
 
+<p>
 <li>Frontier requests are handled via the <em>Request</em> class:
 
 <pre>
@@ -118,32 +139,35 @@ requestVector.push_back(&request);
 
 </pre>
 
-<li>The DataSource object retrieves request data from the Frontier server, and provides iterator for going over the returned records:
+<li>The Session object retrieves request data from the Frontier
+server, and provides an iterator for going over the returned records:
 
 <pre>
     
 // Retrieve data.
-dataSource.getData(requestVector);
-dataSource.setCurrentLoad(1);
+session.getData(requestVector);
+session.setCurrentLoad(1);
 
 // Go over the object fields (metaData consists of one record with field names).
 int field_num=0;
 std::cout << "Object fields:" << std::endl;
 std::string name, type;
-dataSource.next();
-while(!dataSource.isEOR()) {
-  dataSource.assignString(&name);
-  dataSource.assignString(&type);
+session.next();
+while(!session.isEOR()) {
+  session.assignString(&name);
+  session.assignString(&type);
   ++field_num;
   std::cout << field_num << " " << (name) << " " << (type) << std::endl;
 }
 
 // Go over the actual records and extract them according to their type.
-std::cout << " \nResult contains "<< dataSource.getNumberOfRecords() <<" objects.\n";
-while(dataSource.next()) {
+std::cout << " \nResult contains "<< session.getNumberOfRecords() <<" objects.\n";
+frontier::AnyData ad;
+std::string stringBuf;
+std::string *vs = &stringBuf;
+while(session.next()) {
   for(int k=0;k<field_num;k++) {
-    frontier::AnyData ad;
-    dataSource.getAnyData(&ad);
+    session.getAnyData(&ad);
     switch(ad.type()) {
       case frontier::BLOB_TYPE_INT4:
         int vi = ad.getInt();
@@ -166,14 +190,13 @@ while(dataSource.next()) {
         std::cout<<vl;
         break;
       case frontier::BLOB_TYPE_ARRAY_BYTE:
-        std::string *vs = ad.getString();
-        if(!vs) {
+        ad.assignString(vs);
+        if(vs->size() != 0) {
           std::cout<<"NULL";
         }
         else {
           str_escape_quota(vs);
           std::cout << '\'' << (*vs) <<'\'';
-          delete vs;
         }
         break;
       default:
@@ -185,8 +208,10 @@ while(dataSource.next()) {
 
 </pre>
 
-<li> All exceptions that can be thrown from the Frontier libraries inherit
-from the <em>FrontierException</em> class. Therefore, one should be able to enclose all Frontier calls into try/catch block as follows:
+<li> All exceptions that can be thrown from the Frontier libraries
+inherit from the <em>FrontierException</em> class. Therefore, one
+should be able to enclose all Frontier calls into try/catch block as
+follows:
 
 <pre>
 try {
@@ -199,13 +224,15 @@ catch(const frontier::FrontierException& e) {
 
 </pre>
 
-All frontier exceptions (e.g., <em>ConfigurationError</em>, <em>InvalidArgument</em>, <em>NetworkProblem</em>, etc.)  are listed in the <em>include/frontier_client/FrontierException.hpp</em> file.
+All frontier exceptions (e.g., <em>ConfigurationError</em>,
+<em>InvalidArgument</em>, <em>NetworkProblem</em>, etc.)  are listed
+in the <em>include/frontier_client/FrontierException.hpp</em> file.
 
-
-<li> Working example of a frontier C++ client can be found in the file  <em>test-req.cc</em> in the source code distribution.
+<p>
+<li> A working example of a frontier C++ client can be found in the file
+<em>test-req.cc</em> in the source code distribution.
 
 </ul>
-
 
 
 
@@ -214,22 +241,40 @@ All frontier exceptions (e.g., <em>ConfigurationError</em>, <em>InvalidArgument<
 
 <ul>
 <li>
-Simple python frontier client <em> fnget.py</em> can be found in the frontier client distribution. 
+Simple python frontier client <em> fnget.py</em> can be found in the
+frontier/client directory. 
+
 <li>
 Example usage: 
 
 <pre>
 
-svpc> ./fnget.py --url=http://edge.fnal.gov:8000/FrontierCMS/Frontier --sql="SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION"
+$ ./fnget.py --url=http://edge.fnal.gov:8000/FrontierCMS/Frontier --sql="SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION"
 Using Frontier URL:  http://edge.fnal.gov:8000/FrontierCMS/Frontier
 Query:  SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
 Decode results:  True
 Refresh cache:  False
 
 Frontier Request:
-http://edge.fnal.gov:8000/FrontierCMS/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOB&p1=eNoly8EKwjAMANBfyW03/8BDndEV26akdeIphK0DoTJw3f8reH8vocM.Q0/u7oME4xEuTB7Y5GBvNB4ikRNi8SZGG67ylwkeAzLCiJwshWOne1vf2l6TzGXRvTZZ1o8Mk9ZY5rI1rVsHxGdkOD0hUrL5976NEifp
+http://edge.fnal.gov:8000/FrontierCMS/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=eNoly8EKwjAMANBfyW03/8BDndEV26akdeIphK0DoTJw3f8reH8vocM.Q0/u7oME4xEuTB7Y5GBvNB4ikRNi8SZGG67ylwkeAzLCiJwshWOne1vf2l6TzGXRvTZZ1o8Mk9ZY5rI1rVsHxGdkOD0hUrL5976NEifp
 
-...
+
+Query started:  01/03/07 16:42:44
+Query ended:  01/03/07 16:42:44
+Query time: 0.0153760910034 [seconds]
+
+Query result:
+&lt;?xml version="1.0" encoding="US-ASCII"?&gt;
+&lt;!DOCTYPE frontier SYSTEM "http://frontier.fnal.gov/frontier.dtd"&gt;
+&lt;frontier version="3.4" xmlversion="1.0"&gt;
+ &lt;transaction payloads="1"&gt;
+  &lt;payload type="frontier_request" version="1" encoding="BLOBzip"&gt;
+   &lt;data&gt;eJxjY2Bg4Hb29wn19Yv3c/R1ZQPyOcIcg5w9HIOM2EE8Jk8XMM0c4B+MyhD39Qxx9Q2O93B29Alw
+dXENDnH0ifeFKpfGKhnm6BPqakRIgQlYAbtvsH9QiCtB44wJKTAEK2D1dImHug3KBAABPDT5&lt;/data&gt;
+   &lt;quality error="0" md5="a573175c652667ec4b47fa4f3dba6040" records="11" full_size="252"/&gt;
+  &lt;/payload&gt; &lt;/transaction&gt;
+&lt;/frontier&gt;
+
 
 Fields:
      COLUMN_NAME     VARCHAR2
@@ -238,27 +283,26 @@ Records:
      ID
      POS
      POS
-    MITEMS_HCALPEDESTALS_ITEM_MID
-    MITEMS_HCALPEDESTALS_ITEM_MV_2
-    MITEMS_HCALPEDESTALS_ITEM_MV_4
+     MITEMS_HCALPEDESTAL_MID
+     MITEMS_HCALPEDESTAL_MVALUE2
+     MITEMS_HCALPEDESTAL_MVALUE4
 
 MSORTED
-    MITEMS_HCALPEDESTALS_ITEM_MV_3
-    MITEMS_HCALPEDESTALS_ITEM_MV_1
-    ID_ID
-    ID_ID
-svpc>
+     MITEMS_HCALPEDESTAL_MVALUE3
+     MITEMS_HCALPEDESTAL_MVALUE1
+     ID_ID
+     ID_ID
+$
 
 </pre>
 
 </ul>
 
 
-    <hr>
-    <address><a href="mailto:veseli@fnal.gov">Sinisa Veseli</a></address>
-<!-- Created: Tue Sep 13 15:27:11 CDT 2005 -->
+<hr>
+<address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- hhmts star -->
-Last modified: Wed Sep 28 11:03:44 CDT 2005
+Last modified: 4 January 2007
 <!-- hhmts end -->
   </body>
 </html>
