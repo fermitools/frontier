@@ -97,7 +97,7 @@ for frontierQuery in frontierQueries:
   if statsFlag:
     pass
   else:
-    print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S", queryStart)
+    print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart)
 
   t1 = time.time()
   connection.request("GET", frontierRequest, None, headers)
@@ -111,7 +111,7 @@ for frontierQuery in frontierQueries:
     size=len(result)
     print duration,size,size/duration
   else:
-    print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S", queryEnd)
+    print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryEnd)
     print "Query time: %s [seconds]\n" % (t2-t1)
 
   print "Response:", response.status, response.reason

@@ -86,7 +86,7 @@ queryStart = time.localtime()
 if statsFlag:
   pass
 else:
-  print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S", queryStart)
+  print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart)
 
 t1 = time.time()
 result = urllib2.urlopen(request).read()
@@ -97,7 +97,7 @@ if statsFlag:
   size=len(result)
   print duration,size,size/duration
 else:
-  print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S", queryEnd)
+  print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryEnd)
   print "Query time: %s [seconds]\n" % (t2-t1)
 
 if decodeFlag:
