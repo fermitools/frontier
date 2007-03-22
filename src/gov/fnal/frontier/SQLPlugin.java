@@ -43,13 +43,14 @@ public class SQLPlugin implements FrontierPlugin
         default:
        }
      }
-    sb.append('\n');
+    //sb.append('\n'); //needed with Base64.decode, not Base64Coder.decode
     param=sb.toString();
     //System.out.println("Pre param ["+param+"]");
     
     byte[] bascii=param.getBytes("US-ASCII");
     
-    byte[] bbin=Base64.decode(bascii,0,bascii.length);
+    //byte[] bbin=Base64.decode(bascii,0,bascii.length);
+    byte[] bbin=Base64Coder.decode(bascii);
     
     byte[] buffer=new byte[2048];    
     java.io.ByteArrayOutputStream baos=new java.io.ByteArrayOutputStream();
@@ -66,7 +67,7 @@ public class SQLPlugin implements FrontierPlugin
     byte[] bsql=baos.toByteArray();    
     
     String sql=new String(bsql,"US-ASCII");
-    System.out.println("SQL ["+sql+"]");
+    Frontier.Log("SQL ["+sql+"]");
 
     String stmp=sql.toLowerCase();
     if(stmp.indexOf("drop ")>=0 ||
@@ -81,6 +82,11 @@ public class SQLPlugin implements FrontierPlugin
     try
      {
       stmt=con.createStatement();
+      stmt.setFetchSize(100); /* huge performance boost for small rows */
+      			      /* causes much better row prefetching */
+			      /* 1000 & 10000 are slightly faster but cause
+			         executeQuery to abort with OutOfMemoryError
+				 for some queries with larger rows. */
       rs=stmt.executeQuery(sql);
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
@@ -107,12 +113,15 @@ public class SQLPlugin implements FrontierPlugin
         for(int i=1;i<=cnum;i++)
          {
           String t=rsmd.getColumnTypeName(i);
-	  if (t=="BLOB")
+	  if(t=="BLOB")
 	   {
 	    Blob blob=rs.getBlob(i);
 	    //byte[] b=blob.getBytes((long)1,(int)blob.length());
 	    //enc.writeBytes(b);
-	    enc.writeStream(blob.getBinaryStream(),(int)blob.length());
+	    if(blob!=null)
+	      enc.writeStream(blob.getBinaryStream(),(int)blob.length());
+	    else
+	      enc.writeString("");
 	   }
 	  else
 	   {
@@ -129,7 +138,6 @@ public class SQLPlugin implements FrontierPlugin
       if(rs!=null) try{rs.close();}catch(Exception e){}
       if(stmt!=null) try{stmt.close();}catch(Exception e){}
      }        
-    //System.out.println("SQLPlugin.fp_get(): returning row_count="+row_count);
     return row_count;
    }
 
