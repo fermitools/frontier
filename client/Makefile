@@ -31,6 +31,14 @@ else
   ZLIB_INC     =      -I${ZLIB_DIR}/include
 endif
 
+ifndef OPENSSL_DIR
+  OPENSSL_LD_FLAGS=
+  OPENSSL_INC     =
+else
+  OPENSSL_LD_FLAGS=   -L${OPENSSL_DIR}/lib
+  OPENSSL_INC     =   -I${OPENSSL_DIR}/include
+endif
+
 # GCC settings
 DEBUG_OPTIM     =       -g -O2
 FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
@@ -42,9 +50,9 @@ COPT		=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO		=	c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
-INC		=	-I${EXPAT_DIR}/include ${ZLIB_INC} -I./include -I.
+INC		=	-I${EXPAT_DIR}/include ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
 LIBDIR		=
-LIBS		= 	${ZLIB_LD_FLAGS} -lz
+LIBS		= 	${OPENSSL_LD_FLAGS} -lssl ${ZLIB_LD_FLAGS} -lz 
 
 OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
