@@ -48,6 +48,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->data_pos=0;
   c->data_size=0;
   c->content_length=-1;
+  c->url_suffix="";
   
   *ec=FRONTIER_OK;
   return c;
@@ -126,6 +127,12 @@ void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh)
  }
 
  
+void frontierHttpClnt_setUrlSuffix(FrontierHttpClnt *c,char *suffix)
+ {
+  /* note that no copy is made -- caller must insure longevity of suffix */
+  c->url_suffix=suffix;
+ }
+
  
 void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id)
  {
@@ -313,11 +320,11 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   
   if(c->using_proxy)
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s %s/%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,url,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s %s/%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,url,c->url_suffix,fui_server->host);
    }
   else
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s /%s/%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,url,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s /%s/%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,url,c->url_suffix,fui_server->host);
    }
   if(len>=FN_REQ_BUF)
    {
