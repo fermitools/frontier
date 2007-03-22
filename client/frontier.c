@@ -24,6 +24,9 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <fcntl.h>
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
 
 
 int frontier_log_level;
@@ -63,6 +66,28 @@ char *frontier_str_copy(const char *str)
 
   return ret;
  }
+
+/* this returns the real owner of grid jobs */
+static char *getX509Subject()
+ {
+  char *filename=getenv("X509_USER_PROXY");
+  BIO *biof=NULL;
+  X509 *x509cert=NULL;
+  char *subject=NULL;
+
+  if(filename==NULL)return NULL;
+  biof=BIO_new(BIO_s_file());
+  if(BIO_read_filename(biof,filename)!=0)
+   {
+    x509cert=PEM_read_bio_X509_AUX(biof,0,0,0);
+    if(x509cert!=NULL)
+      subject=X509_NAME_oneline(X509_get_subject_name(x509cert),0,0);
+   }
+
+  if (biof != NULL) BIO_free(biof);
+  if (x509cert != NULL) X509_free(x509cert);
+  return subject;
+ }
  
 
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
@@ -77,6 +102,7 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   uid_t uid;
   struct passwd *pwent;
   pid_t pid;
+  char *x509Subject;
   
   if(initialized) return FRONTIER_OK;
 
@@ -122,8 +148,9 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   uid=getuid();
   pwent=getpwuid(uid);
   pid=getpid();
+  x509Subject=getX509Subject();
 
-  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %d %s(%d) %s",frontier_api_version,pid,pwent->pw_name,uid,pwent->pw_gecos);
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %d %s(%d) %s",frontier_api_version,pid,pwent->pw_name,uid,(x509Subject!=NULL)?x509Subject:pwent->pw_gecos);
   
   initialized=1;
   
