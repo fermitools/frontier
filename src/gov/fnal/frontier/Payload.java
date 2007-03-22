@@ -134,7 +134,7 @@ public class Payload
          enc.close(); 
          md5=md5Digest(enc);
 	 full_size=enc.getOutputSize();
-         System.out.println("Full uncompressed payload size: " + full_size);
+         Frontier.Log("rows="+rec_num+", full size="+full_size);
         }
        return;
       
