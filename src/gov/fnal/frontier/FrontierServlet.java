@@ -10,19 +10,30 @@ public final class FrontierServlet extends HttpServlet
  {
   private static final String frontierVersion="3.4";
   private static final String xmlVersion="1.0";
+  private static int count_total=0;
+  private static int count_current=0;
+  private static Boolean mutex=new Boolean(true);
   
   public static String frontierVersion() {return frontierVersion;}
   public static String xmlVersion() {return xmlVersion;}
+  public static int numCurrentThreads() {return count_current;}
+
+  private static String throwableDescript(Throwable e)
+   {
+    return e+" at "+e.getStackTrace()[0];
+
+   }
   
   public void init()
    {
+    Thread.currentThread().setName("FrontierInit");
     try
      {
       Frontier.init();
      }
-    catch(Exception e)
+    catch(Throwable e)
      {
-      Frontier.Log("Frontier.init() failes:",e);
+      Frontier.Log("Frontier.init() failed:",e);
      }
    }
    
@@ -32,6 +43,14 @@ public final class FrontierServlet extends HttpServlet
     ServletOutputStream out=null;
     Frontier frontier=null;
     
+    long timestamp=(new java.util.Date()).getTime();
+    synchronized(mutex) 
+     {
+      ++count_total;
+      ++count_current;
+     }        
+    Thread.currentThread().setName("id="+count_total);
+
     try
      {
       out=response.getOutputStream();      
@@ -43,11 +62,13 @@ public final class FrontierServlet extends HttpServlet
         response.setDateHeader("Expires",frontier.time_expire);
         if(frontier.noCache) response.setHeader("Pragma","no-cache");
        }
-      catch(Exception e)
+      catch(Throwable e)
        {
         Frontier.Log("Error: ",e);
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
-        ResponseFormat.putGlobalError(out,"Error: "+e);
+        ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
+	out=null;
+	frontier=null;
         return;
        }
        
@@ -64,10 +85,10 @@ public final class FrontierServlet extends HttpServlet
             p.send(out);
             ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num,p.full_size);
            }
-          catch(Exception e)
+          catch(Throwable e)
            {
             Frontier.Log("Error while processing payload "+i+": ",e);
-            ResponseFormat.payload_end(out,1,""+e,"",-1,0);
+            ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
             break;
            }
          }
@@ -77,14 +98,21 @@ public final class FrontierServlet extends HttpServlet
         ResponseFormat.transaction_end(out);
        }
      }
-    catch(Exception e)
+    catch(Throwable e)
      {
       Frontier.Log("Error: MUST NEVER HAPPEN HERE!: ",e);
-      ResponseFormat.putGlobalError(out,"Error: "+e);
+      ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
      }
     finally
      {
       ResponseFormat.close(out);
+
+      Frontier.Log("stop threads:"+count_current+" elapsed msecs="+((new java.util.Date()).getTime()-timestamp));
+
+      synchronized (mutex) 
+       {
+        --count_current;
+       }
      }
    }
  }
