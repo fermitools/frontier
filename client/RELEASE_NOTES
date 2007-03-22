@@ -1,5 +1,12 @@
 $Id$
 
+v2_7_2 - 22 March 2007 (dwd)
+ - Added a feature to use the subject name from a grid certificate
+   found at $X509_USER_PROXY if it is present, instead of the user's
+   name from /etc/passwd.
+ - Added OPENSSL_DIR Makefile command line variable to specify a
+   non-default directory for the openssl package.
+
 v2_7_1 - 22 March 2007 (dwd)
  - Changed frontier_client library user-requested reload from 
    immediate cache refresh to adding "&ttl=short" to the query URL.
