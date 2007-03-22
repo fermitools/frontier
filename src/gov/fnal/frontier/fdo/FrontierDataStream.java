@@ -41,11 +41,16 @@ public class FrontierDataStream
    }
    
    
-  public String getString(String key) throws Exception
+  public String getOptionalString(String key) throws Exception
    {
     if(mode!=BY_NAME) throw new Exception("Wrong mode");
     
-    String ret=(String)mapParam.get(key);
+    return (String)mapParam.get(key);
+   }
+
+  public String getString(String key) throws Exception
+   {
+    String ret=getOptionalString(key);
     if(ret==null) throw new Exception("Required parameter "+key+" is not defined.");
     return ret;
    }
