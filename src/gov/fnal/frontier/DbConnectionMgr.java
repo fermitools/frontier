@@ -62,7 +62,7 @@ public class DbConnectionMgr
       if (!shuttingDown)
        {
         try {ResponseFormat.keepalive(sos);}catch(Exception e){}
-        System.out.println("DB mgr acquire sent keepalive");
+        Frontier.Log("DB mgr acquire sent keepalive");
        }
     }
    public synchronized void shutdown()
@@ -89,7 +89,7 @@ public class DbConnectionMgr
       timer.cancel();
       timerTask.shutdown();
      }
-    System.out.println("DB mgr connection acquired");
+    Frontier.Log("DB mgr connection acquired");
     ResponseFormat.data_start(sos);
     return connection;
    }
