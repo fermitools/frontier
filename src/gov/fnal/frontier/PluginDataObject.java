@@ -73,7 +73,7 @@ public class PluginDataObject implements FrontierDataObject
     finally
      {
       //System.out.println("fdo_get releasing dbm");
-      if(con!=null) try{dbm.release(con,sos);}catch(Exception e){}
+      if(con!=null) try{dbm.release(con,sos);}catch(Exception e){Frontier.Log("Error releasing DB connection"+e);}
      }
     return rec_num;
    }
