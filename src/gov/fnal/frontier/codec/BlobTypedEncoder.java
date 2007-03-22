@@ -16,6 +16,11 @@ package gov.fnal.frontier.codec;
 import java.io.*;
 import java.security.*;
 import java.util.zip.*;
+// jcraft's ZOutputStream is an alternate implementation of zipping that seemed
+//  at first to be much faster that java.util.zip's DeflaterOutputStream but it
+//  turned out that putting a BufferedOutputStream before zipper (after the
+//  unbuffered DataOutputStream) had the same speedup effect
+//import com.jcraft.jzlib.*;
 import gov.fnal.frontier.fdo.Encoder;
 
 /* this filter can be inserted to print out a datastream in hex */
@@ -60,14 +65,20 @@ public class BlobTypedEncoder implements Encoder
   public static final byte TYPE_EOR=7;   // End Of Record
 
   private static final int BUFFER_SIZE=16384;
+  // measurements showed 512 to be optimimum size for unzipped BLOBs
+  //  on 100mbit net but had little effect on zipped BLOBs
+  private static final int IN_BUFFER_SIZE=512;
+
+  private byte[] streambuf=null;
 
   private DataOutputStream os;
   private MessageDigest md5;
-  private Base64.OutputStream b64os;
-  private ByteArrayOutputStream baos;
+  //private Base64.OutputStream b64os;
+  private Base64CoderOutputStream b64os;
   private OutputStream channel;
   private DigestOutputStream dgos;
-  private DeflaterOutputStream dfos;
+  private DeflaterOutputStream zos;
+  //private ZOutputStream zos;
 
   private int ziplevel=0;
   private long out_size=0;
@@ -76,8 +87,8 @@ public class BlobTypedEncoder implements Encoder
    {
     channel=out;
 
-    baos=new ByteArrayOutputStream();
-    b64os=new Base64.OutputStream(baos);
+    //b64os=new Base64.OutputStream(out);
+    b64os=new Base64CoderOutputStream(out);
     md5=MessageDigest.getInstance("MD5");
     dgos=new DigestOutputStream(b64os,md5);
 
@@ -107,32 +118,26 @@ public class BlobTypedEncoder implements Encoder
      throw new Exception("Unrecognized BLOB sub-encoding "+param);
     //System.out.println("BLOB zip level ["+ziplevel+"]");
 
+    OutputStream selectos;
     if (ziplevel > 0)
      {
-      dfos=new DeflaterOutputStream(dgos,new Deflater(ziplevel));
-      os=new DataOutputStream(dfos);
+      zos=new DeflaterOutputStream(dgos,new Deflater(ziplevel));
+      //zos=new ZOutputStream(dgos,ziplevel);
+      selectos=zos;
      }
     else
      {
-      dfos=null;
-      os=new DataOutputStream(dgos);
+      zos=null;
+      selectos=dgos;
      }
+    os=new DataOutputStream(new BufferedOutputStream(selectos,BUFFER_SIZE));
    }
 
 
-  private void dump() throws Exception
-   {
-    //System.out.println("dump()");
-    baos.writeTo(channel);
-    baos.reset();
-   }
-   
-   
   public void writeEOR() throws Exception
    {
     os.writeByte(TYPE_EOR);
     out_size+=1;
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
 
@@ -141,7 +146,6 @@ public class BlobTypedEncoder implements Encoder
     os.writeByte(TYPE_INT4);
     os.writeInt(v);
     out_size+=5;
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeLong(long v) throws Exception
@@ -149,7 +153,6 @@ public class BlobTypedEncoder implements Encoder
     os.writeByte(TYPE_INT8);
     os.writeLong(v);
     out_size+=9;
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeDouble(double v) throws Exception
@@ -157,7 +160,6 @@ public class BlobTypedEncoder implements Encoder
     os.writeByte(TYPE_DOUBLE);
     os.writeDouble(v);
     out_size+=9;
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeFloat(float v) throws Exception
@@ -165,7 +167,6 @@ public class BlobTypedEncoder implements Encoder
     os.writeByte(TYPE_FLOAT);
     os.writeFloat(v);
     out_size+=5;
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeString(String v) throws Exception
@@ -183,7 +184,6 @@ public class BlobTypedEncoder implements Encoder
       os.writeBytes(v);
       out_size+=v.length();
      }
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeBytes(byte[] v) throws Exception
@@ -202,7 +202,6 @@ public class BlobTypedEncoder implements Encoder
       os.write(v,0,v.length);
       out_size+=v.length;
      }
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public void writeStream(InputStream is,int len) throws Exception
@@ -214,23 +213,23 @@ public class BlobTypedEncoder implements Encoder
      }
     else
      {
+      if(streambuf==null)
+       streambuf=new byte[IN_BUFFER_SIZE];
       os.writeByte(TYPE_ARRAY_BYTE);
       os.writeInt(len);
       out_size+=5;
       int in_size=len;
-      byte[] b=new byte[BUFFER_SIZE];
       while(in_size>0)
        {
         int read_size;
-	if(in_size>=BUFFER_SIZE)
-	  read_size=is.read(b,0,BUFFER_SIZE);
+	if(in_size>=IN_BUFFER_SIZE)
+	  read_size=is.read(streambuf,0,IN_BUFFER_SIZE);
 	else
-	  read_size=is.read(b,0,in_size);
+	  read_size=is.read(streambuf,0,in_size);
 	if(read_size<=0)
 	  throw new Exception("Blob read unexpectedly returned "+read_size);
-        os.write(b,0,read_size);
+        os.write(streambuf,0,read_size);
 	in_size-=read_size;
-        if(baos.size()>=BUFFER_SIZE) dump();
        }
       out_size+=len;
      }
@@ -249,7 +248,6 @@ public class BlobTypedEncoder implements Encoder
       os.writeLong(v.getTime());
       out_size+=9;
      }
-    if(baos.size()>=BUFFER_SIZE) dump();
    }
 
   public long getOutputSize()
@@ -266,18 +264,17 @@ public class BlobTypedEncoder implements Encoder
   public void flush() throws Exception
    {
     os.flush();
-    if (dfos!=null) dfos.finish();
+    if (zos!=null) zos.finish();
     b64os.flushBase64();
-    dump();
    }
 
 
   public void close() throws Exception
    {
     flush();
-    os.close();
+    // don't close the 'channel' because that may still be used
     os=null;
-    dfos=null;
+    zos=null;
     b64os=null;
    }
  }
