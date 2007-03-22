@@ -19,6 +19,7 @@
 #define FRONTIER_ENV_CONNECTTIMEOUTSECS	"FRONTIER_CONNECTTIMEOUTSECS"
 #define FRONTIER_ENV_READTIMEOUTSECS	"FRONTIER_READTIMEOUTSECS"
 #define FRONTIER_ENV_WRITETIMEOUTSECS	"FRONTIER_WRITETIMEOUTSECS"
+#define FRONTIER_ENV_FORCERELOAD	"FRONTIER_FORCERELOAD"
 
 struct s_FrontierConfig
  {
@@ -31,6 +32,7 @@ struct s_FrontierConfig
   int connect_timeout_secs;
   int read_timeout_secs;
   int write_timeout_secs;
+  char *force_reload;
   int retrieve_zip_level;
  };
 typedef struct s_FrontierConfig FrontierConfig;
@@ -46,6 +48,8 @@ void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int level);
 int frontierConfig_getConnectTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int level);
 int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg);
+void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload);
+const char *frontierConfig_getForceReload(FrontierConfig *cfg);
 void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int level);
 int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level);
