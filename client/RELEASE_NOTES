@@ -1,5 +1,19 @@
 $Id$
 
+v2_7_1 - 22 March 2007 (dwd)
+ - Changed frontier_client library user-requested reload from 
+   immediate cache refresh to adding "&ttl=short" to the query URL.
+   This tells the Frontier servlet that the time-to-live of the cache
+   of the query should be a "short" time, as defined by the server.
+   This requires servlet version 3.5 to work properly; older servlet
+   versions will still work but everything will expire at the same
+   time.
+ - Added complex connection string option "forcereload" and
+   environment variable $FRONTIER_FORCERELOAD.  A value of "short"
+   in either forces an immediate cache refresh on the short time-to-
+   live queries and a value of "long" forces a refresh on all queries.
+   The default is "none".
+
 v2_7_0 - 4 January 2007 (dwd)
  Note that this release is not binary compatible, although it is
  source compatible.
