@@ -9,16 +9,16 @@ import java.io.*;
 
 public final class Frontier
  {
-  private static int count_total=0;
-  private static int count_current=0;
-  private static Boolean mutex=new Boolean(true);
   private static final SimpleDateFormat date_fmt=new SimpleDateFormat("MM/dd/yy HH:mm:ss.SSS z Z");    
   private static boolean initialized=false;    
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
   private static String conf_xsd_table;
-  private static String conf_cache_expire_hourofday; // hour of day to expire
-  private static String conf_cache_expire_seconds;   // seconds to expire
+  private static final int SHORTCACHE=0;
+  private static final int LONGCACHE=1;
+  private static final int NUMCACHELENGTHS=2;
+  private static String[] conf_cache_expire_hourofday = new String[NUMCACHELENGTHS];
+  private static String[] conf_cache_expire_seconds = new String[NUMCACHELENGTHS];
   
   private static String conf_monitor_node;  // MonAlisa stuff, node address events to be sent to
   private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
@@ -61,8 +61,18 @@ public final class Frontier
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
-    conf_cache_expire_hourofday=getPropertyString(prb,"CacheExpireHourOfDay");
-    conf_cache_expire_seconds=getPropertyString(prb,"CacheExpireSeconds");
+    conf_cache_expire_hourofday[LONGCACHE]=getPropertyString(prb,"LongCacheExpireHourOfDay");
+    conf_cache_expire_seconds[LONGCACHE]=getPropertyString(prb,"LongCacheExpireSeconds");
+    conf_cache_expire_hourofday[SHORTCACHE]=getPropertyString(prb,"ShortCacheExpireHourOfDay");
+    conf_cache_expire_seconds[SHORTCACHE]=getPropertyString(prb,"ShortCacheExpireSeconds");
+
+    // If no short time set, default it to 0 seconds
+    if((conf_cache_expire_hourofday[SHORTCACHE]==null)&&
+       (conf_cache_expire_seconds[SHORTCACHE]==null))
+      conf_cache_expire_seconds[SHORTCACHE]="0";
+
+    Frontier.Log("long hour: "+conf_cache_expire_hourofday[LONGCACHE]+", long secs: "+conf_cache_expire_seconds[LONGCACHE]);
+    Frontier.Log("short hour: "+conf_cache_expire_hourofday[SHORTCACHE]+", short secs: "+conf_cache_expire_seconds[SHORTCACHE]);
 
     conf_monitor_node=getPropertyString(prb,"MonitorNode");
     conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");
@@ -95,67 +105,51 @@ public final class Frontier
    {
     if(!initialized) init();
 
-    int local_id;
-    long timestamp=(new java.util.Date()).getTime();
     DbConnectionMgr connMgr=null;
     ArrayList commandList=null;
     
-    synchronized(mutex) 
-     {
-      ++count_total;
-      ++count_current;
-      local_id=count_total;
-     }        
-    Thread.currentThread().setName("id="+local_id);
     if(monitor!=null) monitor.increment();
 
-    try 
+    logClientDesc(req);          
+    connMgr=DbConnectionMgr.getDbConnectionMgr();
+    commandList=Command.parse(req);
+    payloads_num=commandList.size();
+    aPayloads=new ArrayList();
+    int cachelength=LONGCACHE;
+    for(int i=0;i<payloads_num;i++)
      {
-      logClientDesc(req);          
-      connMgr=DbConnectionMgr.getDbConnectionMgr();
-      commandList=Command.parse(req);
-      payloads_num=commandList.size();
-      aPayloads=new ArrayList();
-      for(int i=0;i<payloads_num;i++)
-       {
-        Command cmd=(Command)commandList.get(i);
-        Payload p=new Payload(cmd,connMgr);
-        if(p.noCache) noCache=true;
-        if(time_expire<0) time_expire=p.time_expire;
-        if(p.time_expire<time_expire) time_expire=p.time_expire;
-        aPayloads.add(p);
-       }
-      if(conf_cache_expire_seconds!=null)
-       {
-        //if set, use configured expiration seconds instead of Payload's
-	//milliseconds
-	time_expire=Long.parseLong(conf_cache_expire_seconds)*1000;
-       }
-      Calendar cal=Calendar.getInstance();
-      long now=cal.getTimeInMillis();
-      if(conf_cache_expire_hourofday!=null)
-       {
-        //use expiration hour-of-day if it is set and sooner
-	int hourofday=Integer.parseInt(conf_cache_expire_hourofday);
-	if(hourofday<=cal.get(Calendar.HOUR_OF_DAY))
-	  cal.add(Calendar.DAY_OF_YEAR,1);
-	cal.set(Calendar.HOUR_OF_DAY,hourofday);
-	cal.set(Calendar.MINUTE,0);
-	cal.set(Calendar.SECOND,0);
-	long diff=cal.getTimeInMillis()-now;
-	if(diff<time_expire)
-	  time_expire=diff;
-       }
-      time_expire+=now;
-     } 
-    finally 
-     {
-      synchronized (mutex) 
-       {
-        --count_current;
-       }
-      Log("stop threads:"+count_current+" ET="+((new java.util.Date()).getTime()-timestamp));
+      Command cmd=(Command)commandList.get(i);
+      Payload p=new Payload(cmd,connMgr);
+      if(p.noCache) noCache=true;
+      String ttl=cmd.fds.getOptionalString("ttl");
+      if((ttl!=null)&&(ttl.equals("short"))) cachelength=SHORTCACHE;
+      if(time_expire<0) time_expire=p.time_expire;
+      if(p.time_expire<time_expire) time_expire=p.time_expire;
+      aPayloads.add(p);
      }
+    if(conf_cache_expire_seconds[cachelength]!=null)
+     {
+      //if set, use configured expiration seconds for requested cache length
+      //  instead of Payload's milliseconds
+      time_expire=Long.parseLong(conf_cache_expire_seconds[cachelength])*1000;
+     }
+    Calendar cal=Calendar.getInstance();
+    long now=cal.getTimeInMillis();
+    if(conf_cache_expire_hourofday[cachelength]!=null)
+     {
+      //use expiration hour-of-day if it is set and sooner
+      int hourofday=Integer.parseInt(conf_cache_expire_hourofday[cachelength]);
+      if(hourofday<=cal.get(Calendar.HOUR_OF_DAY))
+	cal.add(Calendar.DAY_OF_YEAR,1);
+      cal.set(Calendar.HOUR_OF_DAY,hourofday);
+      cal.set(Calendar.MINUTE,0);
+      cal.set(Calendar.SECOND,0);
+      long diff=cal.getTimeInMillis()-now;
+      if(diff<time_expire)
+	time_expire=diff;
+     }
+    Frontier.Log("seconds to expiration="+(time_expire/1000));
+    time_expire+=now;
    }
 
    
@@ -166,7 +160,7 @@ public final class Frontier
     client_desc.append("servlet_version:");
     client_desc.append(FrontierServlet.frontierVersion());
     client_desc.append(" start threads:");
-    client_desc.append(count_current);
+    client_desc.append(FrontierServlet.numCurrentThreads());
     client_desc.append(" query ");
     client_desc.append(queryString);
     client_desc.append(" raddr ");
@@ -202,7 +196,7 @@ public final class Frontier
    }
 
      
-  public static void Log(String msg,Exception e)
+  public static void Log(String msg,Throwable e)
    {     
     ByteArrayOutputStream baos=new ByteArrayOutputStream();
     PrintWriter pw=new PrintWriter(baos);
