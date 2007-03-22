@@ -22,6 +22,7 @@
 static int default_connect_timeout_secs = -1;
 static int default_read_timeout_secs = -1;
 static int default_write_timeout_secs = -1;
+static char *default_force_reload = 0;
 static int default_retrieve_zip_level = -1;
 static char *default_logical_server = 0;
 static char *default_physical_servers = 0;
@@ -63,7 +64,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   //  by a complex server string next.
   frontierConfig_setRetrieveZipLevel(cfg,frontierConfig_getDefaultRetrieveZipLevel());
 
-  // Likewise for the timeouts
+  // Likewise for the timeouts and forcereload
   if(default_connect_timeout_secs==-1)
    {
     if((env=getenv(FRONTIER_ENV_CONNECTTIMEOUTSECS))==0)
@@ -102,6 +103,15 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
    }
   frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
 
+  if(default_force_reload==0)
+   {
+    if((env=getenv(FRONTIER_ENV_FORCERELOAD))==0)
+      default_force_reload="none";
+    else
+     default_force_reload=env;
+   }
+  frontierConfig_setForceReload(cfg,default_force_reload);
+
   // Add configured server and proxy.
   *errorCode=frontierConfig_addServer(cfg,server_url);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
@@ -133,6 +143,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Connect timeoutsecs is %d",cfg->connect_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Read timeoutsecs is %d",cfg->read_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
 
   return cfg;
 
@@ -187,6 +198,8 @@ void frontierConfig_delete(FrontierConfig *cfg)
    {
     frontier_mem_free(cfg->proxy[i]);
    }
+  
+  if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
 
   frontier_mem_free(cfg);
  }
@@ -209,6 +222,17 @@ void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
 int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg)
  {
   return cfg->read_timeout_secs;
+ }
+
+void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload)
+ {
+  if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
+  cfg->force_reload=str_dup(forcereload);
+ }
+
+const char *frontierConfig_getForceReload(FrontierConfig *cfg)
+ {
+  return cfg->force_reload;
  }
 
 void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
@@ -385,6 +409,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  frontierConfig_setReadTimeoutSecs(cfg, atoi(valp));
 	else if (strcmp(keyp, "writetimeoutsecs") == 0)
 	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
+	else if (strcmp(keyp, "forcereload") == 0)
+	  frontierConfig_setForceReload(cfg, valp);
 	else
 	 {
 	 /* else ignore unrecognized keys */
