@@ -1,5 +1,28 @@
 $Id$
 
+3.5 2007/03/22 (dwd)
+    - Cleaned up log messages so those that occur regularly all will
+      show timestamp and thread id
+    - Greatly improved performance for blobs, for small rows, and for
+      zipping
+    - Replaced Base64 encode/decode implementation with much simpler/
+      cleaner version
+    - Eliminate null pointer exception on null blobs
+    - Renamed CacheExpireSeconds and CacheExpireHourOfDay to 
+      LongCacheExpireSeconds and LongExpireHourOfDay.  Added two new
+      parameters ShortCacheExpireSeconds and ShortCacheExpireHourOfDay
+      which are the same except apply to all queries that have
+      "&ttl=short" (ttl stands for time-to-live).  The default on
+      ShortCacheExpireSeconds is 0.
+    - Catch all Throwables, not just Exceptions, so that Errors are
+      also included and debugged
+    - When an Exception or Error occurs pass the function, source file
+      number, and line number to the application in addition to the
+      name of the throwable
+    - The "stop" log message now includes the entire transaction, so
+      the number of active threads and the elapsed time are more
+      meaningful
+
 3.4 2006/10/26 (dwd)
     - Added support for oracle BLOB (Binary Large OBject) types
     - Added two optional parameters to WEB-INF/classes/config.properties:
