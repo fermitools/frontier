@@ -287,6 +287,8 @@ static int get_data(Channel *chn,const char *uri,const char *body)
  {
   int ret=FRONTIER_OK;
   char buf[8192];
+  char *force_reload;
+  int reload;
 
   if(!chn) 
    {
@@ -297,7 +299,22 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   ret=prepare_channel(chn);
   if(ret) return ret;
   
-  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,chn->reload);
+  reload=chn->reload;
+  if(!reload)
+  {
+    // Reload not requested, see if need to force a reload
+    force_reload=frontierConfig_getForceReload(chn->cfg);
+    if(strcmp(force_reload,"short")==0)
+      reload=chn->user_reload;
+    else if(strcmp(force_reload,"long")==0)
+      reload=1;
+  }
+  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,reload);
+  /* User-requested reloads are translated into a "short" time-to-live
+     where the length of time is defined by the server.  Add the suffix
+     even when reloads are forced to make sure the same URL is cleared
+     in the caches. */
+  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,chn->user_reload ? "&ttl=short" : "");
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
   
   ret=frontierHttpClnt_open(chn->ht_clnt);
@@ -351,7 +368,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
    }
   
   clnt=chn->ht_clnt;
-  chn->reload=chn->user_reload;
+  chn->reload=0;
   bzero(err_last_buf,ERR_LAST_BUF_SIZE);
   
   while(1)
@@ -378,7 +395,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
       chn->reload=1;
       continue;
      }
-    chn->reload=chn->user_reload;
+    chn->reload=0;
     
     if(clnt->cur_proxy<clnt->total_proxy)
      {
