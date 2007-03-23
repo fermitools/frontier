@@ -19,13 +19,19 @@ href="http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier/</
 <li>The distribution contains everything necessary to build C/C++ Frontier
 clients, including a recent version of expat libraries.
 
-<li> Note that if EXPAT_DIR environment variable is defined, building of the
-included expat sources will be skipped, and expat libraries from $EXPAT_DIR
-will be used.
-
-
 <li>To build the client libraries and test executables one can simply execute
 <em>make</em> in the client source directory.
+
+<li>These make command line variables can be defined to select non-default
+libraries for support packages:
+  <ul>
+  <li>
+  EXPAT_DIR - expat (overrides included library)
+  <li>
+  ZLIB_DIR - zlib (overrides system library)
+  <li>
+  OPENSSL_DIR - openssl (overrides system library)
+  </ul>
 
 <li>To prepare source code distribution file: make src-dist (will create tar
 file in the client/tmp directory)
@@ -37,21 +43,102 @@ the client/tmp directory)
 
 </ul>
 
+<h2>Client configuration</h2>
+
+Frontier client configuration can can come from a complex server
+connection string made up of multiple keyword=value pairs enclosed in
+parentheses.  For example:
+<pre>
+    (serverurl=http://cmsfrontier.cern.ch:8000)(retrieveziplevel=0)...
+</pre>
+If there are any parentheses in a server connection string, anything
+outside of parentheses is ignored (for example, it is often convenient
+to precede the string with http:// to pretend the whole string is a
+server url).  If any of the configuration items are missing from the
+server connection string, they can also be read from environment
+variables.  These are the connection string keywords and corresponding
+environment variables:
+<ul>
+<li>
+serverurl - server of the form http://host:port/servlet (:port is
+optional and defaults to 80).  Multiple serverurl keywords may be
+supplied and they will be tried in the order listed.  Environment
+variables FRONTIER_SERVER and FRONTIER_SERVER[123456] can add
+additional servers, up to a maximum of 6.  Each server string is also
+recursively parsed for parenthesized keywords.
+<li>
+proxyurl - proxy of the form http://host:port.  Multiple proxyurl
+keywords may be supplied and they will be tried in the order listed.
+Environment variables FRONTIER_PROXY and FRONTIER_PROXY[1234] can add
+additional proxies, up to a maximum of 4.
+<li>
+logicalserverurl - logical server of the form http://logical_name
+which, when encountered in a later connection as a server name, will
+be replaced by the entire rest of the complex connection string that
+the logicalserverurl keyword came from.  If logicalserverurl is not
+present in the connection string, it may come from environment variable
+FRONTIER_LOGICALSERVER and then its replacement string comes from
+FRONTIER_PHYSICALSERVERS.
+<li>
+retrieveziplevel - zip level of retrieved data, from 0 for none to
+1 for fast to 9 for best.  If not present, may come from environment
+variable FRONTIER_RETRIEVEZIPLEVEL.  Default 5.
+<li>
+connecttimeoutsecs - number of seconds before timeout on a server or
+proxy connection.  If not present, may come from environment variable
+FRONTIER_CONNECTTIMEOUTSECS.  Default 5.
+<li>
+readtimeoutsecs - number of seconds before timeout on a read from a
+server or proxy.  If not present, may come from environment variable
+FRONTIER_READTIMEOUTSECS.  Default 10.
+<li>
+writetimeoutsecs - number of seconds before timeout on a write to a
+server or proxy.  If not present, may come from environment variable
+FRONTIER_WRITETIMEOUTSECS.  Default 5.
+<li>
+forcereload - value of "short" forces an immediate cache refresh
+on all short time-to-live queries (those indicated by setReload API),
+and a value of "long"  forces an immediate refresh on all queries.
+If not present, may come from environment variable 
+FRONTIER_FORCERELOAD.  Default "none".
+</ul>
+
+<p>
+These may only come from environment variables:
+<ul>
+<li>
+FRONTIER_LOG_LEVEL - set logging level
+<ul>
+<li>
+nolog - no log output (default)
+<li>
+error - log errors
+<li>
+warning - log errors and warnings (which mainly have to do with non-fatal
+connection problems and retries)
+<li>
+debug - log errors, warnings, and verbose debug messages
+<li>
+</ul>
+FRONTIER_LOG_FILE - filename to write log messages to instead of stdout
+</ul>
+
+<p>
+Note that isn't part of frontier client but may be useful information
+to some readers: in CMS, a long connection string is constructed from
+the frontier-connect portion of site-local-config.xml in
+$CMS_PATH/SITECONF/local/JobConfig.  Blanks and quotes are removed
+from that and they're converted into the parenthesized form above,
+plus a (logicalserverurl=http://cms_conditions_data) is added so that
+form can be used a shortcut.
+
+
 <h2>C++ Test Client Usage</h2>
 
 <ul>
 
-<li> Simple C++ test executable is fn-req (file <em>test-req.cc</em>).
-There are these environment variables which can be used (actually there
-are more, but these are enough for now):
-<ul>
-<li>export FRONTIER_SERVER[1234]=&lt frontier server url &gt
-<li>export FRONTIER_PROXY[1234]= &lt proxy server url &gt
-<li>export FRONTIER_LOG_LEVEL={nolog,error,warning,debug}
-<li>export FRONTIER_LOG_FILE=filename.log
-</ul>
-
 <li>
+Simple C++ test executable is fn-req (source file <em>test-req.cc</em>).
 Here is an example of a query against the Frontier server running on
 edge.fnal.gov:
 
