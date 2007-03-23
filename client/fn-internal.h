@@ -14,7 +14,7 @@
 
 #include <http/fn-htclient.h>
 
-#define FRONTIER_ID_SIZE 128
+#define FRONTIER_ID_SIZE 256
 
 # define FRONTIER_SUCCESS 0
 # define FRONTIER_FAILURE 1
