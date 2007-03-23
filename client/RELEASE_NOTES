@@ -1,6 +1,6 @@
 $Id$
 
-v2_7_2 - 22 March 2007 (dwd)
+v2_7_2 - 23 March 2007 (dwd)
  - Added a feature to use the subject name from a grid certificate
    found at $X509_USER_PROXY if it is present, instead of the user's
    name from /etc/passwd.
