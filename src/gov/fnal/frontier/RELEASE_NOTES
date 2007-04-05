@@ -1,5 +1,9 @@
 $Id$
 
+3.6 2007/04/05 (dwd)
+    - Get the transaction id (with a -ka suffix) into log messages
+      from the keepalive thread
+
 3.5 2007/03/22 (dwd)
     - Cleaned up log messages so those that occur regularly all will
       show timestamp and thread id
