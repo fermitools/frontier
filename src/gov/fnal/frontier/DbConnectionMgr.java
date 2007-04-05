@@ -53,14 +53,17 @@ public class DbConnectionMgr
    {
    ServletOutputStream sos=null;
    boolean shuttingDown=false;
-   public KeepAliveTimerTask(ServletOutputStream os)
+   String threadName=null;
+   public KeepAliveTimerTask(String name,ServletOutputStream os)
     {
+     threadName=name;
      sos = os;
     }
    public synchronized void run()
     {
       if (!shuttingDown)
        {
+        Thread.currentThread().setName(threadName);
         try {ResponseFormat.keepalive(sos);}catch(Exception e){}
         Frontier.Log("DB mgr acquire sent keepalive");
        }
@@ -78,7 +81,8 @@ public class DbConnectionMgr
    {
     Connection connection;
     Timer timer=new Timer();
-    KeepAliveTimerTask timerTask=new KeepAliveTimerTask(sos);
+    KeepAliveTimerTask timerTask=
+        new KeepAliveTimerTask(Thread.currentThread().getName()+"-ka",sos);
     timer.schedule(timerTask,5000,5000);
     try
      {
