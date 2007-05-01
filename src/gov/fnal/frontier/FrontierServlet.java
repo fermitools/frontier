@@ -8,7 +8,7 @@ import java.util.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.6";
+  private static final String frontierVersion="3.7";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
