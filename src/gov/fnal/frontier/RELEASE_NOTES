@@ -1,5 +1,9 @@
 $Id$
 
+3.7 2007/05/01 (dwd)
+    - Send response headers as soon as possible to maximize the
+      sharing that squid does.
+
 3.6 2007/04/05 (dwd)
     - Get the transaction id (with a -ka suffix) into log messages
       from the keepalive thread
