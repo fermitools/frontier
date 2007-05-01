@@ -67,6 +67,10 @@ public class ResponseFormat
     out.print(" <transaction payloads=\"");
     out.print(num);
     out.print("\">\n");
+    /* flush here so that the header will get back to squid as soon as
+       possible, so squid can start sharing the same connection if multiple
+       requests for the same object come around the same time. */
+    out.flush();
    }
 
    
@@ -126,7 +130,7 @@ public class ResponseFormat
   static void keepalive(ServletOutputStream out) throws Exception
    {
     out.print("   <keepalive />\n");
-    out.flush();
+    out.flush(); /* make sure keepalive is sent immediately */
    }
   
   static void putGlobalError(ServletOutputStream out,String msg)
