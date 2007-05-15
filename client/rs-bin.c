@@ -9,11 +9,11 @@
  *
  */
 #include <frontier_client/frontier.h>
-#include <endian.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <strings.h>
 #include "fn-internal.h"
+#include "fn-endian.h"
 
 #define TYPED_BLOB
 
