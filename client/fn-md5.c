@@ -17,9 +17,9 @@
  *
  */
 
-#include <endian.h>
 #include <sys/types.h>
 #include <string.h>
+#include "fn-endian.h"
  
 union u_Buf32 { int v; char b[4]; };
 
