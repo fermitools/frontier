@@ -38,7 +38,7 @@ struct s_FrontierPayload
   int error;
   int error_code;
   char *error_msg;
-  char *blob;
+  unsigned char *blob;
   int blob_size;
   unsigned int nrec;
   long full_size;
@@ -95,7 +95,7 @@ struct s_RSBlob
   FrontierResponse *resp;
   int payload_error;
   const char *payload_msg;
-  const char *buf;
+  const unsigned char *buf;
   unsigned int size;
   unsigned int pos;
   unsigned int nrec;

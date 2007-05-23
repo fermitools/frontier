@@ -24,7 +24,7 @@ union u_Buf32 { int v; float f; char b[4]; };
 union u_Buf64 { long long v; double d; char b[8]; };
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-static inline int n2h_i32(const char *p) 
+static inline int n2h_i32(const unsigned char *p) 
  {
   union u_Buf32 u; 
   u.b[3]=p[0]; 
@@ -33,7 +33,7 @@ static inline int n2h_i32(const char *p)
   u.b[0]=p[3];  
   return u.v;
  }
-static inline float n2h_f32(const char *p) 
+static inline float n2h_f32(const unsigned char *p) 
  {
   union u_Buf32 u; 
   u.b[3]=p[0]; 
@@ -42,7 +42,7 @@ static inline float n2h_f32(const char *p)
   u.b[0]=p[3];  
   return u.f;
  }
-static inline long long n2h_i64(const char *p) 
+static inline long long n2h_i64(const unsigned char *p) 
  {
   union u_Buf64 u; 
   u.b[7]=p[0]; 
@@ -55,7 +55,7 @@ static inline long long n2h_i64(const char *p)
   u.b[0]=p[7];  
   return u.v;
  }
-static inline double n2h_d64(const char *p) 
+static inline double n2h_d64(const unsigned char *p) 
  {
   union u_Buf64 u; 
   u.b[7]=p[0]; 
@@ -71,19 +71,19 @@ static inline double n2h_d64(const char *p)
 #else
 #warning Big endian order
 #include <strings.h>
-static inline int n2h_i32(const char *p) 
+static inline int n2h_i32(const unsigned char *p) 
  {
   return *((int*)p);
  }
-static inline float n2h_f32(const char *p) 
+static inline float n2h_f32(const unsigned char *p) 
  {
   return *((float*)p);
  }
-static inline long long n2h_i64(const char *p) 
+static inline long long n2h_i64(const unsigned char *p) 
  {
   return *((long long*)p);
  }
-static inline double n2h_d64(const char *p) 
+static inline double n2h_d64(const unsigned char *p) 
  {
   return *((double*)p);
  }
@@ -223,7 +223,7 @@ char frontierRSBlob_checkByte(FrontierRSBlob *frs,int *ec)
 void frontierRSBlob_getArea(FrontierRSBlob *frs,char *p,unsigned int len,int *ec)
  {
   RSBlob* rs=(RSBlob *)frs;
-  const char *buf;
+  const unsigned char *buf;
   
   if(rs->pos>=rs->size-(len-1))
    {
