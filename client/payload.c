@@ -89,7 +89,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   int bin_size;
   /* uLongf needed for 64-bit uncompress! */
   uLongf blob_size;
-  char *bin_data = 0;
+  unsigned char *bin_data = 0;
   
   fpl->blob = 0;
   fpl->error = FRONTIER_OK;
@@ -127,14 +127,14 @@ int frontierPayload_finalize(FrontierPayload *fpl)
    }
 
   /* binary data is not larger than base64-encoded data */
-  bin_data=(char*)frontier_mem_alloc(fpl->md->len);
+  bin_data=(unsigned char*)frontier_mem_alloc(fpl->md->len);
   if(!bin_data)
    {
     FRONTIER_MSG(FRONTIER_EMEM);   
     fpl->error=FRONTIER_EMEM;
     goto errcleanup;
    }
-  bin_size=base64_ascii2bin(fpl->md->buf,fpl->md->len,bin_data,fpl->md->len);
+  bin_size=base64_ascii2bin((unsigned char*)fpl->md->buf,fpl->md->len,bin_data,fpl->md->len);
 
   if(bin_size<0) 
    {
@@ -167,7 +167,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     char hexdata[60*3+1];
 
     for (i=0;(i<bin_size)&&(i<(sizeof(hexdata)/3));i++)
-	sprintf(&hexdata[i*3],"%02x\n",(unsigned char)bin_data[i]);
+	sprintf(&hexdata[i*3],"%02x\n",bin_data[i]);
     hexdata[i*3]='\0';
 
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"pre-uncompressed %d byte (full size %d) payload: %s",bin_size,fpl->full_size,hexdata);
@@ -175,7 +175,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"uncompressing %d byte (full size %d) payload",bin_size,fpl->full_size);
 #endif
 
-    fpl->blob=(char*)frontier_mem_alloc(fpl->full_size);
+    fpl->blob=(unsigned char*)frontier_mem_alloc(fpl->full_size);
     if(!fpl->blob)
      {
       FRONTIER_MSG(FRONTIER_EMEM);   
@@ -238,7 +238,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
       else if(isprint(c))
         dumpdata[n++]=c;
       else
-        n+=sprintf(&dumpdata[n],"%%%02x",c);
+        n+=sprintf((char *)&dumpdata[n],"%%%02x",c);
      }
     dumpdata[n]='\0';
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"start of decoded response: %s",dumpdata);
