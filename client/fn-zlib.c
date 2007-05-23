@@ -13,7 +13,7 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
   int ret;
   long res_size=dest_size;
   
-  ret=compress2(dest,&res_size,src,src_size,9);
+  ret=compress2((Bytef *)dest,(uLongf *)&res_size,(const Bytef *)src,(uLong)src_size,9);
   switch(ret)
    {
     case Z_OK: return res_size;
@@ -27,11 +27,11 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
 int fn_gzip_str2urlenc(const char *str,int size,char **out)
  {
   int zsize;
-  char *zbuf=0;
+  unsigned char *zbuf=0;
   long zret;
   int ret;
   int asize;
-  char *abuf=0;
+  unsigned char *abuf=0;
   
   if(size>MAX_STR2URL_SIZE) return FN_ZLIB_E_TOOBIG;
 
@@ -41,7 +41,7 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   zbuf=frontier_mem_alloc(zsize);
   if(!zbuf) return FN_ZLIB_E_NOMEM;
   
-  zret=fn_gzip_str(str,size,zbuf,zsize);
+  zret=fn_gzip_str(str,size,(char *)zbuf,zsize);
   if(zret<0) {ret=zret; goto end;}
   
   asize=((int)zret)*2+3;
@@ -51,7 +51,7 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   ret=base64URL_bin2ascii(zbuf,zret,abuf,asize);
   if(ret<0) goto end;
   
-  *out=abuf;
+  *out=(char *)abuf;
   abuf=0;
   
 end:
