@@ -314,7 +314,7 @@ static int get_data(Channel *chn,const char *uri,const char *body)
  {
   int ret=FRONTIER_OK;
   char buf[8192];
-  char *force_reload;
+  const char *force_reload;
   int reload;
 
   if(!chn) 
