@@ -92,7 +92,12 @@ class Base64CoderOutputStream extends java.io.FilterOutputStream
       nsavedbytes=0;
      }
     endline(true);
-    out.flush();
+    flush();
+   }
+
+  public void flush() throws IOException
+   {
+    // don't flush "out"; save that for explicit flushing by caller
    }
  }
 
