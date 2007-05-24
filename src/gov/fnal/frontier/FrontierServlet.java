@@ -107,7 +107,17 @@ public final class FrontierServlet extends HttpServlet
      {
       ResponseFormat.close(out);
 
-      Frontier.Log("stop threads:"+count_current+" elapsed msecs="+((new java.util.Date()).getTime()-timestamp));
+      if(response.isCommitted())
+       {
+	// This means that there will be no Content-Length in the header
+	//   and that the connection will be dropped to indicate the end
+	//   of the response.
+	// It happens any time the response buffer (default 8k) is filled up
+	//  or ResponseFormat.keepalive() is called.
+        Frontier.Log("response was precommitted");
+       }
+
+      Frontier.Log("stop threads="+count_current+" msecs="+((new java.util.Date()).getTime()-timestamp));
 
       synchronized (mutex) 
        {
