@@ -273,6 +273,7 @@ public class BlobTypedEncoder implements Encoder
    {
     flush();
     // don't close the 'channel' because that may still be used
+    channel=null;
     os=null;
     zos=null;
     b64os=null;
