@@ -43,7 +43,7 @@ static inline int le_2_i32(const char *p)
 static inline void le32_to_cpu_array(u32 *buf, unsigned int words)
 {
 	while (words--) {
-		le_2_i32(buf);
+		*buf = le_2_i32(buf);
 		buf++;
 	}
 }
@@ -51,7 +51,7 @@ static inline void le32_to_cpu_array(u32 *buf, unsigned int words)
 static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 {
 	while (words--) {
-		i32_2_le(buf);
+		*buf = i32_2_le(buf);
 		buf++;
 	}
 }
