@@ -1,5 +1,9 @@
 $Id$
 
+v2_7_3 - 25 May 2007 (dwd)
+ - Ported to Intel & PowerPC Mac.  Tested on Mac OS X 10.4.9 and
+   Xcode 2.4.1 (gcc 4.0.1).
+
 v2_7_2 - 23 March 2007 (dwd)
  - Added a feature to use the subject name from a grid certificate
    found at $X509_USER_PROXY if it is present, instead of the user's
