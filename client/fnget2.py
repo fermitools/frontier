@@ -18,6 +18,8 @@ import curses.ascii
 import time
 import os.path
 
+frontierId = "fnget2.py 1.1"
+
 if sys.version < '2.4':
   print 'fnget2: python version must be at least 2.4!'
   sys.exit(1)
@@ -75,7 +77,7 @@ else:
 #open the http server connection
 connection = httplib.HTTPConnection(frontierServer)
 
-headers = {"X-Frontier-Id": "fnget2.py"}
+headers = {"X-Frontier-Id": frontierId}
 # add refresh header if needed
 if refreshFlag:
   headers["Pragma"] = "no-cache"
