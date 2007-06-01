@@ -5,6 +5,7 @@
 # for url safety), retrieves data, and decodes results
 # Author: Sinisa Veseli November 2005
 # Update: Lee Lueking added --stats-only flag for perf testing
+# Update: Dave Dykstra added version number put into frontier id
 #
 # example of usage
 # ./fnget.py --url=http://lxfs6043.cern.ch:8000/Frontier3D/Frontier 
@@ -20,6 +21,8 @@ import string
 import curses.ascii
 import time
 import os.path
+
+frontierId = "fnget.py 1.2"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
@@ -81,7 +84,7 @@ request = urllib2.Request(frontierRequest)
 if refreshFlag:
   request.add_header("pragma", "no-cache")
 
-request.add_header("X-Frontier-Id", "fnget.py")
+request.add_header("X-Frontier-Id", frontierId)
 
 # start and time query
 queryStart = time.localtime()
