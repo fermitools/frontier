@@ -81,6 +81,8 @@ request = urllib2.Request(frontierRequest)
 if refreshFlag:
   request.add_header("pragma", "no-cache")
 
+request.add_header("X-Frontier-Id", "fnget.py")
+
 # start and time query
 queryStart = time.localtime()
 if statsFlag:

@@ -75,10 +75,11 @@ else:
 #open the http server connection
 connection = httplib.HTTPConnection(frontierServer)
 
+headers = {"X-Frontier-Id": "fnget2.py"}
 # add refresh header if needed
-headers = {}
 if refreshFlag:
-  headers = {"Pragma": "no-cache"}
+  headers["Pragma"] = "no-cache"
+
 
 for frontierQuery in frontierQueries:
   print "\n-----\nQuery: ", frontierQuery
