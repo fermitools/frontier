@@ -1,5 +1,11 @@
 $Id$
 
+v2_7_4 - 26 June 2007 (dwd)
+ - Fixed portability of build of builtin expat; it wasn't working on
+    64-bit Linux since version 2.7.3 because -fPIC gcc option wasn't
+    being used.  Also upgraded builtin expat from version 1.95.8 to
+    2.0.1.
+
 v2_7_3 - 25 May 2007 (dwd)
  - Ported to Intel & PowerPC Mac.  Tested on Mac OS X 10.4.9 and
    Xcode 2.4.1 (gcc 4.0.1).
