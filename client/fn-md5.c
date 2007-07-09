@@ -29,9 +29,10 @@ typedef unsigned long long u64;
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #warning Big endian order
-static inline int le_2_i32(const char *p) 
+static inline int le_2_i32(u32 *buf) 
  {
   union u_Buf32 u; 
+  const char *p = (const char *)buf;
   u.b[3]=p[0]; 
   u.b[2]=p[1]; 
   u.b[1]=p[2]; 
