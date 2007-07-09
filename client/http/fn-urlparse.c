@@ -137,7 +137,13 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
   hints.ai_socktype=SOCK_STREAM;
   hints.ai_protocol=0;
   
+  if(fui->addr)
+   {
+    freeaddrinfo(fui->addr);
+    fui->addr=0;
+   }
   ret=getaddrinfo(fui->host,NULL,&hints,&(fui->addr));
+  fui->nextaddr=fui->addr;
   if(ret)
    {
     if(ret==EAI_SYSTEM)
