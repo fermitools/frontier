@@ -34,6 +34,7 @@ struct s_FrontierUrlInfo
   int port;
   char *path;
   struct addrinfo *addr;
+  struct addrinfo *nextaddr;
  };
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
