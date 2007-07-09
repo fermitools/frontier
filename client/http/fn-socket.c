@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 //static int total_socket=0;
 
@@ -67,6 +68,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
   struct timeval tv;
   int val;
   socklen_t s_len;
+  struct sockaddr_in *sin=(struct sockaddr_in*)(serv_addr);
   
   ret=connect(s,serv_addr,addrlen);
   if(ret==0) return FRONTIER_OK;
@@ -76,18 +78,18 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    {
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"host is down or unreachable");
+      frontier_setErrorMsg(__FILE__,__LINE__,"host %s is down or unreachable",inet_ntoa(sin->sin_addr));
       return FRONTIER_ENETWORK;
      }
     else
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
       return FRONTIER_ESYS;     
      }
    }
  
   /* non-blocking connect in progress here */
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d waiting for response",s);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d addr %s waiting for response",s,inet_ntoa(sin->sin_addr));
   FD_ZERO(&wfds);
   FD_SET(s,&wfds);
   tv.tv_sec=timeoutsecs;
@@ -98,12 +100,12 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on select when connecting to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
     return FRONTIER_ESYS;
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"connect timed out after %d seconds",timeoutsecs);
+    frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",inet_ntoa(sin->sin_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   
@@ -122,7 +124,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    }
   if(val)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",val,strerror(val));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",val,inet_ntoa(sin->sin_addr),strerror(val));
     return FRONTIER_ESYS;
    }
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connected, s=%d .",s);
