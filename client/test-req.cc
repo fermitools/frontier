@@ -49,8 +49,10 @@ int main(int argc, char **argv)
 static void print_usage(char **argv)
  {
   std::cout<<"Usage: \n"<<argv[0]<<" -h\n\tPrint this info\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] -f file_name\n\tRead query from file_name\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] \n\tRead query from stdin\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] [-n] -f file_name\n\tRead query from file_name\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] [-n] \n\tRead query from stdin\n";
+  std::cout<<"\n  [-r] means to force a reload\n";
+  std::cout<<"  [-n] means do not print data\n";
  }
  
 int do_main(int argc, char **argv)
@@ -66,6 +68,7 @@ int do_main(int argc, char **argv)
   char *file_name=0;
   int arg_ind;
   int do_reload=0;
+  int do_print=1;
   std::string sql("");
   
   try
@@ -83,7 +86,12 @@ int do_main(int argc, char **argv)
       if(strcmp(argv[1],"-r")==0)
        {
         do_reload=1;
-        arg_ind=2;
+        arg_ind++;
+       }
+      if(strcmp(argv[1],"-n")==0)
+       {
+        do_print=0;
+        arg_ind++;
        }
       if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
        {
@@ -164,6 +172,7 @@ int do_main(int argc, char **argv)
     std::cout<<"\nResult contains "<< nrec<<" objects.\n";
         
     while(ses.next()) {
+      if(!do_print)continue;
       for(int k=0;k<field_num;k++) {
         ses.getAnyData(&ad);
         switch(ad.type()) {
