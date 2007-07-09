@@ -232,7 +232,7 @@ static int open_connection(FrontierHttpClnt *c)
  {
   int ret;
   struct sockaddr_in *sin;
-  struct addrinfo *addr;
+  struct addrinfo *addr,**firstaddrp,**nextaddrp;
   FrontierUrlInfo *fui_proxy;
   FrontierUrlInfo *fui_server;
   
@@ -261,7 +261,8 @@ static int open_connection(FrontierHttpClnt *c)
       ret=frontier_resolv_host(fui_proxy);
       if(ret) return ret;
      }
-    addr=fui_proxy->addr;
+    firstaddrp=&fui_proxy->addr;
+    nextaddrp=&fui_proxy->nextaddr;
     c->using_proxy=1;
    }
   else
@@ -272,10 +273,12 @@ static int open_connection(FrontierHttpClnt *c)
       ret=frontier_resolv_host(fui_server);
       if(ret) return ret;
      }
-    addr=fui_server->addr;
+    firstaddrp=&fui_server->addr;
+    nextaddrp=&fui_server->nextaddr;
     c->using_proxy=0;
    }
      
+  addr=*nextaddrp;
   do
    {
     c->socket=frontier_socket();
@@ -292,11 +295,15 @@ static int open_connection(FrontierHttpClnt *c)
      }
        
     ret=frontier_connect(c->socket,addr->ai_addr,addr->ai_addrlen,c->connect_timeout_secs);
+    addr=addr->ai_next;
+    if(addr==0)addr=*firstaddrp;
+
     if(ret==0) break;
     
     close(c->socket);
-    addr=addr->ai_next;
-   }while(addr);
+   }while(addr!=*nextaddrp);
+
+  *nextaddrp=addr;
    
   return ret;
 }
