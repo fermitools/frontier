@@ -413,8 +413,8 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
       if(ret==FRONTIER_OK) break;
      }
     now=time(NULL);
-    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,ctime(&now),ret,frontier_getErrorMsg());
-    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed: %d %s",chn->resp->seqnum,chn->seqnum,ret,frontier_getErrorMsg());
+    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,ctime(&now),ret,frontier_getErrorMsg());
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
     if(!chn->reload)
      {
