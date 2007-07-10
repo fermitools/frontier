@@ -127,10 +127,10 @@ int do_main(int argc, char **argv)
         if(!std::cin.good()) break;
         std::getline(std::cin,tmp,'\n');       
        }
-      sql+=tmp+'\n';
+      sql+=tmp;
      }
     if(file_name) {in_file.close();}
-    std::cout<<"Entered:\n"<<sql;
+    std::cout<<"Entered:\n"<<sql<<'\n';
     
     std::string param=frontier::Request::encodeParam(sql);
     std::cout<<"Param ["<<param<<"]\n";
