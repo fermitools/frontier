@@ -210,6 +210,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
    }
   else
    {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"finalizing payload (full size %d)",bin_size);
     fpl->blob_size=bin_size;
     fpl->blob=bin_data;
    }
