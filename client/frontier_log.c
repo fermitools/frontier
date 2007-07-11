@@ -54,8 +54,8 @@ void frontier_log(int level,const char *file,int line,const char *fmt,...)
   ret+=vsnprintf(_frontier_log_msg+ret,LOG_BUF_SIZE-ret-1,fmt,ap);
   va_end(ap);
 
-  if(ret>LOG_BUF_SIZE-1)
-    ret=LOG_BUF_SIZE-1;
+  if(ret>LOG_BUF_SIZE-2)
+    ret=LOG_BUF_SIZE-2;
   
   _frontier_log_msg[ret]='\n';
   _frontier_log_msg[ret+1]=0;
