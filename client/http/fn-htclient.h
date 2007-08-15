@@ -43,6 +43,7 @@ int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
+#define FRONTIER_MAX_PERSIST_SIZE (16*1024)
 
 struct s_FrontierHttpClnt
  {
@@ -55,6 +56,7 @@ struct s_FrontierHttpClnt
   int is_refresh;
   int using_proxy;
   int content_length;
+  int total_length;
   char *url_suffix;
   char *frontier_id;
   

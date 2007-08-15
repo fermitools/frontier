@@ -496,6 +496,7 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len)
      }
     c->content_length-=available;
    }
+  c->total_length+=available;
 #endif
   bcopy(c->buf+c->data_pos,buf,available);
   c->data_pos+=available;
@@ -538,10 +539,21 @@ void frontierHttpClnt_close(FrontierHttpClnt *c)
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
+  else if(c->total_length>=FRONTIER_MAX_PERSIST_SIZE)
+   {
+    /*squid inconsistently drops persistent connections after large objects
+      (at least in squid2.6STABLE13, it drops after those that were cache
+      MISSes upstream when the object initially loaded), so make it consistent
+      and close after every large object.  This helps with load balancing.*/
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after large object");
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
   else
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"persisting connection s=%d",c->socket);
    }
+  c->total_length=0;
 #else
   frontier_socket_close(c->socket);
   c->socket=-1;
