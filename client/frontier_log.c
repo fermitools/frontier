@@ -28,6 +28,7 @@ char _frontier_log_msg[LOG_BUF_SIZE];
 
 extern int frontier_log_level;
 extern char *frontier_log_file;
+extern int frontier_log_dup;
 
 static const char *log_desc[]=
  {
@@ -60,11 +61,11 @@ void frontier_log(int level,const char *file,int line,const char *fmt,...)
   _frontier_log_msg[ret]='\n';
   _frontier_log_msg[ret+1]=0;
   
-  if(!frontier_log_file)
+  if(!frontier_log_file||(frontier_log_dup&&(level>=FRONTIER_LOGLEVEL_WARNING)))
    {
     write(1,_frontier_log_msg,ret+1);
     fsync(1);
-    return;
+    if(!frontier_log_file) return;
    }
   fd=open(frontier_log_file,O_CREAT|O_APPEND|O_WRONLY,0644);
   if(fd<0) return;

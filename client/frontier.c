@@ -31,6 +31,7 @@
 
 int frontier_log_level;
 char *frontier_log_file;
+int frontier_log_dup = 0;
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
 static int initialized=0;
@@ -130,6 +131,11 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
      }
     else
      {
+      if(*logfilename=='+')
+       {
+	frontier_log_dup=1;
+	logfilename++;
+       }
       int fd=open(logfilename,O_CREAT|O_APPEND|O_WRONLY,0644);
       if(fd<0) 
        {
