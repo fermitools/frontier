@@ -49,7 +49,7 @@ Frontier client configuration can can come from a complex server
 connection string made up of multiple keyword=value pairs enclosed in
 parentheses.  For example:
 <pre>
-    (serverurl=http://cmsfrontier.cern.ch:8000)(retrieveziplevel=0)...
+    (serverurl=http://cmsfrontier.cern.ch:8000)(retrieve-ziplevel=0)...
 </pre>
 If there are any parentheses in a server connection string, anything
 outside of parentheses is ignored (for example, it is often convenient
@@ -80,7 +80,7 @@ present in the connection string, it may come from environment variable
 FRONTIER_LOGICALSERVER and then its replacement string comes from
 FRONTIER_PHYSICALSERVERS.
 <li>
-retrieveziplevel - zip level of retrieved data, from 0 for none to
+retrieve-ziplevel - zip level of retrieved data, from 0 for none to
 1 for fast to 9 for best.  If not present, may come from environment
 variable FRONTIER_RETRIEVEZIPLEVEL.  Default 5.
 <li>
