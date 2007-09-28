@@ -285,9 +285,15 @@ int frontierConfig_getDefaultRetrieveZipLevel()
 
 void frontierConfig_setDefaultLogicalServer(const char *logical_server)
  {
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default logical server to %s", logical_server);     
+  if (logical_server != default_logical_server)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default logical server to %s", logical_server);
   if (default_logical_server != 0)
+   {
+    if ((logical_server != 0) &&
+	(strcmp(logical_server, default_logical_server) == 0))
+      return;
     frontier_mem_free(default_logical_server);
+   }
   if (logical_server != 0)
     default_logical_server = str_dup(logical_server);
   else
@@ -306,9 +312,15 @@ char *frontierConfig_getDefaultLogicalServer()
 
 void frontierConfig_setDefaultPhysicalServers(const char *physical_servers)
  {
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default physical servers to %s", physical_servers);     
+  if (physical_servers != default_physical_servers)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default physical servers to %s", physical_servers);     
   if (default_physical_servers != 0)
+   {
+    if ((physical_servers != 0) &&
+	(strcmp(physical_servers, default_physical_servers) == 0))
+      return;
     frontier_mem_free(default_physical_servers);
+   }
   if (physical_servers != 0)
     default_physical_servers = str_dup(physical_servers);
   else
