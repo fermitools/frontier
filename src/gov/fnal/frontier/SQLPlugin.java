@@ -121,7 +121,7 @@ public class SQLPlugin implements FrontierPlugin
 	    if(blob!=null)
 	      enc.writeStream(blob.getBinaryStream(),(int)blob.length());
 	    else
-	      enc.writeString("");
+	      enc.writeString(null);
 	   }
 	  else
 	   {
