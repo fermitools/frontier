@@ -308,29 +308,29 @@ Update the version number in src/gov/fnal/frontier/FrontierServlet.java
 <li>
 Commit all your changes to CVS
 <li>
-Set a cvs tag at the level (above src and client) in the format
-<tt>servlet_3_7</tt>.  This will unnecessarily add tags in the client
+Set a cvs tag at the top level (above src and client) in the format
+<tt>servlet_3_9</tt>.  This will unnecessarily add tags in the client
 directory, which can optionally be removed with cvs tag -d in the
 client directory.
 <li>
 In a scratch directory, and with CVSROOT set to
 cvsuser@cdcvs.fnal.gov:/cvs/cd do
 <br>
-<tt>cvs co -r servlet_3_7 frontier</tt>
+<tt>cvs co -r servlet_3_9 frontier</tt>
 <li>
 Prepare and release the sources:
 <br>
-<tt>mkdir Frontier_3_7</tt>
+<tt>mkdir Frontier_3_9</tt>
 <br>
-<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_3_7</tt>
+<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_3_9</tt>
 <br>
-<tt>tar zcf Frontier_servlet__3.7__src.tar.gz Frontier_3_7</tt>
+<tt>tar zcf Frontier_servlet__3.9__src.tar.gz Frontier_3_9</tt>
 <br>
-<tt>scp Frontier_servlet__3.7__src.tar.gz frontier@edge:frontier_web</tt>
+<tt>scp Frontier_servlet__3.9__src.tar.gz frontier@edge:frontier_web</tt>
 <li>
 Prepare and release the binaries:
 <br>
-<tt>cd Frontier_3_7</tt>
+<tt>cd Frontier_3_9</tt>
 <br>
 <tt>ant -f build.local clean</tt>
 <br>
@@ -339,7 +339,7 @@ Prepare and release the binaries:
 where CATALINA_HOME is set to the top level directory of a tomcat
 installation.
 <br>
-<tt>scp dist/Frontier.war frontier@edge:frontier_web/Frontier_3.7.war</tt>
+<tt>scp dist/Frontier.war frontier@edge:frontier_web/Frontier_3.9.war</tt>
 <li>
 ssh frontier@edge and edit frontier_web/index.html with the new
 version number for the server sources and binary
