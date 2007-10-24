@@ -1,5 +1,10 @@
 $Id$
 
+3.9 2007/10/24 (dwd)
+    - When a blob is null, send a null indication rather than empty.
+      This is the more correct way to handle null blobs than what was
+      put in in release 3.5.
+
 3.8 2007/05/24 (dwd)
     - Back out change from 3.7 because that ends up eliminating the
       Content-Length header from even small responses, causing squid
