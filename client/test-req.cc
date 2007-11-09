@@ -198,13 +198,15 @@ int do_main(int argc, char **argv)
             std::cout<<vl; 
             break;
           case frontier::BLOB_TYPE_ARRAY_BYTE: 
-            vs=ad.getString(); 
-            if(!vs) {
+            if(!ad.getRawStrP()) {
               std::cout<<"NULL";
             }
+	    else if (ad.getRawStrS() == 0)
+              std::cout<<"''"; 
             else {
+              vs=ad.getString(); 
               str_escape_quota(vs);
-              std::cout<<'\''<<(*vs)<<'\''; 
+              std::cout<<'\''<<(*vs)<<'\''<<'('<<ad.getRawStrS()<<')'; 
             }
             break;	  
           default: 
