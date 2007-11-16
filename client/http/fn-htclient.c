@@ -389,7 +389,7 @@ static int read_connection(FrontierHttpClnt *c)
   if(strncmp(buf,"HTTP/1.0 200 ",13) && strncmp(buf,"HTTP/1.1 200 ",13))
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s)",buf);
-    return FRONTIER_ENETWORK;        
+    return FRONTIER_EPROTO;
    }
       
   do
@@ -579,3 +579,16 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   frontier_mem_free(c);
  }
 
+char *frontierHttpClnt_curserver(FrontierHttpClnt *c)
+ {
+  if (c->cur_server<c->total_server)
+    return c->server[c->cur_server]->host;
+  return "";
+ }
+
+char *frontierHttpClnt_curproxy(FrontierHttpClnt *c)
+ {
+  if (c->cur_proxy<c->total_proxy)
+    return c->proxy[c->cur_proxy]->host;
+  return "";
+ }
