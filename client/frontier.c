@@ -427,20 +427,33 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     
     if(clnt->cur_proxy<clnt->total_proxy)
      {
-      /*cycle through proxy list*/
-      clnt->cur_proxy++;
-      if(clnt->cur_proxy<clnt->total_proxy)
+      if (ret==FRONTIER_EPROTO)
        {
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy");
-        continue;
+        /*The problem was not with the proxy, it was with the server.*/
+	/*Note that this doesn't cover the case of non-response from*/
+	/* the server because that will be a timeout which looks the*/
+	/* same as a timeout on the proxy.*/
+	/*Pretend that last proxy has been tried & reloaded.*/
+	chn->reload=1;
+	/*and fall through to try the next server*/
        }
-      else if(chn->reload)
+      else
        {
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server");
-	chn->reload=0;
-	continue;
+	/*cycle through proxy list*/
+	clnt->cur_proxy++;
+	if(clnt->cur_proxy<clnt->total_proxy)
+	 {
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxy(clnt));
+	  continue;
+	 }
+	else if(chn->reload)
+	 {
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curserver(clnt));
+	  chn->reload=0;
+	  continue;
+	 }
+	 /*else fall through to refresh the server*/
        }
-       /*else fall through to refresh the server*/
      }
 
     if(!chn->reload)
@@ -450,10 +463,10 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
        {
         tried_refresh_proxies=1;
 	clnt->cur_proxy=0;
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on proxies");
+        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on proxies starting with %s",frontierHttpClnt_curproxy(clnt));
        }
       else
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on direct connect server");
+        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on direct connect to server %s",frontierHttpClnt_curserver(clnt));
       continue;
      }
     chn->reload=0;
@@ -461,7 +474,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if(clnt->cur_server+1<clnt->total_server)
      {
       clnt->cur_server++;
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server");
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s",frontierHttpClnt_curserver(clnt));
       continue;      
      }    
     frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
