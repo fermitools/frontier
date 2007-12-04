@@ -423,6 +423,13 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
 	else if (strcmp(keyp, "forcereload") == 0)
 	  frontierConfig_setForceReload(cfg, valp);
+	else if (strcmp(keyp, "loadbalance") == 0)
+	 {
+	  if (strcmp(valp, "proxies") == 0)
+	    frontierConfig_setBalancedProxies(cfg);
+	  else if (strcmp(valp, "servers") == 0)
+	    frontierConfig_setBalancedServers(cfg);
+	 }
 	else
 	 {
 	 /* else ignore unrecognized keys */
@@ -516,4 +523,24 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
   cfg->proxy_num++;
   return FRONTIER_OK;
  } 
+
+void frontierConfig_setBalancedProxies(FrontierConfig *cfg)
+ {
+  cfg->proxies_balanced=1;
+ }
+
+int frontierConfig_getBalancedProxies(FrontierConfig *cfg)
+ {
+  return cfg->proxies_balanced;
+ }
+
+void frontierConfig_setBalancedServers(FrontierConfig *cfg)
+ {
+  cfg->servers_balanced=1;
+ }
+
+int frontierConfig_getBalancedServers(FrontierConfig *cfg)
+ {
+  return cfg->servers_balanced;
+ }
 
