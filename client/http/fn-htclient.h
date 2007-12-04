@@ -53,6 +53,11 @@ struct s_FrontierHttpClnt
   int cur_server;
   int total_proxy;
   int total_server;
+  int balance_proxies;
+  int balance_servers;
+  int first_proxy;
+  int first_server;
+  unsigned rand_seed;
   int is_refresh;
   int using_proxy;
   int content_length;
@@ -88,8 +93,10 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body);
 int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len);
 void frontierHttpClnt_close(FrontierHttpClnt *c);
 void frontierHttpClnt_delete(FrontierHttpClnt *c);
-char *frontierHttpClnt_curserver(FrontierHttpClnt *c);
 char *frontierHttpClnt_curproxy(FrontierHttpClnt *c);
+char *frontierHttpClnt_curserver(FrontierHttpClnt *c);
+void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c);
+void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c);
 
 
 #endif //__HEADER_HTTP_H_FN_HTCLIENT_H

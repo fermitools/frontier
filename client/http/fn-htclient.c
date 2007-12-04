@@ -49,6 +49,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->data_size=0;
   c->content_length=-1;
   c->url_suffix="";
+  c->rand_seed=getpid();
   
   *ec=FRONTIER_OK;
   return c;
@@ -93,6 +94,7 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   
   c->server[c->total_server]=fui;
   c->total_server++;
+  if(c->balance_servers)frontierHttpClnt_setBalancedServers(c);
   
   return FRONTIER_OK;
  }
@@ -115,7 +117,8 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
     
   c->proxy[c->total_proxy]=fui;
   c->total_proxy++;
-  
+  if(c->balance_proxies)frontierHttpClnt_setBalancedProxies(c);
+
   return FRONTIER_OK;
  }
  
@@ -579,6 +582,13 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   frontier_mem_free(c);
  }
 
+char *frontierHttpClnt_curproxy(FrontierHttpClnt *c)
+ {
+  if (c->cur_proxy<c->total_proxy)
+    return c->proxy[c->cur_proxy]->host;
+  return "";
+ }
+
 char *frontierHttpClnt_curserver(FrontierHttpClnt *c)
  {
   if (c->cur_server<c->total_server)
@@ -586,9 +596,17 @@ char *frontierHttpClnt_curserver(FrontierHttpClnt *c)
   return "";
  }
 
-char *frontierHttpClnt_curproxy(FrontierHttpClnt *c)
+void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c)
  {
-  if (c->cur_proxy<c->total_proxy)
-    return c->proxy[c->cur_proxy]->host;
-  return "";
+  c->balance_proxies=1;
+  c->first_proxy=rand_r(&c->rand_seed)%c->total_proxy;
+  c->cur_proxy=c->first_proxy;
  }
+
+void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c)
+ {
+  c->balance_servers=1;
+  c->first_server=rand_r(&c->rand_seed)%c->total_server;
+  c->cur_server=c->first_server;
+ }
+
