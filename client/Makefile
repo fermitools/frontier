@@ -44,7 +44,7 @@ DYLIBTYPE := $(shell if [ -f /usr/lib/libc.dylib ]; then echo dylib; else echo s
 
 # GCC settings
 DEBUG_OPTIM     =       -g -O2
-FNAPI_VERSION	=	GCC $(FN_VER_MAJOR).$(FN_VER_MINOR)
+FNAPI_VERSION	=	$(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
 CXX		=	c++
 CXXOPT_LIB	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
