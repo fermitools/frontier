@@ -103,6 +103,7 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   uid_t uid;
   struct passwd *pwent;
   pid_t pid;
+  char *appId;
   char *x509Subject;
   
   if(initialized) return FRONTIER_OK;
@@ -154,9 +155,12 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   uid=getuid();
   pwent=getpwuid(uid);
   pid=getpid();
+  appId=getenv("CMSSW_VERSION");
+  if(appId==NULL)
+    appId="client";
   x509Subject=getX509Subject();
 
-  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %d %s(%d) %s",frontier_api_version,pid,pwent->pw_name,uid,(x509Subject!=NULL)?x509Subject:pwent->pw_gecos);
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,pid,pwent->pw_name,uid,(x509Subject!=NULL)?x509Subject:pwent->pw_gecos);
   
   initialized=1;
   
