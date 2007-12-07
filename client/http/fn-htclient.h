@@ -32,6 +32,7 @@ struct s_FrontierUrlInfo
   char *proto;
   char *host;
   int port;
+  int haderror;
   char *path;
   struct addrinfo *addr;
   struct addrinfo *nextaddr;
@@ -93,8 +94,12 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body);
 int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len);
 void frontierHttpClnt_close(FrontierHttpClnt *c);
 void frontierHttpClnt_delete(FrontierHttpClnt *c);
-char *frontierHttpClnt_curproxy(FrontierHttpClnt *c);
-char *frontierHttpClnt_curserver(FrontierHttpClnt *c);
+int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle);
+int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle);
+int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror);
+int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror);
+char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c);
+char *frontierHttpClnt_curservername(FrontierHttpClnt *c);
 void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c);
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c);
 
