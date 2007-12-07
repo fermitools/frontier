@@ -582,14 +582,106 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   frontier_mem_free(c);
  }
 
-char *frontierHttpClnt_curproxy(FrontierHttpClnt *c)
+int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle)
+ {
+  /*don't reset anything if connection is persisting*/
+  if(c->socket==-1)
+   {
+    if(shuffle&&c->balance_proxies&&(c->total_proxy>0))
+      c->first_proxy=rand_r(&c->rand_seed)%c->total_proxy;
+    c->cur_proxy=c->first_proxy;
+   }
+  if(c->cur_proxy>=c->total_proxy)
+    return(-1);
+  if(c->proxy[c->cur_proxy]->haderror)
+    /*find one without an error*/
+    frontierHttpClnt_nextproxy(c,0);
+  return(c->cur_proxy);
+ }
+
+int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle)
+ {
+  /*don't reset anything if connection is persisting*/
+  if(c->socket==-1)
+   {
+    if(shuffle&&c->balance_servers&&(c->total_server>0))
+      c->first_server=rand_r(&c->rand_seed)%c->total_server;
+    c->cur_server=c->first_server;
+   }
+  if(c->cur_server>=c->total_server)
+    return(-1);
+  if(c->server[c->cur_server]->haderror)
+    /*find one without an error*/
+    frontierHttpClnt_nextserver(c,0);
+  return(c->cur_server);
+ }
+
+int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
+ {
+  if(curhaderror&&c->balance_proxies)
+    c->proxy[c->cur_proxy]->haderror=1;
+  /*cycle through proxy list*/
+  c->cur_proxy++;
+  if(c->cur_proxy==c->total_proxy)
+    /*wrap around in case doing load balancing*/
+    c->cur_proxy=0;
+  if(c->cur_proxy==c->first_proxy)
+    /*set to total when done*/
+    c->cur_proxy=c->total_proxy;
+  if(c->cur_proxy>=c->total_proxy)
+   {
+    /*exhausted list, clear out all errors for next try*/
+    int i;
+    for(i=0;i<c->total_proxy;i++)
+      c->proxy[i]->haderror=0;
+    return(-1);
+   }
+  if(c->proxy[c->cur_proxy]->haderror)
+    return(frontierHttpClnt_nextproxy(c,0));
+  return(c->cur_proxy);
+ }
+
+int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
+ {
+  if(curhaderror&&c->balance_servers)
+    c->server[c->cur_server]->haderror=1;
+  /*cycle through server list*/
+  c->cur_server++;
+  if(c->cur_server==c->total_server)
+    /*wrap around in case doing load balancing*/
+    c->cur_server=0;
+  if(c->cur_server==c->first_server)
+  /*cycle through server list*/
+  c->cur_server++;
+  if(c->cur_server==c->total_server)
+    /*wrap around in case doing load balancing*/
+    c->cur_server=0;
+  if(c->cur_server==c->first_server)
+    /*set to total when done*/
+    c->cur_server=c->total_server;
+  if(c->cur_server>=c->total_server)
+   {
+    /*although running out of servers is currently fatal, clear out errors
+      here just to be analagous to proxies; may be useful someday*/
+    int i;
+    for(i=0;i<c->total_server;i++)
+      c->server[i]->haderror=0;
+    return(-1);
+   }
+  if(c->server[c->cur_server]->haderror)
+    return(frontierHttpClnt_nextserver(c,0));
+  return(c->cur_server);
+ }
+
+
+char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c)
  {
   if (c->cur_proxy<c->total_proxy)
     return c->proxy[c->cur_proxy]->host;
   return "";
  }
 
-char *frontierHttpClnt_curserver(FrontierHttpClnt *c)
+char *frontierHttpClnt_curservername(FrontierHttpClnt *c)
  {
   if (c->cur_server<c->total_server)
     return c->server[c->cur_server]->host;
@@ -599,14 +691,12 @@ char *frontierHttpClnt_curserver(FrontierHttpClnt *c)
 void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c)
  {
   c->balance_proxies=1;
-  c->first_proxy=rand_r(&c->rand_seed)%c->total_proxy;
-  c->cur_proxy=c->first_proxy;
+  frontierHttpClnt_resetproxylist(c,1);
  }
 
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c)
  {
   c->balance_servers=1;
-  c->first_server=rand_r(&c->rand_seed)%c->total_server;
-  c->cur_server=c->first_server;
+  frontierHttpClnt_resetserverlist(c,1);
  }
 
