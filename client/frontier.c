@@ -400,6 +400,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   FrontierHttpClnt *clnt;
   char err_last_buf[ERR_LAST_BUF_SIZE];
   int tried_refresh_proxies=0;
+  int curproxy,curserver;
 
   if(!chn) 
    {
@@ -408,17 +409,8 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
    }
   
   clnt=chn->ht_clnt;
-  /* If not doing load balancing, always start over at the beginning
-     of the proxies & servers lists because the first one is probably
-     the best one & likely a load-balanced alias itself.  On the other
-     hand, if doing load balancing don't start over unless the
-     previous attempt failed through all the possible proxies or
-     servers, because they're all equivalent and the earlier ones
-     might have been down. */
-  if((!clnt->balance_proxies)||(clnt->cur_proxy>=clnt->total_proxy))
-    clnt->cur_proxy=clnt->first_proxy;
-  if((!clnt->balance_servers)||(clnt->cur_server>=clnt->total_server))
-    clnt->cur_server=clnt->first_server;
+  curproxy=frontierHttpClnt_resetproxylist(clnt,1);
+  curserver=frontierHttpClnt_resetserverlist(clnt,1);
   chn->reload=0;
   bzero(err_last_buf,ERR_LAST_BUF_SIZE);
   
@@ -440,7 +432,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,ctime(&now),ret,frontier_getErrorMsg());
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
-    if(clnt->cur_proxy<clnt->total_proxy)
+    if(curproxy>=0)
      {
       if (ret==FRONTIER_EPROTO)
        {
@@ -454,22 +446,15 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
        }
       else
        {
-	/*cycle through proxy list*/
-	clnt->cur_proxy++;
-	if(clnt->cur_proxy==clnt->total_proxy)
-	  /*wrap around in case doing load balancing*/
-	  clnt->cur_proxy=0;
-	if(clnt->cur_proxy==clnt->first_proxy)
-	  /*set to total when done*/
-	  clnt->cur_proxy=clnt->total_proxy;
-	if(clnt->cur_proxy<clnt->total_proxy)
+	curproxy=frontierHttpClnt_nextproxy(clnt,1);
+	if(curproxy>=0)
 	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxy(clnt));
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxyname(clnt));
 	  continue;
 	 }
 	else if(chn->reload)
 	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curserver(clnt));
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curservername(clnt));
 	  chn->reload=0;
 	  continue;
 	 }
@@ -480,29 +465,25 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if(!chn->reload)
      {
       chn->reload=1;
-      if(!tried_refresh_proxies&&(clnt->total_proxy>0))
+      if(!tried_refresh_proxies)
        {
         tried_refresh_proxies=1;
-	clnt->cur_proxy=clnt->first_proxy;
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on proxies starting with %s",frontierHttpClnt_curproxy(clnt));
+	curproxy=frontierHttpClnt_resetproxylist(clnt,0);
+	if(curproxy>=0)
+	 {
+          frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on proxies starting with %s",frontierHttpClnt_curproxyname(clnt));
+	  continue;
+	 }
        }
-      else
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on direct connect to server %s",frontierHttpClnt_curserver(clnt));
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on direct connect to server %s",frontierHttpClnt_curservername(clnt));
       continue;
      }
     chn->reload=0;
     
-    /*cycle through server list*/
-    clnt->cur_server++;
-    if(clnt->cur_server==clnt->total_server)
-      /*wrap around in case doing load balancing*/
-      clnt->cur_server=0;
-    if(clnt->cur_server==clnt->first_server)
-      /*set to total when done*/
-      clnt->cur_server=clnt->total_server;
-    if(clnt->cur_server<clnt->total_server)
+    curserver=frontierHttpClnt_nextserver(clnt,1);
+    if(curserver>=0)
      {
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s",frontierHttpClnt_curserver(clnt));
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s",frontierHttpClnt_curservername(clnt));
       continue;      
      }    
     frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
