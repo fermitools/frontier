@@ -665,12 +665,6 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
     /*wrap around in case doing load balancing*/
     c->cur_server=0;
   if(c->cur_server==c->first_server)
-  /*cycle through server list*/
-  c->cur_server++;
-  if(c->cur_server==c->total_server)
-    /*wrap around in case doing load balancing*/
-    c->cur_server=0;
-  if(c->cur_server==c->first_server)
     /*set to total when done*/
     c->cur_server=c->total_server;
   if(c->cur_server>=c->total_server)
