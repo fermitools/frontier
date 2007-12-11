@@ -1,0 +1,15 @@
+All source files in this package called "frontier_client" that are
+Copyright Fermilab are covered by the GNU Lesser General Public
+License version 3, details in the file lgpl-3.0.txt.  That file refers
+to the GNU General Public License version 3, details in the file
+gpl-3.0.txt.
+
+There is one source file fn-md5.c that is copyrighted by others and
+covered by the GNU General Public License.  See the details in the
+header of that file.  There is another pair of source files
+fn-base64.c and fn-base64.h that are covered by the python license.
+
+Also, a copy of the 'expat' package source is included in this
+distribution.  It has its own open source license.
+
+- Dave Dykstra, 10 December 2007
