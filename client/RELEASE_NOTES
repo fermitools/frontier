@@ -1,5 +1,53 @@
 $Id$
 
+v2_7_5 - 11 December 2007 (dwd)
+ - Fixed a debug log buffer overflow for long messages that has caused
+    corrupted log messages and crashes for long queries.  Doubled the
+    buffer size, and made it safely truncate if a message is too long.
+ - When there are multiple addresses for a server name (round-robin
+    DNS), frontier client now cycles through the servers each time a
+    new connection is opened.
+ - Improved load balancing by dropping persistent connections after 
+    every large (>16k) query.  Some versions of squid were already
+    inconsistently dropping connections after large queries which
+    made load balancing much worse.
+ - Added options "loadbalance=proxies" and "loadbalance=servers" to 
+    randomly select which proxy or server (respectively) to try first
+    rather than starting at the beginning of the list.
+ - Changed the retry strategy to this:
+    1. Whenever a new connection is opened, reset the proxies &
+	servers lists to start the retry order at the beginning.  If
+	doing load balancing, also randomly select a new beginning
+	proxy or server.
+    2. If an error occurs, and it is a protocol error, assume the
+	problem is with the server so go to step 4.  Otherwise the
+	error is a network error, go to step 3.  If doing load
+	balancing, also mark the erring proxy or server so it won't be
+	tried again until all the proxies or servers have had errors.
+    3. If there are multiple proxies, try them all before attempting any
+	forced refreshes, and if all proxies fail then go back to the
+	begining of the proxy list and try refreshes on them all.
+    4. If those all fail, then try all the servers in order, and if
+	those all fail then go back to the beginning of the server list
+	and try refreshes on all of them.
+ - Eliminated a compiler warning on big endian Mac (PowerPC).
+ - Included a timestamp in warning messages about connection failures.
+ - Added server address to socket error messages.
+ - The debug log now includes the full size of objects even when they
+    aren't compressed.
+ - When $FRONTIER_LOG_FILE is set and begins with "+", and 
+    $FRONTIER_LOG_LEVEL is set to warning or debug, the "+" is now
+    removed from the log file name and warning messages get sent to
+    to stdout in addition to the log file.
+ - If $CMSSW_VERSION is set, it is now included in the "frontier-id"
+    header which is sent in queries so the server can log what version
+    of CMSSW is being used (if any).  If $CMSSW_VERSION is not set, it
+    now just says "client" in that place before the frontier client
+    version number (it used to say "GCC").
+ - Added a header to all source files except the few that are imported
+    from elsewhere which says that the source is covered under the
+    GNU LGPL.  Details in COPYING.
+
 v2_7_4 - 26 June 2007 (dwd)
  - Fixed portability of build of builtin expat; it wasn't working on
     64-bit Linux since version 2.7.3 because -fPIC gcc option wasn't
