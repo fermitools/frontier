@@ -21,6 +21,7 @@
  *  License along with this program.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
+ */
 #ifndef __HEADER_H_FN_ENDIAN_H
 #define __HEADER_H_FN_ENDIAN_H
 
