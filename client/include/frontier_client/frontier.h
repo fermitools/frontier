@@ -49,7 +49,7 @@ int frontierRSBlob_getInt(FrontierRSBlob *rs,int *ec);
 long long frontierRSBlob_getLong(FrontierRSBlob *rs,int *ec);
 double frontierRSBlob_getDouble(FrontierRSBlob *rs,int *ec);
 float frontierRSBlob_getFloat(FrontierRSBlob *rs,int *ec);
-void frontierRSBlob_getArea(FrontierRSBlob *rs,char *p,unsigned int len,int *ec);
+char *frontierRSBlob_getByteArray(FrontierRSBlob *rs,unsigned int len,int *ec);
 unsigned int frontierRSBlob_getRecNum(FrontierRSBlob *rs);
 unsigned int frontierRSBlob_getPos(FrontierRSBlob *rs);
 unsigned int frontierRSBlob_getSize(FrontierRSBlob *rs);
