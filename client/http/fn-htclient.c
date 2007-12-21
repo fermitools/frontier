@@ -632,6 +632,12 @@ int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle)
 
 int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
  {
+  if(c->socket!=-1)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after proxy error\n");
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
   if(curhaderror&&c->balance_proxies)
     c->proxy[c->cur_proxy]->haderror=1;
   /*cycle through proxy list*/
@@ -657,6 +663,12 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
 
 int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
  {
+  if(c->socket!=-1)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after server error\n");
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
   if(curhaderror&&c->balance_servers)
     c->server[c->cur_server]->haderror=1;
   /*cycle through server list*/
