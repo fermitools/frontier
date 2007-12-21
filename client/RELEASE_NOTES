@@ -1,5 +1,21 @@
 $Id$
 
+v2_7_6 - 21 December 2007 (dwd)
+This release is primarily about performance improvements, mainly
+    memory performance.  This was done in a binary-compatible way.
+ - Eliminate one copy of each data item that was kept in AnyData,
+    and instead refer directly to the copy in memory that contains
+    all the data items in a query.
+ - Delete memory copies as soon as possible so there is never more
+    than two needed to be held allocated at once.
+ - Decode base64-encoded data as soon as it is read, saving 25% for
+    its space (especially significant for non-zipped queries).
+ - Keep the original data read from the frontier server in 64KB
+    chunks rather than repeatedly doubling the allocated space
+    and copying the data over (again, especially significant for
+    non-zipped queries).
+ - Replace the base64 decoding function with a faster one.
+ 
 v2_7_5 - 11 December 2007 (dwd)
  - Fixed a debug log buffer overflow for long messages that has caused
     corrupted log messages and crashes for long queries.  Doubled the
