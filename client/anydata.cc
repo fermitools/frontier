@@ -163,42 +163,14 @@ void AnyData::assignString(std::string *s)
   s->assign(oss.str());
  }
 
-char *AnyData::getStrBuf(unsigned int minsize)
- {
-  if(minsize<strbuf.s)return strbuf.p;	// existing is big enough
-
-  if(strbuf.p)
-   {
-    delete[] strbuf.p;
-    strbuf.p=0;
-    strbuf.s=0;
-   }
-
-  // keep doubling size to allocate until big enough
-  unsigned int allocsize=32; // minimum size
-  while(allocsize<minsize)
-    allocsize*=2;
-  strbuf.p=new char[allocsize];
-  if(strbuf.p)strbuf.s=allocsize;
-  return strbuf.p;
- }
-
 void AnyData::clean()
  {
-  // If cleaning an array type and it is not saved in strbuf then
-  // delete now.  This is for backward compatibility; the recommended,
-  // better-performing method is for the application to use getStrBuf()
-  // to avoid a new & delete for every piece of string data.
-  if((t==BLOB_TYPE_ARRAY_BYTE)&&v.str.p&&(v.str.p!=strbuf.p))
-   {
-    delete[] v.str.p;
-    v.str.p=NULL;
-   }
+  // the cleanup work is now done in the Session instead
+  if(sessionp)sessionp->clean();
+  sessionp=NULL;
  }
 
 AnyData::~AnyData()
  {
   clean();
-  if(strbuf.p)
-    delete[] strbuf.p;
  }
