@@ -1,28 +1,64 @@
 /*
-** Jack Jansen, CWI, July 1995.
-** Brandon Long, September 2001.
-** Python 2.3.3 code adapted by by Sergey Kosyakov, May 2004
-** See http://www.python.org for license information
-*/
+ * frontier client base64 encode/decode header
+ * 
+ * $Id$
+ *
+ *  Copyright (C) 2007  Fermilab
+ *
+ *  This program is free software: you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public License
+ *  as published by the Free Software Foundation, either version 3 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with this program.  If not, see
+ *  <http://www.gnu.org/licenses/>.
+ *
+ */
 
-#ifndef __H_BASE64_CUSTOM__
-#define __H_BASE64_CUSTOM__
+#ifndef __H_FN_BASE64__
+#define __H_FN_BASE64__
 
 #define BASE64_NOSPACE		-1
 #define BASE64_INVPADDING	-2
 
-int base64_ascii2bin(const unsigned char *ascii_data,int ascii_len,
-                     unsigned char *bin_data,int buf_size);
+struct s_fn_b64a2b_context {
+    int dlast;
+    int phase;
+};
+typedef struct s_fn_b64a2b_context fn_b64a2b_context;
+
+// decode a portion of a stream of data from base64 ascii to binary
+// caller must ensure that the ctxt structure is initialized to zero
+// When finished, *ascii_lenp will have the number of bytes left unused
+//  in the ascii data, and *bin_lenp will have the number of bytes
+//  left in the binary data.
+void fn_base64_stream_ascii2bin(fn_b64a2b_context *ctxt, 
+		const unsigned char *ascii_data,int *ascii_lenp,
+                     unsigned char *bin_data,int *bin_lenp);
                         
-int base64_bin2ascii(const unsigned char *bin_data,int bin_len,
-                     unsigned char *ascii_data,int buf_size);
+// decode from base64 ascii to binary
+// return the amount of binary data produced
+int fn_base64_ascii2bin(const unsigned char *ascii_data,int ascii_len,
+                     unsigned char *bin_data,int bin_len);
+                        
+// encode from binary to base64 ascii
+// return the amount of ascii data produced
+int fn_base64_bin2ascii(const unsigned char *bin_data,int bin_len,
+                     unsigned char *ascii_data,int ascii_len);
 
 // URL-compatible encoding. It can be fed to standard BASE64 decoder
-// after replacing: '.'->'+', '-'->'/', '_'->'=', and appending '\n'                      
-int base64URL_bin2ascii(const unsigned char *bin_data,int bin_len,
-                        unsigned char *ascii_data,int buf_size);
+// after replacing: '.'->'+', '-'->'/', '_'->'=', and appending '\n'
+// return the amount of ascii data produced
+int fn_base64URL_bin2ascii(const unsigned char *bin_data,int bin_len,
+                        unsigned char *ascii_data,int ascii_len);
                      
 
-#endif /*__H_BASE64_CUSTOM__*/
+#endif /*__H_FN_BASE64__*/
 
 
