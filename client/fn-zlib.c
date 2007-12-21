@@ -72,7 +72,7 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   abuf=frontier_mem_alloc(asize);
   if(!abuf) {ret=FN_ZLIB_E_NOMEM; goto end;}
   
-  ret=base64URL_bin2ascii(zbuf,zret,abuf,asize);
+  ret=fn_base64URL_bin2ascii(zbuf,zret,abuf,asize);
   if(ret<0) goto end;
   
   *out=(char *)abuf;
