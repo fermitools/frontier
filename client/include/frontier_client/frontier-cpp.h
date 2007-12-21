@@ -118,21 +118,21 @@ class AnyData
    int isNull;   // I do not use "bool" here because of compatibility problems [SSK]   
    int type_error;   
    BLOB_TYPE t;  // The data type
-   struct{char *p;unsigned int s;}strbuf;
+   Session *sessionp;
+   int unused1;  // for binary compatibility -- available for reuse
 
    int castToInt();
    long long castToLongLong();
    float castToFloat();
    double castToDouble();
    std::string* castToString();
-   char *getStrBuf(unsigned int minsize);
       
   public:     
    AnyData()
      :isNull(0)
      ,type_error(FRONTIER_OK)
      ,t(BLOB_TYPE_NONE)
-     {strbuf.p=0;strbuf.s=0;}
+     {sessionp=0;unused1=0;}
    
    long long getRawI8() const {return v.i8;}
    double getRawD() const {return v.d;}
@@ -207,7 +207,10 @@ class Session
    std::string *uri;
    void *internal_data;
    BLOB_TYPE last_field_type;
-   int first_row;
+   char have_saved_byte;
+   unsigned char saved_byte;
+   char first_row;
+   int num_records;
 
   public:
    
@@ -259,6 +262,7 @@ class Session
    inline int isEOR(){return (nextFieldType()==BLOB_TYPE_EOR);}  // End Of Record. THIS METHOD DOES NOT CHANGE DS POSITION !!!
    inline int isEOF(){return (getRSBinarySize()==getRSBinaryPos());} // End Of File
    int next();
+   void clean(); // for use from AnyData::clean()
  };
 
 // DataSource is a combined Session & Connection, for backward compatibility
