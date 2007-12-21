@@ -33,16 +33,26 @@
 # define FRONTIER_SUCCESS 0
 # define FRONTIER_FAILURE 1
 
+#include "fn-base64.h"
+
+struct s_FrontierMemBuf
+ {
+  struct s_FrontierMemBuf *nextbuf;
+  size_t len;
+  // data follows immediately after
+ };
+typedef struct s_FrontierMemBuf FrontierMemBuf;
 struct s_FrontierMemData
  {
-  size_t size;
-  size_t len;
-  char *buf;
+  FrontierMemBuf *firstbuf;
+  FrontierMemBuf *lastbuf;
+  size_t total;
+  fn_b64a2b_context b64context;
  };
 typedef struct s_FrontierMemData FrontierMemData;
 FrontierMemData *frontierMemData_create();
 void frontierMemData_delete(FrontierMemData *md);
-int frontierMemData_append(FrontierMemData *md,const char *buf,size_t size);
+int frontierMemData_b64append(FrontierMemData *md,const char *buf,size_t size);
 
 
 struct s_FrontierPayload
