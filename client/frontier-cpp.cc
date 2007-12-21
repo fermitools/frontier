@@ -192,6 +192,8 @@ Session::Session(Connection *connection)
   uri=NULL;
   internal_data=NULL;
   channel=connection->channel;
+  have_saved_byte=0;
+  num_records=0;
 }
   
 void Session::getData(const std::vector<const Request*>& v_req)
@@ -257,10 +259,11 @@ void Session::setCurrentLoad(int n) {
   }
   if(oldrsb) frontierRSBlob_close(oldrsb,&ec);
   
-  internal_data = rsb;
+  internal_data=rsb;
   if(getCurrentLoadError() != FRONTIER_OK) {
     throw ProtocolError(getCurrentLoadErrorMessage());
   }
+  num_records=frontierRSBlob_getRecNum(rsb);
 }
 
  
@@ -280,27 +283,21 @@ const char* Session::getCurrentLoadErrorMessage() const
 
 unsigned int Session::getRecNum()
  {
-  if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
-  }
-  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return frontierRSBlob_getRecNum(rs);
+   return num_records;
  }
 
 // Get number of records.
-unsigned int Session::getNumberOfRecords() {
-  if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
-  }
-  FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
-  return frontierRSBlob_getRecNum(rs);
-}
+unsigned int Session::getNumberOfRecords()
+ {
+  return num_records;
+ }
 
  
 unsigned int Session::getRSBinarySize()
  {
   if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
+    // this can happen at the end, return same as getRSBinaryPos
+    return 0;
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return frontierRSBlob_getSize(rs);
@@ -310,7 +307,8 @@ unsigned int Session::getRSBinarySize()
 unsigned int Session::getRSBinaryPos()
  {
   if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
+    // this can happen at the end, return same as getRSBinarySize
+    return 0;
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   return frontierRSBlob_getPos(rs);
@@ -320,18 +318,29 @@ unsigned int Session::getRSBinaryPos()
 int Session::getAnyData(AnyData* buf,int not_eor)
  {
   buf->isNull=0;
-  if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
-  }
+  buf->sessionp=this;
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
   BLOB_TYPE dt;
   
-  if(not_eor && isEOR()) {
+  if(not_eor && isEOR())
     throw InvalidArgument("EOR has been reached");
-  }
   
-  dt=frontierRSBlob_getByte(rs,&ec);
+  if(have_saved_byte)
+   {
+    //std::cout<<"using saved byte "<<(int)saved_byte<<'\n';
+    dt=saved_byte;
+    have_saved_byte=0;
+    if(dt!=BLOB_TYPE_EOR&&!internal_data)
+      throw InvalidArgument("Session::getAnyData() Current load is not set");
+   }
+  else
+   {
+    if(!internal_data)
+      throw InvalidArgument("Session::getAnyData() Current load is not set");
+    dt=frontierRSBlob_getByte(rs,&ec);
+   }
+
   //std::cout<<"Intermediate type prefix "<<(int)dt<<'\n';
   if(ec!=FRONTIER_OK) {
     throw LogicError("getAnyData() failed while getting type", ec);
@@ -361,34 +370,59 @@ int Session::getAnyData(AnyData* buf,int not_eor)
     case BLOB_TYPE_DOUBLE: buf->set(frontierRSBlob_getDouble(rs,&ec)); break;
     case BLOB_TYPE_TIME: buf->set(frontierRSBlob_getLong(rs,&ec)); break;
     case BLOB_TYPE_ARRAY_BYTE:
-       len=frontierRSBlob_getInt(rs,&ec);
-       if(ec!=FRONTIER_OK) {
-	 throw LogicError("can not get byte array length", ec);
+      len=frontierRSBlob_getInt(rs,&ec);
+      if(ec!=FRONTIER_OK)
+	throw LogicError("can not get byte array length", ec);
+      if(len<0)
+        throw LogicError("negative byte array length", ec);
+      p=frontierRSBlob_getByteArray(rs,len,&ec); 
+      if(ec==FRONTIER_OK)
+       {
+	// save the next byte and replace it with a C string terminator
+	// this avoids having to make another copy of the data
+        saved_byte=frontierRSBlob_getByte(rs,&ec);
+        //std::cout<<"saving byte "<<(int)saved_byte<<'\n';
+        have_saved_byte=1;
+        p[len]=0;
+        buf->set(len,p);
        }
-       if(len<0) {
-         throw LogicError("negative byte array length", ec);
-       }
-       p=buf->getStrBuf((unsigned int)len+1);
-       frontierRSBlob_getArea(rs,p,len,&ec); 
-       p[len]=0; // To emulate C string
-       buf->set(len,p);
-       break;
-    case BLOB_TYPE_EOR: buf->setEOR(); break;
+      break;
+    case BLOB_TYPE_EOR:
+      buf->setEOR();
+      break;
     default: 
-         //std::cout<<"Unknown type prefix "<<(int)dt<<'\n';
-         throw InvalidArgument("unknown type prefix");
+      //std::cout<<"Unknown type prefix "<<(int)dt<<'\n';
+      throw InvalidArgument("unknown type prefix");
    }
-  if(ec!=FRONTIER_OK) {
+  if(ec!=FRONTIER_OK)
     throw LogicError("can not get AnyData value", ec);
-  }
   return 0;
+ }
+
+void Session::clean()
+ {
+  if(internal_data&&isEOF())
+   {
+    int ec=FRONTIER_OK;
+    /* delete as soon as possible because RSBlob may hold large buffer */
+    frontierRSBlob_close((FrontierRSBlob*)internal_data,&ec);
+    internal_data=NULL;
+    if(ec!=FRONTIER_OK)
+      throw LogicError("can not get AnyData value", ec);
+   }
  }
  
  
 BLOB_TYPE Session::nextFieldType()
  {
+  if(have_saved_byte)
+   {
+    //std::cout<<"nextFieldType using saved byte "<<(int)saved_byte<<'\n';
+    return saved_byte;
+   }
+
   if(!internal_data) {
-    throw InvalidArgument("Current load is not set");
+    throw InvalidArgument("Session::nextFieldType() Current load is not set");
   }
   FrontierRSBlob *rs=(FrontierRSBlob*)internal_data;
   int ec=FRONTIER_OK;
