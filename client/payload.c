@@ -83,27 +83,30 @@ void frontierPayload_delete(FrontierPayload *fpl)
 
   if(fpl->error_msg) frontier_mem_free(fpl->error_msg);
 
-  frontierMemData_delete(fpl->md);
+  if(fpl->md) frontierMemData_delete(fpl->md);
+
   frontier_mem_free(fpl);
  }
 
 
 void frontierPayload_append(FrontierPayload *fpl,const char *s,int len)
  {
-  frontierMemData_append(fpl->md,s,len);
+  frontierMemData_b64append(fpl->md,s,len);
  }
 
 
 
 int frontierPayload_finalize(FrontierPayload *fpl)
  {
-  char *md5_ctx = 0;
+  char *md5_ctx=0;
   int i;
   int zipped=0;
   int bin_size;
   /* uLongf needed for 64-bit uncompress! */
   uLongf blob_size;
-  unsigned char *bin_data = 0;
+  unsigned char *bin_data=0;
+  unsigned char *p;
+  FrontierMemBuf *mb;
   
   fpl->blob = 0;
   fpl->error = FRONTIER_OK;
@@ -140,22 +143,19 @@ int frontierPayload_finalize(FrontierPayload *fpl)
      zipped=1;
    }
 
-  /* binary data is not larger than base64-encoded data */
-  bin_data=(unsigned char*)frontier_mem_alloc(fpl->md->len);
-  if(!bin_data)
+  // put all the buffered pieces together into one
+  bin_size=fpl->md->total;
+  bin_data=(unsigned char*)frontier_mem_alloc(bin_size);
+  mb=fpl->md->firstbuf;
+  p=bin_data;
+  while(mb!=0)
    {
-    FRONTIER_MSG(FRONTIER_EMEM);   
-    fpl->error=FRONTIER_EMEM;
-    goto errcleanup;
+    bcopy(((unsigned char *)mb)+sizeof(*mb),p,mb->len);
+    p+=mb->len;
+    mb=mb->nextbuf;
    }
-  bin_size=base64_ascii2bin((unsigned char*)fpl->md->buf,fpl->md->len,bin_data,fpl->md->len);
-
-  if(bin_size<0) 
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"wrong response - base64 decode failed");
-    fpl->error=FRONTIER_EPROTO;
-    goto errcleanup;
-   }
+  frontierMemData_delete(fpl->md);
+  fpl->md=0;
 
   md5_ctx=frontier_mem_alloc(frontier_md5_get_ctx_size());
   if(!md5_ctx) 
@@ -227,6 +227,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"finalizing payload (full size %d)",bin_size);
     fpl->blob_size=bin_size;
     fpl->blob=bin_data;
+    bin_data=0;
    }
 
   if(frontier_log_level>=FRONTIER_LOGLEVEL_DEBUG)
