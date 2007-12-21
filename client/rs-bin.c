@@ -234,7 +234,7 @@ char frontierRSBlob_checkByte(FrontierRSBlob *frs,int *ec)
  }
  
  
-void frontierRSBlob_getArea(FrontierRSBlob *frs,char *p,unsigned int len,int *ec)
+char *frontierRSBlob_getByteArray(FrontierRSBlob *frs,unsigned int len,int *ec)
  {
   RSBlob* rs=(RSBlob *)frs;
   const unsigned char *buf;
@@ -243,13 +243,12 @@ void frontierRSBlob_getArea(FrontierRSBlob *frs,char *p,unsigned int len,int *ec
    {
     *ec=FRONTIER_EIARG;
     frontier_setErrorMsg(__FILE__,__LINE__,"resultset size (%d bytes) violation",rs->size);
-    return;
+    return 0;
    }
   buf=rs->buf+rs->pos;
-  bcopy(buf,p,len);
   rs->pos+=len;
   *ec=FRONTIER_OK;
-  return; 
+  return (char *)buf; 
  } 
 
 
