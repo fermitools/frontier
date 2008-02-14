@@ -5,11 +5,12 @@ to the GNU General Public License version 3, details in the file
 gpl-3.0.txt.
 
 There is one source file fn-md5.c that is copyrighted by others and
-covered by the GNU General Public License.  See the details in the
-header of that file.  There is another source file fn-base64.c that is
-covered by the python license.
+covered by the GNU General Public License.  There is another source
+file fn-base64.c that is covered by the python license, and several in
+the "chashtable" directories covered by the new BSD license.  See the
+details in the files themselves.
 
 Also, a copy of the 'expat' package source is included in this
 distribution.  It has its own open source license.
 
-- Dave Dykstra, 21 December 2007
+- Dave Dykstra, 14 February 2008
