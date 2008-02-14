@@ -1,5 +1,19 @@
 $Id$
 
+v2_7_7 - 14 February 2008 (dwd)
+ - Added a local client cache, for all queries that return a result
+    that is less than a specified size, default 10000 bytes.  The
+    default size may be overridden with complex connection string
+    keyword "clientcachemaxresultsize=NNN" where NNN is the maximum
+    result size (in bytes) that will be cached.  For typical current
+    CMSSW configurations this reduces the number of queries that are
+    sent to a server by an order of magnitude.
+ - Fixed bugs in the handling of the FrontierId when a grid 
+    certificate has a subject that has illegal characters or is very
+    long, and added '@' to the list of allowed characters.
+ - Increased the maximum number of proxies from 4 to 16 and the
+    maximum number of servers from 6 to 16.
+
 v2_7_6 - 21 December 2007 (dwd)
 This release is primarily about performance improvements, mainly
     memory performance.  This was done in a binary-compatible way.
