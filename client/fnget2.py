@@ -6,6 +6,7 @@
 # Author: Sinisa Veseli November 2005
 # Update: Lee Lueking added --stats-only flag for perf testing
 # Update: Dave Dykstra modified to use HTTP/1.1 and multiple queries
+# Update: Dave Dykstra modified to also support https
 #
 #
 import sys
@@ -16,9 +17,9 @@ import zlib
 import string
 import curses.ascii
 import time
-import os.path
+import os
 
-frontierId = "fnget2.py 1.1"
+frontierId = "fnget2.py 1.2"
 
 if sys.version < '2.4':
   print 'fnget2: python version must be at least 2.4!'
@@ -27,17 +28,55 @@ if sys.version < '2.4':
 def usage():
   progName = os.path.basename(sys.argv[0])
   print "Usage:"
-  print "  %s --server=<frontier http server> --path=<path on frontier server> \\" % progName
-  print "    [--no-decode] [--refresh-cache] [--stats-only] \\"
+  print "  %s --server=<frontier http[s] server> --path=<path on frontier server> \\" % progName
+  print "    [--no-decode] [--refresh-cache]  [--retrieve-ziplevel=N] [--stats-only] \\"
   print "    --sql=<sql query> [--sql=<sql query> ...] "
   print "Example:"
   print "  %s --server=cmsfrontier.cern.ch:8000 --path=/FrontierInt/Frontier \\" % progName
   print "     --sql='select 1 from dual' --sql='select 2 from dual'"
   print "Example using a proxy:"
-  print "  %s --server=cmssrv11.fnal.gov:3128 \\" % progName
+  print "  %s --server=cmsfrontier1.fnal.gov:3128 \\" % progName
   print "     --path=http://cmsfrontier.cern.ch:8000/FrontierInt/Frontier \\"
   print "     --sql='select 1 from dual' --sql='select 2 from dual'"
+  print "Example using https:"
+  print "  %s --server=https://localhost:8443 --path=/FrontierInt/Frontier \\" % progName
+  print "     --sql='select 1 from dual' --sql='select 2 from dual'"
   print " "
+
+# this was copied from dbsHttpService.py
+def getKeyCert():
+  """
+  Gets the User key and cert if they exist otherwise throws an exception
+  """
+
+  # First presendence to HOST Certificate, RARE
+  if os.environ.has_key('X509_HOST_CERT'):
+    cert = os.environ['X509_HOST_CERT']
+    key = os.environ['X509_HOST_KEY']
+  
+  # Second preference to User Proxy, very common
+  elif os.environ.has_key('X509_USER_PROXY'):
+    cert = os.environ['X509_USER_PROXY']
+    key = cert
+
+  # Third preference to User Cert/key combination
+  elif os.environ.has_key('X509_USER_CERT'):
+    cert = os.environ['X509_USER_CERT']
+    key = os.environ['X509_USER_KEY']
+
+  # Worst case, look for proxy at default location /tmp/x509up_u$uid
+  else :
+    uid = os.getuid()
+    cert = '/tmp/x509up_u'+str(uid)
+    key = cert
+
+  #Set but not found
+  if not os.path.exists(cert) or not os.path.exists(key):
+    raise Exception("required cert/key not found at %s or %s for user '%s'" % (cert, key, os.getlogin()))
+
+  # All looks OK, still doesn't guarantee validity etc.
+  return key, cert
+  
 
 frontierServer = None
 frontierPath = None
@@ -45,6 +84,7 @@ frontierQueries = []
 decodeFlag = True
 refreshFlag = False
 statsFlag = False
+retrieveZiplevel = "zip"
 for a in sys.argv[1:]:
   arg = string.split(a, "=")
   if arg[0] == "--server":
@@ -57,6 +97,11 @@ for a in sys.argv[1:]:
     decodeFlag = False
   elif arg[0] == "--refresh-cache":
     refreshFlag = True
+  elif arg[0] == "--retrieve-ziplevel":
+    level = string.join(arg[1:], "=")
+    retrieveZiplevel="zip%s" % (level)
+    if level == "0":
+      retrieveZiplevel = ""
   elif arg[0] == "--stats-only":
     statsFlag = True
   else:
@@ -74,8 +119,14 @@ else:
   print "Decode results: ", decodeFlag
   print "Refresh cache: ", refreshFlag
 
-#open the http server connection
-connection = httplib.HTTPConnection(frontierServer)
+#open the http or https server connection
+if frontierServer[:8] == "https://":
+  key, cert = getKeyCert()
+  connection = httplib.HTTPSConnection(frontierServer[8:], None, key, cert)
+elif frontierServer[:7] == "http://":
+  connection = httplib.HTTPConnection(frontierServer[7:])
+else:
+  connection = httplib.HTTPConnection(frontierServer)
 
 headers = {"X-Frontier-Id": frontierId}
 # add refresh header if needed
@@ -86,10 +137,10 @@ if refreshFlag:
 for frontierQuery in frontierQueries:
   print "\n-----\nQuery: ", frontierQuery
   # encode query
-  encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".").replace("\n","")
+  encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
 
   # frontier request
-  frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=%s" % (frontierPath, encQuery)
+  frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s" % (frontierPath, retrieveZiplevel, encQuery)
   if statsFlag:
     pass
   else:
@@ -132,7 +183,8 @@ for frontierQuery in frontierQueries:
       if data.firstChild is not None:
 
 	row = base64.decodestring(data.firstChild.data)
-	row = zlib.decompress(row)
+        if retrieveZiplevel != "":
+          row = zlib.decompress(row)
         for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
 	  row = row.replace(c, ' ')
 
