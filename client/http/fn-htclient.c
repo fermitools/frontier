@@ -35,8 +35,7 @@
 #include <unistd.h>
 #include <ctype.h>
 
-
-#define MAX_NAME_LEN	128
+#define MAX_NAME_LEN	256
 #define URL_FMT_SRV	"http://%127[^/]/%127s"
 #define URL_FMT_PROXY	"http://%s"
 
@@ -156,6 +155,7 @@ void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id)
   int i;
   int len;
   char *p;
+  unsigned char ch;
   
   len=strlen(frontier_id);
   if(len>MAX_NAME_LEN) len=MAX_NAME_LEN;
@@ -164,11 +164,12 @@ void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id)
   c->frontier_id=frontier_mem_alloc(len+1);
   p=c->frontier_id;
   
+  // eliminate any illegal characters
   for(i=0;i<len;i++)  
    {
-    if(isalnum(frontier_id[i]) || strchr(" ;:,.<>/?=+-_{}[]()|",frontier_id[i]))
-    *p=frontier_id[i];
-    ++p;
+    ch=frontier_id[i];
+    if(isalnum(ch)||strchr(" ;:,.<>/?=+-_{}[]()|@",ch))
+      *p++=ch;
    }
   *p=0;
  } 
