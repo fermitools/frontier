@@ -708,6 +708,13 @@ char *frontierHttpClnt_curservername(FrontierHttpClnt *c)
   return "";
  }
 
+char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
+ {
+  if (c->cur_server<c->total_server)
+    return c->server[c->cur_server]->path;
+  return "";
+ }
+
 void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c)
  {
   c->balance_proxies=1;
