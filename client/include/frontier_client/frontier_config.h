@@ -27,6 +27,8 @@
 #define FRONTIER_MAX_SERVERN	6	// Max number of servers in FRONTIER_SERVER env. variable
 #define FRONTIER_MAX_PROXYN	4	// Max number of proxies in FRONTIER_PROXY env. variable
 
+#define FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE 10000
+
 #define FRONTIER_ENV_LOGICALSERVER	"FRONTIER_LOGICALSERVER"
 #define FRONTIER_ENV_PHYSICALSERVERS	"FRONTIER_PHYSICALSERVERS"
 #define FRONTIER_ENV_SERVER		"FRONTIER_SERVER"
@@ -52,6 +54,7 @@ struct s_FrontierConfig
   int write_timeout_secs;
   char *force_reload;
   int retrieve_zip_level;
+  int client_cache_max_result_size;
  };
 typedef struct s_FrontierConfig FrontierConfig;
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode);
@@ -82,6 +85,8 @@ void frontierConfig_setDefaultLogicalServer(const char *logical_server);
 char *frontierConfig_getDefaultLogicalServer();
 void frontierConfig_setDefaultPhysicalServers(const char *physical_servers);
 char *frontierConfig_getDefaultPhysicalServers();
+void frontierConfig_setClientCacheMaxResultSize(FrontierConfig *cfg,int size);
+int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg);
 
 #endif /* FRONTIER_CONFIG_H */
 
