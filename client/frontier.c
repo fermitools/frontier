@@ -33,6 +33,7 @@
 #include <string.h>
 #include <frontier_client/frontier.h>
 #include "fn-internal.h"
+#include "fn-hash.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -56,6 +57,10 @@ static char frontier_api_version[]=FNAPI_VERSION;
 static int chan_seqnum=0;
 static void channel_delete(Channel *chn);
 
+static fn_client_cache_list *client_cache_list=0;
+
+
+// our own implementation of strndup
 char *frontier_str_ncopy(const char *str, size_t len)
  {
   char *ret;
@@ -69,6 +74,7 @@ char *frontier_str_ncopy(const char *str, size_t len)
  }
 
 
+// our own implementation of strdup
 char *frontier_str_copy(const char *str)
  {
   int len=strlen(str);
@@ -189,6 +195,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   Channel *chn;
   int ret;
   const char *p;
+  fn_client_cache_list *cache_listp;
+  char *servlet;
 
   chn=frontier_mem_alloc(sizeof(Channel));
   if(!chn) 
@@ -264,6 +272,65 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   if(frontierConfig_getBalancedProxies(chn->cfg))
     frontierHttpClnt_setBalancedProxies(chn->ht_clnt);
 
+  chn->client_cache_maxsize=frontierConfig_getClientCacheMaxResultSize(chn->cfg);
+  if(chn->client_cache_maxsize>0)
+   {
+    chn->client_cache_buf=frontier_mem_alloc(chn->client_cache_maxsize);
+    if(!chn->client_cache_buf)
+     {
+      *ec=FRONTIER_EMEM;
+      FRONTIER_MSG(*ec);
+      channel_delete(chn);    
+      return (void*)0;
+     }
+
+    // get the path component of one of the servers (they're all the same)
+    //  which is the servlet name
+    servlet=frontierHttpClnt_curserverpath(chn->ht_clnt);
+
+    // locate the client cache for this servlet if it exists
+    for(cache_listp=client_cache_list;cache_listp!=NULL;cache_listp=cache_listp->next)
+     {
+      if(strcmp(cache_listp->servlet,servlet)==0)
+       {
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"using existing %s client cache for responses less than %d bytes",
+				servlet,chn->client_cache_maxsize);
+	break;
+       }
+     }
+    if(!cache_listp)
+     {
+      // doesn't yet exist, create a client cache and its list entry.
+      // note that they are never deleted.
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"creating %s client cache for responses less than %d bytes",
+      				servlet,chn->client_cache_maxsize);
+      // leave room for the servlet name after the list entry
+      cache_listp=(fn_client_cache_list *)frontier_mem_alloc(sizeof(*cache_listp)+strlen(servlet)+1);
+      if(!cache_listp)
+       {
+        *ec=FRONTIER_EMEM;
+        FRONTIER_MSG(*ec);
+        channel_delete(chn);    
+	frontier_mem_free(cache_listp);
+        return (void*)0;
+       }
+      cache_listp->table=fn_inithashtable();
+      if(!cache_listp->table)
+       {
+        *ec=FRONTIER_EMEM;
+        FRONTIER_MSG(*ec);
+        channel_delete(chn);    
+	frontier_mem_free(cache_listp);
+        return (void*)0;
+       }
+      // tack the servlet name on the end, space was allocated above
+      cache_listp->servlet=((char *)cache_listp)+sizeof(*cache_listp);
+      strcpy(cache_listp->servlet,servlet);
+      cache_listp->next=client_cache_list;
+      client_cache_list=cache_listp;
+     }
+    chn->client_cache=cache_listp;
+   }
   frontierHttpClnt_setConnectTimeoutSecs(chn->ht_clnt,
   		frontierConfig_getConnectTimeoutSecs(chn->cfg));
   frontierHttpClnt_setReadTimeoutSecs(chn->ht_clnt,
@@ -290,6 +357,7 @@ static void channel_delete(Channel *chn)
   frontierHttpClnt_delete(chn->ht_clnt);
   if(chn->resp)frontierResponse_delete(chn->resp);
   frontierConfig_delete(chn->cfg);
+  if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
   frontier_mem_free(chn);
  }
 
@@ -345,7 +413,12 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   int ret=FRONTIER_OK;
   char buf[8192];
   const char *force_reload;
+  char *uri_copy,*data_copy;
+  int uri_len;
   int reload;
+  int client_cache_bufsize;
+  fn_hashval *hashval;
+  char statbuf[128];
 
   if(!chn) 
    {
@@ -355,6 +428,15 @@ static int get_data(Channel *chn,const char *uri,const char *body)
 
   ret=prepare_channel(chn);
   if(ret) return ret;
+
+  if(!body&&(chn->client_cache_maxsize>0))
+   {
+    if((hashval=fn_hashtable_search(chn->client_cache->table,(char *)uri))!=0)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"HIT in %s client cache, skipping contacting server",chn->client_cache->servlet);
+      return write_data(chn->resp,hashval->data,hashval->len);
+     }
+   }
   
   reload=chn->reload;
   if(!reload)
@@ -381,15 +463,78 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   else ret=frontierHttpClnt_get(chn->ht_clnt,uri);
   if(ret) goto end;
   
+  if(body)client_cache_bufsize=-1;
+  else client_cache_bufsize=0;
+
   while(1)
    {
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
-    if(ret<=0) goto end;
+    if(ret<0) goto end;
+    if(ret==0) break;
 #if 0
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"read %d bytes from server",ret);
 #endif
+    if((chn->client_cache_maxsize>0)&&(client_cache_bufsize>=0))
+     {
+      if(ret+client_cache_bufsize<=chn->client_cache_maxsize)
+       {
+        bcopy(buf,chn->client_cache_buf+client_cache_bufsize,ret);
+        client_cache_bufsize+=ret;
+       }
+       else
+       {
+        //too big, don't append any more chunks that might fit
+        client_cache_bufsize=-1;
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"result too large to cache");
+       }
+     }
     ret=write_data(chn->resp,buf,ret);
     if(ret!=FRONTIER_OK)  goto end;
+   }
+
+  if(client_cache_bufsize>0)
+   {
+    uri_len=strlen(uri)+1;
+    if((uri_copy=frontier_mem_alloc(uri_len))==0)
+     {
+      ret=FRONTIER_EMEM;
+      FRONTIER_MSG(ret);
+     }
+    else if((data_copy=frontier_mem_alloc(client_cache_bufsize))==0)
+     {
+      ret=FRONTIER_EMEM;
+      FRONTIER_MSG(ret);
+      frontier_mem_free(uri_copy);
+     }
+    else if((hashval=(fn_hashval *)frontier_mem_alloc(sizeof(fn_hashval)))==0)
+     {
+      ret=FRONTIER_EMEM;
+      FRONTIER_MSG(ret);
+      frontier_mem_free(uri_copy);
+      frontier_mem_free(data_copy);
+     }
+    else
+     {
+      bcopy(uri,uri_copy,uri_len);
+      bcopy(chn->client_cache_buf,data_copy,client_cache_bufsize);
+      hashval->len=client_cache_bufsize;
+      hashval->data=data_copy;
+      if(!fn_hashtable_insert(chn->client_cache->table,uri_copy,hashval))
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,"error inserting result in client cache");
+	ret=FRONTIER_EMEM;
+	frontier_mem_free(uri_copy);
+	frontier_mem_free(data_copy);
+	frontier_mem_free(hashval);
+       }
+      else if(frontier_log_level==FRONTIER_LOGLEVEL_DEBUG)
+       {
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"inserted %d byte result in %s client cache with %d byte key",
+		client_cache_bufsize,chn->client_cache->servlet,uri_len);
+        fn_hashtable_stats(chn->client_cache->table,statbuf,sizeof(statbuf));
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s client cache hash stats: %s",chn->client_cache->servlet,statbuf);
+       }
+     }
    }
    
 end:
