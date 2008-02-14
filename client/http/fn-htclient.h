@@ -114,6 +114,7 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror);
 int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror);
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c);
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c);
+char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c);
 void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c);
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c);
 
