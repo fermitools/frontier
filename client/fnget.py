@@ -22,7 +22,7 @@ import curses.ascii
 import time
 import os.path
 
-frontierId = "fnget.py 1.2"
+frontierId = "fnget.py 1.3"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
