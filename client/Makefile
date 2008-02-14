@@ -72,7 +72,7 @@ INC		=	-I${EXPAT_DIR}/include ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
 LIBDIR		=
 LIBS		= 	${OPENSSL_LD_FLAGS} -lssl ${ZLIB_LD_FLAGS} -lz 
 
-OBJ		=	fn-base64.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
+OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
@@ -190,6 +190,9 @@ libfrontier_client.dylib: $(OBJ) http/.libs
 
 fn-base64.o: fn-base64.c $(HDR) fn-base64.h
 	$(CC) $(COPT) $(INC) -c fn-base64.c
+
+fn-hash.o: fn-hash.c $(HDR) fn-hash.h chashtable/hashtable.c chashtable/hashtable.h
+	$(CC) $(COPT) $(INC) -c fn-hash.c
 
 fn-md5.o: fn-md5.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-md5.c
