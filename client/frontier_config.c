@@ -130,6 +130,9 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
    }
   frontierConfig_setForceReload(cfg,default_force_reload);
 
+  // Default on this is not set in environment so just set it here
+  cfg->client_cache_max_result_size = FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE;
+
   // Add configured server and proxy.
   *errorCode=frontierConfig_addServer(cfg,server_url);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
@@ -162,6 +165,8 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Read timeoutsecs is %d",cfg->read_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
+
 
   return cfg;
 
@@ -355,6 +360,16 @@ char *frontierConfig_getDefaultPhysicalServers()
   return default_physical_servers;
  }
 
+void frontierConfig_setClientCacheMaxResultSize(FrontierConfig *cfg,int size)
+ {
+  cfg->client_cache_max_result_size = size;
+ }
+
+int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg)
+ {
+  return cfg->client_cache_max_result_size;
+ }
+
 static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
  {
   char *str = str_dup(server_spec);
@@ -448,6 +463,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  else if (strcmp(valp, "servers") == 0)
 	    frontierConfig_setBalancedServers(cfg);
 	 }
+	else if (strcmp(keyp, "clientcachemaxresultsize") == 0)
+	  frontierConfig_setClientCacheMaxResultSize(cfg, atoi(valp));
 	else
 	 {
 	 /* else ignore unrecognized keys */
