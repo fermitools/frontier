@@ -89,7 +89,6 @@ void fn_base64_stream_ascii2bin(fn_b64a2b_context *ctxt,
             dlast = d;
         }
     }
-done:
     ctxt->dlast = dlast;
     ctxt->phase = phase;
     *ascii_lenp = enda - ascii_data;
