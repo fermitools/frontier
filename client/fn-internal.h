@@ -101,6 +101,15 @@ int frontierResponse_finalize(FrontierResponse *fr);
 #define FRONTIER_ENV_LOG_LEVEL	"FRONTIER_LOG_LEVEL"
 #define FRONTIER_ENV_LOG_FILE	"FRONTIER_LOG_FILE"
 
+struct s_fn_hashtable;
+struct s_fn_client_cache_list {
+    struct s_fn_client_cache_list *next;
+    struct s_fn_hashtable *table;
+    char *servlet;
+};
+typedef struct s_fn_client_cache_list fn_client_cache_list;
+
+
 struct s_Channel
  {
   FrontierConfig *cfg;
@@ -111,6 +120,9 @@ struct s_Channel
   int user_reload; // reload flag desired by user
   int seqnum;      // sequence number for the channel
   int response_seqnum; // next sequence number for responses using this channel
+  fn_client_cache_list *client_cache;
+  char *client_cache_buf;
+  int client_cache_maxsize;
  };
 typedef struct s_Channel Channel;
 
