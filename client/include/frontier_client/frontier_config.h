@@ -24,8 +24,8 @@
 #ifndef FRONTIER_CONFIG_H
 #define FRONTIER_CONFIG_H
 
-#define FRONTIER_MAX_SERVERN	6	// Max number of servers in FRONTIER_SERVER env. variable
-#define FRONTIER_MAX_PROXYN	4	// Max number of proxies in FRONTIER_PROXY env. variable
+#define FRONTIER_MAX_SERVERN	16	// Max number of servers in FRONTIER_SERVER env. variable
+#define FRONTIER_MAX_PROXYN	16	// Max number of proxies in FRONTIER_PROXY env. variable
 
 #define FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE 10000
 
