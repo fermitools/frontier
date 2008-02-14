@@ -70,7 +70,7 @@ else:
   print "Refresh cache: ", refreshFlag
 
 # encode query
-encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".")
+encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
 
 # frontier request
 frontierRequest="%s?type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s" % (frontierUrl, retrieveZiplevel, encQuery)
