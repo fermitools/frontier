@@ -1,5 +1,8 @@
 $Id$
 
+3.10 2008/02/27 (dwd)
+    - Set the expiration time for exception messages to 5 minutes.
+
 3.9 2007/10/24 (dwd)
     - When a blob is null, send a null indication rather than empty.
       This is the more correct way to handle null blobs than what was
