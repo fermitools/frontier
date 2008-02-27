@@ -59,13 +59,10 @@ public final class FrontierServlet extends HttpServlet
       try
        {
         frontier=new Frontier(request,response);
-        response.setDateHeader("Expires",frontier.time_expire);
-        if(frontier.noCache) response.setHeader("Pragma","no-cache");
        }
       catch(Throwable e)
        {
-        response.setDateHeader("Expires",frontier.error_expire);
-        Frontier.Log("Error: ",e);
+        Frontier.Log("Error initializing Frontier object: ",e);
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
         ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
 	out=null;
@@ -73,6 +70,8 @@ public final class FrontierServlet extends HttpServlet
         return;
        }
        
+      if(frontier.noCache) response.setHeader("Pragma","no-cache");
+      response.setDateHeader("Expires",frontier.time_expire);
       ResponseFormat.begin(out,frontierVersion,xmlVersion);
       ResponseFormat.transaction_start(out,frontier.payloads_num);
       try
@@ -103,7 +102,7 @@ public final class FrontierServlet extends HttpServlet
     catch(Throwable e)
      {
       Frontier.Log("Error: MUST NEVER HAPPEN HERE!: ",e);
-      ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
+      ResponseFormat.putGlobalError(out,"Internal Error: "+throwableDescript(e));
      }
     finally
      {
