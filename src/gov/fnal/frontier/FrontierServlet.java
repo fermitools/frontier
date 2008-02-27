@@ -64,6 +64,7 @@ public final class FrontierServlet extends HttpServlet
        }
       catch(Throwable e)
        {
+        response.setDateHeader("Expires",frontier.error_expire);
         Frontier.Log("Error: ",e);
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
         ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
@@ -87,6 +88,7 @@ public final class FrontierServlet extends HttpServlet
            }
           catch(Throwable e)
            {
+            response.setDateHeader("Expires",frontier.error_expire);
             Frontier.Log("Error while processing payload "+i+": ",e);
             ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
             break;
