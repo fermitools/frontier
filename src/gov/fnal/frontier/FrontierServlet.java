@@ -63,6 +63,7 @@ public final class FrontierServlet extends HttpServlet
       catch(Throwable e)
        {
         Frontier.Log("Error initializing Frontier object: ",e);
+        response.setDateHeader("Expires",Frontier.errorExpireTime());
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
         ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
 	out=null;
@@ -87,8 +88,8 @@ public final class FrontierServlet extends HttpServlet
            }
           catch(Throwable e)
            {
-            response.setDateHeader("Expires",frontier.error_expire);
             Frontier.Log("Error while processing payload "+i+": ",e);
+            response.setDateHeader("Expires",Frontier.errorExpireTime());
             ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
             break;
            }
@@ -102,6 +103,7 @@ public final class FrontierServlet extends HttpServlet
     catch(Throwable e)
      {
       Frontier.Log("Error: MUST NEVER HAPPEN HERE!: ",e);
+      response.setDateHeader("Expires",Frontier.errorExpireTime());
       ResponseFormat.putGlobalError(out,"Internal Error: "+throwableDescript(e));
      }
     finally
