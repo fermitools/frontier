@@ -29,7 +29,6 @@ public final class Frontier
   
     
   public long time_expire=-1;
-  public long error_expire=0;
   public boolean noCache=false;
   public int payloads_num;
   public ArrayList aPayloads=null;
@@ -151,9 +150,14 @@ public final class Frontier
      }
     Frontier.Log("seconds to expiration="+(time_expire/1000));
     time_expire+=now;
-    error_expire=now+5*60*1000;		// errors expire in 5 minutes
    }
 
+  public static long errorExpireTime()
+   {
+    Calendar cal=Calendar.getInstance();
+    long now=cal.getTimeInMillis();
+    return now+5*60*1000;		// errors expire in 5 minutes
+   }
    
   private void logClientDesc(HttpServletRequest req) throws Exception
    {
