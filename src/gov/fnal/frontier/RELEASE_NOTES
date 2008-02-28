@@ -1,6 +1,6 @@
 $Id$
 
-3.10 2008/02/27 (dwd)
+3.10 2008/02/28 (dwd)
     - Set the expiration time for exception messages to 5 minutes.
 
 3.9 2007/10/24 (dwd)
