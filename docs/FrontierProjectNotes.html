@@ -40,19 +40,14 @@ here</a>. Note, however, that there are several external jars required:
 
 	      </ul>
 
-
-	    <li> Frontier servlet deployment notes can be found <a href=" http://edge.fnal.gov:8888/frontier/">here</a>. In order to connect to the database, one has to to know the connect strings, frontier account username/password.
-
 	</ul>
 
 <li><a href="http://www.squid-cache.org/">Squid</a>
 
 	<ul>
-	  <li> Version: <a href="http://www.squid-cache.org/Versions/v2/2.5/">2.5.x series</a>
-	    <li> Note that for recent tests we used slightly older version which Sergey compiled. This version also comes with installation scripts and can be found <a href="http://edge.fnal.gov:8888/frontier/dist/frontier_squid-1.0rc4.tar.gz">here</a>.
-
-	    <li> Also useful are Sergey's and Lee's  
- <a href="http://lynx.fnal.gov/ntier-wiki/SquidForCMS">notes<a/> on the <a href="http://lynx.fnal.gov/ntier-wiki"> Frontier Wiki<a> page.
+	  <li> Version: <a href="http://www.squid-cache.org/Versions/v2/2.6/">2.6.x series</a>
+	    <li> Get it through 
+ <a href="https://twiki.cern.ch/twiki/bin/view/CMS/SquidForCMS">instructions<a/> on the CMS twiki.
 		    
            <li> Frontier code can be tested/used without squid installation.
 
@@ -63,10 +58,7 @@ here</a>. Note, however, that there are several external jars required:
 	<ul>
 	  <li> The CVS package is <em>frontier</em> in cdcvs (CVSROOT="CVSROOT cvsuser@cdcvs.fnal.gov:/cvs/cd"), and anyone should be able to check it out. 
 
-	    <li> Notes about  servlet deployment and client installation, as well as the distribution of the latest client libraries can be found <a href=" http://edge.fnal.gov:8888/frontier/">here</a>. 
-
-	    <li> Client code requires the <a href="http://expat.sourceforge.net/"> Expat XML Parser</a>. A fairly recent version (1.95.8) is in the frontier CVS package, and has been working well. Note that the same version is used by CMS software at the moment, so that right now there is no need to update expat libraries.
-
+	    <li> Client code requires the <a href="http://expat.sourceforge.net/"> Expat XML Parser</a>. A fairly recent version (2.0.1) is in the frontier CVS package in case it can't be found externally.  Set EXPAT_DIR on the makefile command line to use an external package.
 
 	  </ul>
 </ul>
@@ -102,9 +94,6 @@ $ cat FrontierCMS.xml
 &lt;/Context&gt
 
 </pre>
-
-Note that older versions of Tomcat/Java (e.g., the one deployed on edge.fnal.gov) have the Resource Parameters specified separately (as opposed to via node attributes). This file is usually deployed in <em>conf/Catalina/localhost</em> relative to the Tomcat root directory (in the above example, the Tomcat root directory is <em>/scratch/veseli/devel/tomcat</em>).
-
 
 <li> The other two configuration  files one has to worry about is the servlet deployment file <em>web.xml</em> (deployed in the <em>webapps/FrontierCMS/WEB-INF </em>), as well
 as the configuration file <em>config.properties</em> (deployed in <em>webapps/FrontierCMS/WEB-INF/classes</em>).
@@ -273,9 +262,9 @@ Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
 <li>
 <tt>make all-dist</tt>
 <li>
-<tt>scp tmp/* frontier@edge:frontier_web</tt>
+<tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
 <li>
-<tt>ssh frontier@edge</tt> and edit frontier_web/index.html with the new
+<tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
 version numbers for the client sources and binary
 <li>
 <tt>scp tmp/*src* lxplus.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
@@ -326,7 +315,7 @@ Prepare and release the sources:
 <br>
 <tt>tar zcf Frontier_servlet__3.9__src.tar.gz Frontier_3_9</tt>
 <br>
-<tt>scp Frontier_servlet__3.9__src.tar.gz frontier@edge:frontier_web</tt>
+<tt>scp Frontier_servlet__3.9__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
 <li>
 Prepare and release the binaries:
 <br>
@@ -339,9 +328,9 @@ Prepare and release the binaries:
 where CATALINA_HOME is set to the top level directory of a tomcat
 installation.
 <br>
-<tt>scp dist/Frontier.war frontier@edge:frontier_web/Frontier_3.9.war</tt>
+<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.9.war</tt>
 <li>
-ssh frontier@edge and edit frontier_web/index.html with the new
+ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
 version number for the server sources and binary
 <li>
 To install on the server (this is in a script called upgradeservlet):
@@ -365,7 +354,7 @@ should notice the update.
 <hr>
 <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- hhmts star -->
-Last modified: 2 May 2007
+Last modified: 11 March 2008
 <!-- hhmts end -->
 </body>
 </html>

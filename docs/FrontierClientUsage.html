@@ -14,7 +14,7 @@
    
 <ul>
 <li>The latest Frontier client source code can be downloaded from <a
-href="http://edge.fnal.gov:8888/frontier/">http://edge.fnal.gov:8888/frontier/</a>.
+href="http://frontier.cern.ch/dist/">http://frontier.cern.ch/dist/</a>.
 
 <li>The distribution contains everything necessary to build C/C++ Frontier
 clients, including a recent version of expat libraries.
@@ -140,41 +140,43 @@ form can be used a shortcut.
 <li>
 Simple C++ test executable is fn-req (source file <em>test-req.cc</em>).
 Here is an example of a query against the Frontier server running on
-edge.fnal.gov:
+cmsfrontier.cern.ch:
 
 <pre>
 
 $ echo $FRONTIER_SERVER1
-http://edge.fnal.gov:8000/FrontierCMS
+http://cmsfrontier.cern.ch:8000/FrontierInt
 $ echo $FRONTIER_PROXY1
-http://cmssrv11.fnal.gov:3128
+http://cmst0frontier.cern.ch:3128
 $ echo $FRONTIER_LOG_LEVEL
 debug
 $ cat test_query.sql
-SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+SELECT COLUMN_NAME FROM CMS_COND_FRONTIER.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_EcalPedestals' ORDER BY POSITION
 $ ./fn-req -f test_query.sql
+SELECT COLUMN_NAME FROM CMS_COND_FRONTIER.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_EcalPedestals' ORDER BY POSITION
+Running Client now.....
+./fn-req  -f test_query.sql
 Entered:
-SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
-
-Param [eNoly7EKwjAQANC9X3FbN--AIbanDSa5cIkVpyO0KQiRQpv.v4L7ewENdhE6Mg-rxCmLcGWywCo6fafx5ImMEItV3mt3k78M8ByQEUbkoMmd23TU9ZPqe5I5L.koVZZ1k2FKxec57zWVvQXiHhkuL-AUdPy9pvkC3QIn-Q__]
-...
+SELECT COLUMN_NAME FROM CMS_COND_FRONTIER.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_EcalPedestals' ORDER BY POSITION
+Param [eNoly8EKwjAMANBfyW03-8DD7KIW2qSkVfEUytbBoDJw3f878PgOL6JDk8Cwe3hS6j3CVdiD8VEN06CHKFmUU2B2yqK.D8HSTf8lwuuOgvBEiZbp3OW9rZ-cllGnMue9Np3Xr.KYayhT2VquWwcsAwpc3hA42nS8H.7JKqY_]
 
 Object fields:
 1 COLUMN_NAME VARCHAR2
 
-Result contains 0 objects.
-'ID'
-'POS'
-'POS'
-'MITEMS_HCALPEDESTAL_MID'
-'MITEMS_HCALPEDESTAL_MVALUE2'
-'MITEMS_HCALPEDESTAL_MVALUE4'
-'MSORTED'
-'MITEMS_HCALPEDESTAL_MVALUE3'
-'MITEMS_HCALPEDESTAL_MVALUE1'
-'ID_ID'
-'ID_ID'
-$
+Result contains 12 objects.
+'M_PEDESTALS_MAPPED_TYPE_RMS__1'(30)
+'POS'(3)
+'ID'(2)
+'M_PEDESTALS_KEY_TYPE'(20)
+'M_PEDESTALS_MAPPED_TYPE_RMS_X1'(30)
+'M_PEDESTALS_MAPPED_TYPE_RMS_X6'(30)
+'M_PEDESTALS_MAPPED_TYPE_MEAN_1'(30)
+'M_PEDESTALS_MAPPED_TYPE_MEAN_2'(30)
+'M_PEDESTALS_MAPPED_TYPE_MEAN_3'(30)
+'POS'(3)
+'ID_ID'(5)
+'ID_ID'(5)
+
 
 </pre>
 
@@ -198,7 +200,7 @@ example of creating an instance of each:
 ...
 
 std::list<std::string> serverList;
-serverList.push_back("http://edge.fnal.gov:8000/FrontierCMS");
+serverList.push_back("http://frontier.cern.ch:8000/FrontierInt");
 std::list<std::string> proxyList;
 frontier::Connection connection(serverList, proxyList);
 frontier::Session session(&connection);
@@ -336,51 +338,49 @@ Example usage:
 
 <pre>
 
-$ ./fnget.py --url=http://edge.fnal.gov:8000/FrontierCMS/Frontier --sql="SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION"
-Using Frontier URL:  http://edge.fnal.gov:8000/FrontierCMS/Frontier
-Query:  SELECT COLUMN_NAME FROM RATNIKOV.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_HcalPedestals' ORDER BY POSITION
+$ ./fnget.py --url=http://cmsfrontier.cern.ch:8000/FrontierInt/Frontier --sql="SELECT COLUMN_NAME FROM CMS_COND_FRONTIER.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_EcalPedestals' ORDER BY POSITION"
+Using Frontier URL:  http://cmsfrontier.cern.ch:8000/FrontierInt/Frontier
+Query:  SELECT COLUMN_NAME FROM CMS_COND_FRONTIER.POOL_OR_MAPPING_COLUMNS WHERE VERSION='automatic_default_for_EcalPedestals' ORDER BY POSITION
 Decode results:  True
 Refresh cache:  False
 
 Frontier Request:
-http://edge.fnal.gov:8000/FrontierCMS/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=eNoly8EKwjAMANBfyW03/8BDndEV26akdeIphK0DoTJw3f8reH8vocM.Q0/u7oME4xEuTB7Y5GBvNB4ikRNi8SZGG67ylwkeAzLCiJwshWOne1vf2l6TzGXRvTZZ1o8Mk9ZY5rI1rVsHxGdkOD0hUrL5976NEifp
+http://cmsfrontier.cern.ch:8000/FrontierInt/Frontier?type=frontier_request:1:DEFAULT&encoding=BLOBzip&p1=eNoly8EKwjAMANBfyW03-8DD7KIW2qSkVfEUytbBoDJw3f878PgOL6JDk8Cwe3hS6j3CVdiD8VEN06CHKFmUU2B2yqK.D8HSTf8lwuuOgvBEiZbp3OW9rZ-cllGnMue9Np3Xr.KYayhT2VquWwcsAwpc3hA42nS8H.7JKqY_
 
-
-Query started:  01/03/07 16:42:44
-Query ended:  01/03/07 16:42:44
-Query time: 0.0153760910034 [seconds]
+Query started:  03/11/08 15:50:15 CDT
+Query ended:  03/11/08 15:50:15 CDT
+Query time: 0.54229593277 [seconds]
 
 Query result:
 &lt;?xml version="1.0" encoding="US-ASCII"?&gt;
 &lt;!DOCTYPE frontier SYSTEM "http://frontier.fnal.gov/frontier.dtd"&gt;
-&lt;frontier version="3.4" xmlversion="1.0"&gt;
+&lt;frontier version="3.10" xmlversion="1.0"&gt;
  &lt;transaction payloads="1"&gt;
   &lt;payload type="frontier_request" version="1" encoding="BLOBzip"&gt;
-   &lt;data&gt;eJxjY2Bg4Hb29wn19Yv3c/R1ZQPyOcIcg5w9HIOM2EE8Jk8XMM0c4B+MyhD39Qxx9Q2O93B29Alw
-dXENDnH0ifeFKpfGKhnm6BPqakRIgQlYAbtvsH9QiCtB44wJKTAEK2D1dImHug3KBAABPDT5&lt;/data&gt;
-   &lt;quality error="0" md5="a573175c652667ec4b47fa4f3dba6040" records="11" full_size="252"/&gt;
+   &lt;data&gt;eJxjY2Bg4Hb29wn19Yv3c/R1ZQPyOcIcg5w9HIOM2EE8Od/4AFcX1+AQR5/geF/HACAnPiQywDU+
+yDc4Pt4QrIY5wD8YzGDydAHTIsiavF0jwToIGxdhSIQaM/xqfF0d/eIJmANWQ8B7YDXGqN5j9XSJ
+h/oQygQA7FRJ2w==&lt;/data&gt;
+   &lt;quality error="0" md5="ab07c00bfa30cfb9e3e41054c6bb835f" records="12" full_size="320"/&gt;
   &lt;/payload&gt; &lt;/transaction&gt;
 &lt;/frontier&gt;
 
 
-Fields:
+Fields: 
      COLUMN_NAME     VARCHAR2
 
 Records:
-     ID
-     POS
-     POS
-     MITEMS_HCALPEDESTAL_MID
-     MITEMS_HCALPEDESTAL_MVALUE2
-     MITEMS_HCALPEDESTAL_MVALUE4
-
-MSORTED
-     MITEMS_HCALPEDESTAL_MVALUE3
-     MITEMS_HCALPEDESTAL_MVALUE1
-     ID_ID
-     ID_ID
-$
-
+    M_PEDESTALS_MAPPED_TYPE_RMS__1
+    POS
+    ID
+    M_PEDESTALS_KEY_TYPE
+    M_PEDESTALS_MAPPED_TYPE_RMS_X1
+    M_PEDESTALS_MAPPED_TYPE_RMS_X6
+    M_PEDESTALS_MAPPED_TYPE_MEAN_1
+    M_PEDESTALS_MAPPED_TYPE_MEAN_2
+    M_PEDESTALS_MAPPED_TYPE_MEAN_3
+    POS
+    ID_ID
+    ID_ID
 </pre>
 
 </ul>
@@ -389,7 +389,7 @@ $
 <hr>
 <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- hhmts star -->
-Last modified: 4 January 2007
+Last modified: 11 March 2008
 <!-- hhmts end -->
   </body>
 </html>
