@@ -1,5 +1,9 @@
 $Id$
 
+3.11 2008/04/14 (dwd)
+    - Set the maximum keepalive time (which includes the time it takes
+      to allocate a connection to the DB) to 5 minutes
+
 3.10 2008/02/28 (dwd)
     - Set the expiration time for exception messages to 5 minutes.
 
