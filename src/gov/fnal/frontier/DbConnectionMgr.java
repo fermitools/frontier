@@ -54,6 +54,7 @@ public class DbConnectionMgr
    ServletOutputStream sos=null;
    boolean shuttingDown=false;
    String threadName=null;
+   int count=0;
    public KeepAliveTimerTask(String name,ServletOutputStream os)
     {
      threadName=name;
@@ -64,8 +65,16 @@ public class DbConnectionMgr
       if (!shuttingDown)
        {
         Thread.currentThread().setName(threadName);
+	count++;
         try {ResponseFormat.keepalive(sos);}catch(Exception e){}
-        Frontier.Log("DB mgr acquire sent keepalive");
+        Frontier.Log("DB mgr acquire sent keepalive "+count);
+	if(count>=60)
+	 {
+	  // give up after 5 minutes
+	  Frontier.Log("DB mgr acquire keepalive giving up");
+	  shuttingDown=true;
+	  cancel();
+	 }
        }
     }
    public synchronized void shutdown()
