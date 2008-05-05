@@ -264,6 +264,8 @@ Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
 <li>
 <tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
 <li>
+<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/clientreleasenotes.txt</tt>
+<li>
 <tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
 version numbers for the client sources and binary
 <li>
@@ -316,6 +318,8 @@ Prepare and release the sources:
 <tt>tar zcf Frontier_servlet__3.9__src.tar.gz Frontier_3_9</tt>
 <br>
 <tt>scp Frontier_servlet__3.9__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
+<br>
+<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/serverreleasenotes.txt</tt>
 <li>
 Prepare and release the binaries:
 <br>
