@@ -111,6 +111,16 @@ static char *getX509Subject()
  }
  
 
+// get current time as a string
+char *frontier_str_now()
+ {
+  time_t now=time(NULL);
+  char *cnow=ctime(&now);
+  // eliminate trailing newline
+  cnow[strlen(cnow)-1]='\0';
+  return cnow;
+ }
+
 int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
 {
   return(frontier_initdebug(f_mem_alloc,f_mem_free,
@@ -354,6 +364,7 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
 static void channel_delete(Channel *chn)
  {
   if(!chn) return;
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing chan %d at %s",chn->seqnum,frontier_str_now());
   frontierHttpClnt_delete(chn->ht_clnt);
   if(chn->resp)frontierResponse_delete(chn->resp);
   frontierConfig_delete(chn->cfg);
@@ -579,20 +590,16 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   
   while(1)
    {
-    time_t now;
-    now=time(NULL);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,ctime(&now));
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now());
 
     ret=get_data(chn,uri,body);    
     if(ret==FRONTIER_OK) 
      {
       ret=frontierResponse_finalize(chn->resp);
-      now=time(NULL);
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,ctime(&now));
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now());
       if(ret==FRONTIER_OK) break;
      }
-    now=time(NULL);
-    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,ctime(&now),ret,frontier_getErrorMsg());
+    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
     if(curproxy>=0)
