@@ -544,7 +544,7 @@ end:
  }
  
 
-#define ERR_LAST_BUF_SIZE 256
+#define ERR_LAST_BUF_SIZE 1024
 
 int frontier_getRawData(FrontierChannel u_channel,const char *uri)
  {
