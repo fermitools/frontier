@@ -43,7 +43,7 @@ the client/tmp directory)
 
 </ul>
 
-<h2>Client configuration</h2>
+<h2><a name="Configuration">Client configuration</a></h2>
 
 Frontier client configuration can can come from a complex server
 connection string made up of multiple keyword=value pairs enclosed in
@@ -101,6 +101,16 @@ on all short time-to-live queries (those indicated by setReload API),
 and a value of "long"  forces an immediate refresh on all queries.
 If not present, may come from environment variable 
 FRONTIER_FORCERELOAD.  Default "none".
+<li>
+loadbalance - value of 'proxies' or 'servers' (both may be listed
+with loadbalance=proxies and loadbalance=servers) to cause frontier
+client to do its own loadbalancing between the listed proxies and
+or servers.
+<li>
+clientcachemaxresultsize - maximum result size (in bytes) that will
+be cached in a local cache inside the frontier client.  Default 500.
+Identical queries whose results are cached locally will not 
+go to a proxy or server to retrieve the answer.
 </ul>
 
 <p>
