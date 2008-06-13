@@ -61,6 +61,8 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
 
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"encoding request [%s]",str);
   
+  if(str[size-1]=='\n')
+    size--;  // don't include trailing newline
   zsize=(int)(((double)size)*1.001+12);
   zbuf=frontier_mem_alloc(zsize);
   if(!zbuf) return FN_ZLIB_E_NOMEM;
