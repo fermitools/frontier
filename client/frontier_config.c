@@ -35,6 +35,7 @@
 #include "frontier_client/frontier_config.h"
 #include "frontier_client/frontier_log.h"
 #include "frontier_client/frontier_error.h"
+#include "frontier_client/frontier.h"
 
 /* default configuration variables */
 static int default_connect_timeout_secs = -1;
@@ -49,18 +50,6 @@ static char *default_physical_servers = 0;
 
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
-
-static char *str_dup(const char *str)
- {
-  char *ret;
-  size_t len=strlen(str);
-
-  ret=frontier_mem_alloc(len+1);
-  if (ret != 0)
-    bcopy(str,ret,len+1);
-  return ret;
- }
-
 
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode)
  {
@@ -250,7 +239,7 @@ int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg)
 void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload)
  {
   if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
-  cfg->force_reload=str_dup(forcereload);
+  cfg->force_reload=frontier_str_copy(forcereload);
  }
 
 const char *frontierConfig_getForceReload(FrontierConfig *cfg)
@@ -318,7 +307,7 @@ void frontierConfig_setDefaultLogicalServer(const char *logical_server)
     frontier_mem_free(default_logical_server);
    }
   if (logical_server != 0)
-    default_logical_server = str_dup(logical_server);
+    default_logical_server = frontier_str_copy(logical_server);
   else
     default_logical_server = 0;
  }
@@ -345,7 +334,7 @@ void frontierConfig_setDefaultPhysicalServers(const char *physical_servers)
     frontier_mem_free(default_physical_servers);
    }
   if (physical_servers != 0)
-    default_physical_servers = str_dup(physical_servers);
+    default_physical_servers = frontier_str_copy(physical_servers);
   else
     default_physical_servers = 0;
  }
@@ -372,7 +361,7 @@ int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg)
 
 static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
  {
-  char *str = str_dup(server_spec);
+  char *str = frontier_str_copy(server_spec);
   char *p = str-1;
   char *keyp = 0, *valp = 0;
   int nestlevel = 0;
@@ -525,7 +514,7 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   }
 
   /* Everything ok, insert new server. */
-  cfg->server[cfg->server_num] = str_dup(server_url);
+  cfg->server[cfg->server_num] = frontier_str_copy(server_url);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
         "Added server <%s>", cfg->server[cfg->server_num]);    
   cfg->server_num++;
@@ -552,7 +541,7 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
   }
 
   /* Everything ok, insert new proxy. */
-  cfg->proxy[cfg->proxy_num] = str_dup(proxy_url);
+  cfg->proxy[cfg->proxy_num] = frontier_str_copy(proxy_url);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
         "Added proxy <%s>", cfg->proxy[cfg->proxy_num]);    
   cfg->proxy_num++;
