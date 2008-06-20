@@ -62,7 +62,7 @@ xml_startElement(void *userData,const char *name,const char **atts)
   
   if(strcmp(name,"global_error")==0)
    {
-    fr->error=-1;
+    fr->error=FRONTIER_EPROTO;
     frontier_setErrorMsg(__FILE__,__LINE__,"Server has signalled Global Error [%s]",atts[1]);
     return;
    }  
