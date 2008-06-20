@@ -114,7 +114,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   if(fpl->error_code!=FRONTIER_OK) 
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"Server signalled payload error %d: %s",fpl->error_code,fpl->error_msg);
-    fpl->error=FRONTIER_EPROTO;
+    fpl->error=FRONTIER_ESERVER;
     goto errcleanup;
    }
 
