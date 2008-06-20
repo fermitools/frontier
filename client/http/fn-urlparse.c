@@ -56,6 +56,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
   bzero(fui,sizeof(FrontierUrlInfo));
+  fui->fai=&fui->firstfai;
   
   fui->url=frontier_str_copy(url);
   if(!fui->url)
@@ -138,12 +139,28 @@ ok:
   return fui;
  }
  
+static void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
+ {
+  if(fui->firstfai.addr)
+   {
+    // this frees all addrinfo structures in the round-robin chain
+    freeaddrinfo(fui->firstfai.addr);
+   }
+  while(fui->firstfai.next)
+   {
+    fui->fai=fui->firstfai.next->next;
+    frontier_mem_free(fui->firstfai.next);
+    fui->firstfai.next=fui->fai;
+   }
+  bzero(&fui->firstfai,sizeof(FrontierAddrInfo));
+ }
  
 int frontier_resolv_host(FrontierUrlInfo *fui)
  {
   struct addrinfo hints;
   int ret;
-  struct addrinfo *addr;  
+  struct addrinfo *addr;
+  FrontierAddrInfo *fai;
   
   bzero(&hints,sizeof(struct addrinfo));
   
@@ -151,13 +168,8 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
   hints.ai_socktype=SOCK_STREAM;
   hints.ai_protocol=0;
   
-  if(fui->addr)
-   {
-    freeaddrinfo(fui->addr);
-    fui->addr=0;
-   }
-  ret=getaddrinfo(fui->host,NULL,&hints,&(fui->addr));
-  fui->nextaddr=fui->addr;
+  frontier_FreeAddrInfo(fui);
+  ret=getaddrinfo(fui->host,NULL,&hints,&(fui->firstfai.addr));
   if(ret)
    {
     if(ret==EAI_SYSTEM)
@@ -169,17 +181,32 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
       frontier_setErrorMsg(__FILE__,__LINE__,"host name %s problem: %s",fui->host,gai_strerror(ret));
      }
     return FRONTIER_ENETWORK;
-   }    
-  
-  addr=fui->addr;
+   }
+
+  fai=&fui->firstfai;
+  addr=fai->addr;
   do
    {
     struct sockaddr_in *sin;
     sin=(struct sockaddr_in*)(addr->ai_addr);
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found addr <%s>",fui->host,inet_ntoa(sin->sin_addr));
     addr=addr->ai_next;
+    if(addr)
+     {
+      FrontierAddrInfo *nextfai=frontier_mem_alloc(sizeof(FrontierAddrInfo));
+      if(!fai)
+       {
+	FRONTIER_MSG(FRONTIER_EMEM);
+	return FRONTIER_EMEM;
+       }
+      bzero(nextfai,sizeof(FrontierAddrInfo));
+      nextfai->addr=addr;
+      fai->next=nextfai;
+      fai=nextfai;
+     }
    }while(addr);   
    
+  fui->fai=fui->lastfai=&fui->firstfai;
   return FRONTIER_OK; 
  }
  
@@ -188,7 +215,7 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui)
  {
   if(!fui) return;
-  if(fui->addr) freeaddrinfo(fui->addr);
+  frontier_FreeAddrInfo(fui);
   if(fui->url) frontier_mem_free(fui->url);
   if(fui->proto) frontier_mem_free(fui->proto);
   if(fui->host) frontier_mem_free(fui->host);
