@@ -440,15 +440,6 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   ret=prepare_channel(chn);
   if(ret) return ret;
 
-  if(!body&&(chn->client_cache_maxsize>0))
-   {
-    if((hashval=fn_hashtable_search(chn->client_cache->table,(char *)uri))!=0)
-     {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"HIT in %s client cache, skipping contacting server",chn->client_cache->servlet);
-      return write_data(chn->resp,hashval->data,hashval->len);
-     }
-   }
-  
   reload=chn->reload;
   if(!reload)
   {
@@ -571,9 +562,9 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
  {
   Channel *chn=(Channel*)u_channel;
   int ret=FRONTIER_OK;
+  fn_hashval *hashval;
   FrontierHttpClnt *clnt;
   char err_last_buf[ERR_LAST_BUF_SIZE];
-  int tried_refresh_proxies=0;
   int curproxy,curserver;
 
   if(!chn) 
@@ -582,7 +573,19 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     return FRONTIER_EIARG;
    }
   
+  if(!body&&(chn->client_cache_maxsize>0))
+   {
+    if((hashval=fn_hashtable_search(chn->client_cache->table,(char *)uri))!=0)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"HIT in %s client cache, skipping contacting server",chn->client_cache->servlet);
+      ret=prepare_channel(chn);
+      if(ret) return ret;
+      return write_data(chn->resp,hashval->data,hashval->len);
+     }
+   }
+  
   clnt=chn->ht_clnt;
+
   curproxy=frontierHttpClnt_resetproxylist(clnt,1);
   curserver=frontierHttpClnt_resetserverlist(clnt,1);
   chn->reload=0;
@@ -602,60 +605,57 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
-    if(curproxy>=0)
+    /* If error code is FRONTIER_ESERVER, the problem was definitely
+       on the server plus it should be cached for a short time.  If
+       the error code is FRONTIER_EPROTO, a bad response may be
+       cached so need to try reloading it.  If it's another kind of
+       error, there's either a networking problem, overloading, or a
+       machine down.  So there are 3 different strategies:
+       1. For FRONTIER_ESERVER, use one proxy and cycle through the
+	  servers, no reload.
+       2. For FRONTIER_EPROTO, cycle through the proxies using the first
+          server and then cycle through direct connects to servers,
+	  attempting reload after every try.
+       3. Otherwise, same as FRONTIER_EPROTO but with no reloads.
+    */
+
+    if(ret==FRONTIER_EPROTO)
      {
-      if (ret==FRONTIER_EPROTO)
+      if(!chn->reload)
        {
-        /*The problem was not with the proxy, it was with the server.*/
-	/*Note that this doesn't cover the case of non-response from*/
-	/* the server because that will be a timeout which looks the*/
-	/* same as a timeout on the proxy.*/
-	/*Pretend that last proxy has been tried & reloaded.*/
+	// try to clear protocol error from same proxy or server it was found on
 	chn->reload=1;
-	/*and fall through to try the next server*/
-       }
-      else
-       {
-	curproxy=frontierHttpClnt_nextproxy(clnt,1);
 	if(curproxy>=0)
 	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxyname(clnt));
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying reload cache on proxy %s",frontierHttpClnt_curproxyname(clnt));
 	  continue;
 	 }
-	else if(chn->reload)
-	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curservername(clnt));
-	  chn->reload=0;
-	  continue;
-	 }
-	 /*else fall through to refresh the server*/
+	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying reload cache on direct connect to server %s",frontierHttpClnt_curservername(clnt));
+	continue;
        }
+      chn->reload=0;
      }
 
-    if(!chn->reload)
+    if((curproxy>=0)&&(ret!=FRONTIER_ESERVER))
      {
-      chn->reload=1;
-      if(!tried_refresh_proxies)
+      // select another proxy
+      curproxy=frontierHttpClnt_nextproxy(clnt,1);
+      if(curproxy>=0)
        {
-        tried_refresh_proxies=1;
-	curproxy=frontierHttpClnt_resetproxylist(clnt,0);
-	if(curproxy>=0)
-	 {
-          frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on proxies starting with %s",frontierHttpClnt_curproxyname(clnt));
-	  continue;
-	 }
+	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxyname(clnt));
+	continue;
        }
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying refresh cache on direct connect to server %s",frontierHttpClnt_curservername(clnt));
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curservername(clnt));
       continue;
      }
-    chn->reload=0;
-    
+
     curserver=frontierHttpClnt_nextserver(clnt,1);
     if(curserver>=0)
      {
       frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s",frontierHttpClnt_curservername(clnt));
       continue;      
-     }    
+     }
+
     frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
     break;
    }
