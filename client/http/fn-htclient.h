@@ -40,16 +40,24 @@ int frontier_write(int s,const char *buf,int len,int timeoutsecs);
 int frontier_read(int s, char *buf,int size,int timeoutsecs);
 
 
+struct s_FrontierAddrInfo
+ {
+  struct s_FrontierAddrInfo *next;
+  struct addrinfo *addr;
+  int haderror;
+ };
+typedef struct s_FrontierAddrInfo FrontierAddrInfo;
+
 struct s_FrontierUrlInfo
  {
   char *url;
   char *proto;
   char *host;
   int port;
-  int haderror;
   char *path;
-  struct addrinfo *addr;
-  struct addrinfo *nextaddr;
+  FrontierAddrInfo firstfai;
+  FrontierAddrInfo *fai;
+  FrontierAddrInfo *lastfai;
  };
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
