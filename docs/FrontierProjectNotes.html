@@ -260,6 +260,13 @@ Commit all your changes to CVS
 <li>
 Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
 <li>
+In a scratch directory, and with CVSROOT set to
+cvsuser@cdcvs.fnal.gov:/cvs/cd do
+<br>
+<tt>cvs co -r v2_7_0 frontier/client</tt>
+<br>
+<tt>cd frontier/client
+<li>
 <tt>make all-dist</tt>
 <li>
 <tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
