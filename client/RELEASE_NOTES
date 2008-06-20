@@ -1,5 +1,63 @@
 $Id$
 
+v2_7_8 - 20 June 2008 (dwd)
+ - Changed the retry strategy again, because the one introduced in
+    v2_7_5 last December did not correctly handle certain error
+    conditions.  This becomes especially apparent with the
+    (in-progress) upgrade to the frontier server (the upgrade that
+    improves cache consistency and greatly reduces the time for
+    database changes to reach clients); some types of errors would
+    have never been cleared from the caches with that server upgrade.
+    As part of this new strategy:
+    - Separated out the kind of protocol error that is explicitly
+      reported by a server (which is used almost exclusively for
+      database errors) to be a new type called server error.
+    - Repaired an inadvertent (but as it turns out, useful for
+      backward-compatibility in the new server upgrade) reporting of
+      other types of errors on the server (known in the client-server
+      protocol as a global error) from being an undefined error to
+      being a protocol error.
+    The new strategy is now this:
+    - If it was a server error, use only one proxy and cycle through
+      the servers.  Don't do any cache reloads because the error will
+      expire from the cache in 5 minutes (even with the current
+      frontier server) and we want it to stay there to avoid
+      overloading the server.  This is most like the former handling
+      for all protocol errors, except that it used to also have a
+      last-resort cache reload for all servers.
+    - Else if it was a protocol error, cycle through the proxies
+      using the first server and then cycle through direct connects
+      to servers, attempting a reload after every try.  This is
+      exactly like the original, pre-v2_7_5 strategy that was used
+      for all errors and will flush the cache of errors that
+      have been repaired.  This type of error is much less common
+      than server errors.
+    - Else do the same as protocol error except with no cache reloads.
+      This covers the cases of networking problems, machines that are
+      down, and proxy or server overloads without making overload
+      situations much worse by doing many reloads.
+ - Added tracking of errors on individual addresses listed in round-
+    robin DNS, just like did before when doing client-controlled load
+    balancing of proxies or servers, so that those addresses are not
+    reused except when all proxies have had at least one failure.
+ - When there's a hit in the local client cache, stopped "shuffling"
+    proxies and servers (that is, advancing the round-robin or
+    selecting a new random address when load balancing).  That was
+    only intended to be done just before opening a new connection to a
+    proxy or server.
+ - Fixed problem with client-controlled load balancing that caused a
+    failure on one address to give preferential treatment to the
+    working address listed after it; for example, if there were 3
+    servers and one had a failure, one of the remaining servers got
+    2/3 of the load and the other got 1/3.
+ - Increased the maximum length of an error message from 256 to 1024
+    bytes.
+ - Added timestamp to debug log when a channel is closed, and remove
+    trailing newlines from debug log timestamps.
+ - Removed trailing newlines from SQL requests sent to the frontier
+    server (although not from the debug log).
+ - Cleaned out a duplicate internal implementation of strdup().
+
 v2_7_7 - 14 February 2008 (dwd)
  - Added a local client cache, for all queries that return a result
     that is less than a specified size, default 10000 bytes.  The
