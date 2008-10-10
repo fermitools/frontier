@@ -31,22 +31,78 @@
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *ptr);
 
+static z_stream *zstream=0;
+
+static void *fn_zalloc(void *opaque,uInt items,uInt size)
+ {
+  return frontier_mem_alloc(items*size);
+ }
+
+static void fn_zfree(void *opaque,void *address)
+ {
+  frontier_mem_free(address);
+ }
 
 long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
  {
   int ret;
-  long res_size=dest_size;
-  
-  ret=compress2((Bytef *)dest,(uLongf *)&res_size,(const Bytef *)src,(uLong)src_size,9);
-  switch(ret)
+
+  if(zstream==0)
    {
-    case Z_OK: return res_size;
-    case Z_BUF_ERROR: return FN_ZLIB_E_SMALLBUF;
-    case Z_MEM_ERROR: return FN_ZLIB_E_NOMEM;
-    default: return FN_ZLIB_E_OTHER;
+    // open a stream and leave it open until channel closes
+    //  because deflateInit does many, large allocs and thrashes
+    zstream=frontier_mem_alloc(sizeof(*zstream));
+    if(zstream==0)
+      return FN_ZLIB_E_NOMEM;
+    zstream->zalloc=fn_zalloc;
+    zstream->zfree=fn_zfree;
+    zstream->opaque=0;
+    ret=deflateInit(zstream,9);
+    if(ret!=Z_OK)
+     {
+      fn_gzip_cleanup();
+      if(ret==Z_MEM_ERROR)
+	return FN_ZLIB_E_NOMEM;
+      return FN_ZLIB_E_OTHER;
+     }
    }
+  else
+   {
+    // reuse existing stream
+    ret=deflateReset(zstream);
+    if(ret!=Z_OK)
+     {
+      fn_gzip_cleanup();
+      return FN_ZLIB_E_OTHER;
+     }
+   }
+  
+  zstream->next_in=(Bytef *)src;
+  zstream->avail_in=(uLongf)src_size;
+  zstream->next_out=(Bytef *)dest;
+  zstream->avail_out=(uLongf)dest_size;
+  ret=deflate(zstream,Z_FINISH);
+  if(ret==Z_STREAM_END)
+   {
+    // leave stream available
+    return dest_size-(long)zstream->avail_out;
+   }
+
+  fn_gzip_cleanup();
+  if(ret==Z_BUF_ERROR)
+    return FN_ZLIB_E_SMALLBUF;
+  return FN_ZLIB_E_OTHER;
  }
 
+void fn_gzip_cleanup()
+ {
+  if(zstream!=0)
+   {
+    deflateEnd(zstream);
+    frontier_mem_free(zstream);
+    zstream=0;
+   }
+ }
  
 int fn_gzip_str2urlenc(const char *str,int size,char **out)
  {
