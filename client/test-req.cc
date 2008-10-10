@@ -28,6 +28,8 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <cstdlib>
+#include <cstring>
 
 int do_main(int argc, char **argv);
 static std::string escape_list="\\\'";

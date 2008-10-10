@@ -26,6 +26,8 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <cstring>
+#include <cstdlib>
 
 #ifndef FNTR_USE_EXCEPTIONS
 #define CHECK_ERROR() do{if(ds.err_code){std::cout<<"ERROR:"<<ds.err_msg<<std::endl; exit(1);}}while(0)

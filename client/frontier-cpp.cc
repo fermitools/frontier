@@ -23,8 +23,9 @@
  *
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <sstream>
+#include <cstring>
 #include "frontier_client/frontier-cpp.h"
 #include "frontier_client/FrontierException.hpp"
 #include "frontier_client/FrontierExceptionMapper.hpp"

@@ -25,6 +25,7 @@
 
 #include <frontier_client/frontier-cpp.h>
 #include <sstream>
+#include <cstdlib>
 
 using namespace frontier;
 
