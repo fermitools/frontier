@@ -1,5 +1,23 @@
 $Id$
 
+v2_7_9 - 10 October 2008 (dwd)
+ - Use deflate zlib API instead of compress2 when compressing URLs in
+    order to keep it initialized and avoid many large (~250KB)
+    allocations spread out over a run.  Requested by Pete Elmer.
+ - Treat 5XX HTTP errors as server errors instead proxy errors,
+    so the retry algorithm will move on to the next server instead
+    of the next proxy
+ - Send 'Cache-Control: max-age=1' header on every request, as an
+    indication to the frontier server that the 5XX errors are handled
+    properly and it may send back 'Cache-Control: send-if-error=1'
+    which tells squid 2.7 to return a 504 error if the server later
+    goes down after the data is expired rather than returning stale
+    data.
+ - Fixed a segmentation fault that can happen if an application tries
+    to do another query after an error that used up all servers
+    occurred (COOL sometimes does this).
+ - Added some extra includes in C++ files for gcc 4.3
+
 v2_7_8 - 20 June 2008 (dwd)
  - Changed the retry strategy again, because the one introduced in
     v2_7_5 last December did not correctly handle certain error
