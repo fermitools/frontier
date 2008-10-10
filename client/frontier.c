@@ -34,6 +34,7 @@
 #include <frontier_client/frontier.h>
 #include "fn-internal.h"
 #include "fn-hash.h"
+#include "fn-zlib.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -370,6 +371,7 @@ static void channel_delete(Channel *chn)
   frontierConfig_delete(chn->cfg);
   if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
   frontier_mem_free(chn);
+  fn_gzip_cleanup();
  }
 
 
