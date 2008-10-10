@@ -338,10 +338,22 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
     return FRONTIER_EIARG;
    }
   
+  // Would use 'Cache-Control: max-stale=0' but squid 2.6 series (at least
+  //  2.6STABLE13 and 2.6STABLE18, but not 2.7STABLE4) then sends just 
+  //  'Cache-Control: max-stale' (without =0) upstream and messes up
+  //  its parent.  max-stale=1 is almost the same thing except for one
+  //  second, and requires squid to return an error if server is down
+  //  rather than returning stale data.  This option has very little
+  //  effect, but it gets sent upstream to frontier server which now
+  //  can send back a corresponding stale-if-error header which does
+  //  tell squid 2.7 or later to return a 504 error if the origin server
+  //  can't be reached when a cached item is stale.  frontier_client
+  //  couldn't handle that before this header was added, so this allows
+  //  a compatible upgrade
 #ifdef PERSISTCONNECTION
-  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nConnection: keep-alive\r\n",c->frontier_id);
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nCache-Control: max-stale=1\r\nConnection: keep-alive\r\n",c->frontier_id);
 #else
-  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\n",c->frontier_id);
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nCache-Control: max-stale=1\r\n",c->frontier_id);
 #endif
   if(ret>=FN_REQ_BUF-len)
    {
@@ -385,7 +397,14 @@ static int read_connection(FrontierHttpClnt *c)
   if(ret<=0) return ret;
   tot=ret;
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"status line <%s>",buf);
-  if(strncmp(buf,"HTTP/1.0 200 ",13) && strncmp(buf,"HTTP/1.1 200 ",13))
+  if((strncmp(buf,"HTTP/1.0 5",10)==0)||(strncmp(buf,"HTTP/1.1 5",10)==0))
+   {
+    /* 5xx HTTP error code indicates server error */
+    frontier_setErrorMsg(__FILE__,__LINE__,"server error (%s)",buf);
+    return FRONTIER_ESERVER;
+   }
+
+  if((strncmp(buf,"HTTP/1.0 200 ",13)!=0)&&(strncmp(buf,"HTTP/1.1 200 ",13)!=0))
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s)",buf);
     return FRONTIER_EPROTO;
@@ -764,7 +783,11 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
       c->cur_server=c->total_server;
    }
   if(c->cur_server>=c->total_server)
+   {
+    /*this query is done, but re-set in case another query is made*/
+    c->cur_server=c->first_server;
     return(-1);
+   }
   if(c->server[c->cur_server]->fai->haderror)
     return(frontierHttpClnt_nextserver(c,curhaderror));
   return(c->cur_server);
