@@ -203,7 +203,7 @@ fn-zlib.o: fn-zlib.c $(HDR) fn-zlib.h fn-base64.h
 fn-mem.o: fn-mem.c $(HDR)
 	$(CC) $(COPT) $(INC) -c fn-mem.c
 
-frontier.o: frontier.c $(HDR)
+frontier.o: frontier.c $(HDR) fn-zlib.h
 	$(CC) -DFNAPI_VERSION="\"$(FNAPI_VERSION)\"" $(COPT) $(INC) -c frontier.c
 
 response.o: response.c $(HDR)
