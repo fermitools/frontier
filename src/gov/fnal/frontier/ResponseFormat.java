@@ -85,16 +85,19 @@ public class ResponseFormat
     out.print("\" encoding=\"");
     out.print(encoder);
     out.print("\">\n");
+    out.print("   <data>");
    }
 
    
   static void payload_end(ServletOutputStream out,int err_code,String err_msg,String md5,int rec_num,long full_size) throws Exception
    {
+    out.print("</data>\n");
     out.print("   <quality error=\"");
     out.print(err_code);
     if(err_msg.length()>0)
      {
       out.print("\" message=\"");
+      err_msg=Frontier.getServerName()+" "+err_msg;
       out.print(xml_str(err_msg));
      }
     if(md5.length()>0)
@@ -110,19 +113,9 @@ public class ResponseFormat
     out.print("\" full_size=\"");
     out.print(full_size);
     out.print("\"/>\n");
-    out.print("  </payload>");
+    out.print("  </payload>\n");
    }
          
-  static void data_start(ServletOutputStream out) throws Exception
-   {
-    out.print("   <data>");
-   }
-  
-  static void data_end(ServletOutputStream out) throws Exception
-   {
-    out.print("</data>\n");
-   }
-  
   static void commit(ServletOutputStream out) throws Exception
    {
     // a flush finishes & sends the response header and everything else
@@ -138,6 +131,7 @@ public class ResponseFormat
   
   static void putGlobalError(ServletOutputStream out,String msg)
    {
+    msg=Frontier.getServerName()+" "+msg;
     try
      {
       out.print("\n  <global_error msg=\""+xml_str(msg)+"\"/>\n");
