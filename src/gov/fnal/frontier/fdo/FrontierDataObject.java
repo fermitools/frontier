@@ -17,7 +17,11 @@ public interface FrontierDataObject
  {
   public void fdo_init(byte[] body) throws Exception;
   public MethodDesc fdo_getMethodDesc(String method) throws Exception;
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream os) throws Exception;
+  public void fdo_start(ServletOutputStream os) throws Exception;
+  public int fdo_get(Encoder enc,String method,ServletOutputStream os) throws Exception;
   public int fdo_meta(Encoder enc,String method) throws Exception;
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream os) throws Exception;
+  public int fdo_write(Encoder enc,String method,ServletOutputStream os) throws Exception;
+  public long fdo_cachedLastModified() throws Exception;
+  public long fdo_getLastModified(ServletOutputStream os) throws Exception;
+  public void fdo_close(ServletOutputStream os);
  }
