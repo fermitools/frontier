@@ -20,7 +20,7 @@ public class PluginTest implements FrontierPlugin
    }
    
    
-  public int fp_get(java.sql.Connection con,Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fp_get(java.sql.Connection con,Encoder enc,String method) throws Exception
    {
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
     PreparedStatement stmt=null;
@@ -53,7 +53,17 @@ public class PluginTest implements FrontierPlugin
    }
    
    
-  public int fp_write(java.sql.Connection con,Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fp_write(java.sql.Connection con,Encoder enc,String method) throws Exception
+   {
+    throw new Exception("Not implemented");
+   }
+
+  public long fp_cachedLastModified() throws Exception
+   {
+    return -1;
+   }
+
+  public long fp_getLastModified(java.sql.Connection con) throws Exception
    {
     throw new Exception("Not implemented");
    }
