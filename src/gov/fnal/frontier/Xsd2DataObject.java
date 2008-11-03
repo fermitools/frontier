@@ -12,6 +12,8 @@ public class Xsd2DataObject implements FrontierDataObject
  {
   private DbConnectionMgr dbm;
   
+  private FrontierDataStream frontier_data_stream;
+  
   // XML related helper
   private Xsd2DataObjectHelper xsdhelper;
   
@@ -21,12 +23,13 @@ public class Xsd2DataObject implements FrontierDataObject
   public static final String xsd_version="2";
 
   
-  protected Xsd2DataObject(DbConnectionMgr dbm,String requested_name,String requested_version) throws Exception
+  protected Xsd2DataObject(DbConnectionMgr dbm,String requested_name,String requested_version,FrontierDataStream fds) throws Exception
    {
     System.out.println("Xsd2DataObject()");
     this.dbm=dbm;
     obj_name=requested_name;
     obj_version=requested_version;
+    frontier_data_stream=fds;
     xsdhelper=null;
    }
 
@@ -44,8 +47,11 @@ public class Xsd2DataObject implements FrontierDataObject
     return md;
    }
      
+  public void fdo_start(ServletOutputStream sos) throws Exception
+   {
+   }
    
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
+  public int fdo_get(Encoder enc,String method,ServletOutputStream sos) throws Exception
    {
     System.out.println("Xsd2DataObject.fdo_get()");
     int rec_num=0;
@@ -70,7 +76,7 @@ public class Xsd2DataObject implements FrontierDataObject
       for(int i=0;i<mi.aParams.size();i++)
        {
         FieldDesc param=(FieldDesc)mi.aParams.get(i);
-        String val=fds.getString(param.n);
+        String val=frontier_data_stream.getString(param.n);
         System.out.println("Param "+i+" ["+param.n+":"+val+"]");
         stmt.setString(i+1,val);
        }
@@ -138,7 +144,7 @@ public class Xsd2DataObject implements FrontierDataObject
    }
    
    
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception   
+  public int fdo_write(Encoder enc,String method,ServletOutputStream sos) throws Exception   
    {
     System.out.println("Xsd2DataObject.fdo_write()");
     int rec_num=0;
@@ -163,7 +169,7 @@ public class Xsd2DataObject implements FrontierDataObject
       for(int i=0;i<mi.aParams.size();i++)
        {
         FieldDesc param=(FieldDesc)mi.aParams.get(i);
-        String val=fds.getString(param.n);
+        String val=frontier_data_stream.getString(param.n);
         System.out.println("Param "+i+" ["+param.n+":"+val+"]");
         stmt.setString(i+1,val);
        }
@@ -179,5 +185,19 @@ public class Xsd2DataObject implements FrontierDataObject
       if(con!=null) try{dbm.release(con,sos);}catch(Exception e){}
      }
     return rec_num;
+   }
+
+  public long fdo_cachedLastModified()
+   {
+    return -1;
+   }
+
+  public long fdo_getLastModified(ServletOutputStream sos)
+   {
+    return 0;
+   }
+
+  public void fdo_close(ServletOutputStream sos)
+   {
    }
  }

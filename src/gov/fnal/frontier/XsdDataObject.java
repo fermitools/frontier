@@ -22,6 +22,8 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    +"<!DOCTYPE descriptor SYSTEM \"http://frontier.fnal.gov/descriptor.dtd\"> ";
   
   private DbConnectionMgr dbm;
+
+  private FrontierDataStream frontier_data_stream;
   
   // Current state for SAX parser
   private String current_element;
@@ -84,14 +86,14 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }// end of WhereClause
    
 
-  protected XsdDataObject(DbConnectionMgr dbm,String requested_name,String requested_version) throws Exception
+  protected XsdDataObject(DbConnectionMgr dbm,String requested_name,String requested_version,FrontierDataStream fds) throws Exception
    {
     this.dbm=dbm;
     obj_name=requested_name;
     obj_version=requested_version;
+    frontier_data_stream=fds;
    }
 
-   
   private String prepareXml(byte[] body) throws Exception
    {
     // StringBuffer can not append byte[] - isn't it silly?
@@ -141,8 +143,12 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }
    
      
+  public void fdo_start(ServletOutputStream sos) throws Exception
+   {
+   }
    
-  public int fdo_get(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
+   
+  public int fdo_get(Encoder enc,String method,ServletOutputStream sos) throws Exception
    {
     //System.out.println("XsdDataObject.fdo_get()");
     int rec_num=0;
@@ -150,7 +156,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     // XSD v1 does not define "method", so chech it was not defined
     if(method!=null && (!method.equals("DEFAULT"))) throw new Exception("XSD v1 does not support methods");
     
-    WhereClause wc=find_wehere_clause(fds);
+    WhereClause wc=find_wehere_clause();
     if(wc==null) throw new Exception("Can not find suitable where clause for object "+obj_name+" in domain GET");
     
     StringBuffer sql=new StringBuffer("");
@@ -175,7 +181,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
       for(int i=0;i<wc.aParams.size();i++)
        {
         FieldDesc param=(FieldDesc)wc.aParams.get(i);
-        String val=fds.getString(param.n);
+        String val=frontier_data_stream.getString(param.n);
         //System.out.println("Param "+i+" ["+param.n+":"+val+"]");
         stmt.setString(i+1,val);
        }
@@ -232,16 +238,28 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    }
      
   
-  public int fdo_write(Encoder enc,String method,FrontierDataStream fds,ServletOutputStream sos) throws Exception
+  public int fdo_write(Encoder enc,String method,ServletOutputStream sos) throws Exception
    {
     throw new Exception("XSD v1 does not support writes");
    }   
   
-  
-   
-  private WhereClause find_wehere_clause(FrontierDataStream fds)
+  public long fdo_cachedLastModified()
    {
-    Object[] keys=fds.getParamNames();
+    return -1;
+   }
+
+  public long fdo_getLastModified(ServletOutputStream sos)
+   {
+    return 0;
+   }
+
+  public void fdo_close(ServletOutputStream sos)
+   {
+   }
+   
+  private WhereClause find_wehere_clause()
+   {
+    Object[] keys=frontier_data_stream.getParamNames();
     WhereClause ret=null;
     
     for(int i=0;i<aWhere.size();i++)
