@@ -4,29 +4,19 @@ import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import gov.fnal.frontier.codec.*;
 import java.sql.*;
+import java.util.Hashtable;
 import com.jcraft.jzlib.*;
 
 public class SQLPlugin implements FrontierPlugin
  {
-  public String[] fp_getMethods()
+  private static Hashtable tableNames=new Hashtable();
+
+  private String query;
+  private String queryLower;
+  private String queryTableName=null;
+
+  public SQLPlugin(FrontierDataStream fds) throws Exception
    {
-    String[] ret=new String[1];
-    ret[0]="DEFAULT";
-    return ret;
-   }
-   
-   
-  public MethodDesc fp_getMethodDesc(String name) throws Exception
-   {
-    MethodDesc ret=new MethodDesc("DEFAULT","get",false,((long)60*60*24*7*1000),"free","public");
-    return ret;
-   }
-   
-   
-  public int fp_get(java.sql.Connection con,Encoder enc,String method,FrontierDataStream fds) throws Exception
-   {
-    if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
-    
     String param=fds.getString("p1");
     //System.out.println("Got param ["+param+"]");
     
@@ -66,28 +56,48 @@ public class SQLPlugin implements FrontierPlugin
      }
     byte[] bsql=baos.toByteArray();    
     
-    String sql=new String(bsql,"US-ASCII");
-    Frontier.Log("SQL ["+sql+"]");
+    query=new String(bsql,"US-ASCII");
+    queryLower=query.toLowerCase();
+    Frontier.Log("SQL ["+query+"]");
+   }
 
-    String stmp=sql.toLowerCase();
-    if(stmp.indexOf("drop ")>=0 ||
-       stmp.indexOf("delete ")>=0 ||
-       stmp.indexOf("insert ")>=0 ||
-       stmp.indexOf("alter ")>=0 ||
-       stmp.indexOf("create ")>=0) throw new Exception("Query cancelled");
+  public String[] fp_getMethods()
+   {
+    String[] ret=new String[1];
+    ret[0]="DEFAULT";
+    return ret;
+   }
+   
+   
+  public MethodDesc fp_getMethodDesc(String name) throws Exception
+   {
+    MethodDesc ret=new MethodDesc("DEFAULT","get",false,((long)60*60*24*7*1000),"free","public");
+    return ret;
+   }
+   
+   
+  public int fp_get(java.sql.Connection con,Encoder enc,String method) throws Exception
+   {
+    if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
     
-    Statement stmt=null;
+    if(queryLower.indexOf("drop ")>=0 ||
+       queryLower.indexOf("delete ")>=0 ||
+       queryLower.indexOf("insert ")>=0 ||
+       queryLower.indexOf("alter ")>=0 ||
+       queryLower.indexOf("create ")>=0) throw new Exception("Query cancelled");
+    
+    PreparedStatement stmt=null;
     ResultSet rs=null;
     int row_count=0;
     try
      {
-      stmt=con.createStatement();
+      stmt=con.prepareStatement(query);
       stmt.setFetchSize(100); /* huge performance boost for small rows */
       			      /* causes much better row prefetching */
 			      /* 1000 & 10000 are slightly faster but cause
 			         executeQuery to abort with OutOfMemoryError
 				 for some queries with larger rows. */
-      rs=stmt.executeQuery(sql);
+      rs=stmt.executeQuery();
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
       
@@ -132,6 +142,18 @@ public class SQLPlugin implements FrontierPlugin
         enc.writeEOR();
        }
      }
+    catch(Exception e)
+     {
+      if(queryTableName!=null)
+       {
+        // prefix queryTableName to the exception message
+        Exception newe=new Exception("While querying "+queryTableName+": "+e.getMessage().trim());
+        newe.setStackTrace(e.getStackTrace());
+        throw newe;
+       }
+      else
+       throw e;
+     }
     finally
      {
       enc.flush();
@@ -148,9 +170,97 @@ public class SQLPlugin implements FrontierPlugin
    }
    
    
-  public int fp_write(java.sql.Connection con,Encoder enc,String method,FrontierDataStream fds) throws Exception
+  public int fp_write(java.sql.Connection con,Encoder enc,String method) throws Exception
    {
     throw new Exception("Not implemented");
+   }
+
+  protected static synchronized SQLTimes getSQLTimesObject(String tableName, boolean createIfNecessary)
+   {
+    SQLTimes times=(SQLTimes)tableNames.get(tableName);
+    if((times==null)&&createIfNecessary)
+     {
+      times=new SQLTimes(tableName);
+      tableNames.put(tableName,times);
+     }
+    return times;
+   }
+
+  public long fp_cachedLastModified() throws Exception
+   {
+    if(!queryLower.startsWith("select "))
+      return -1;
+    int startfrom=queryLower.indexOf(" from ");
+    if(startfrom==-1)
+      return -1;
+    startfrom+=6;
+    int endfrom;
+    if(queryLower.startsWith("(select",startfrom))
+     {
+      //nested select
+      startfrom=queryLower.indexOf(" from ",startfrom+7);
+      if(startfrom==-1)
+	return -1;
+      startfrom+=6;
+      int endparen=queryLower.indexOf(')',startfrom);
+      endfrom=queryLower.indexOf(' ',startfrom);
+      if((endparen<endfrom)||(endfrom==-1))
+        endfrom=endparen;
+     }
+    else
+      endfrom=queryLower.indexOf(' ',startfrom);
+    //take the table name from mixed-case query, not lower-case queryLower
+    if(endfrom==-1)
+      queryTableName=query.substring(startfrom);
+    else
+      queryTableName=query.substring(startfrom,endfrom);
+    if(queryTableName.indexOf('.')==-1)
+     {
+      // one of the special system tables without a '.'
+      // if it starts with ALL_ and has a OWNER='XXX' then use a
+      //   special queryTableName of "XXX".ALL_TABLES
+      int startowner=queryLower.indexOf(" owner",startfrom);
+      if(startowner==-1)
+        startowner=queryLower.indexOf(".owner",startfrom);
+      if((startowner>startfrom)&&(queryLower.substring(startfrom,startfrom+4).equals("all_")))
+       {
+	startowner+=6;
+	while(query.charAt(startowner)==' ')startowner++;
+	if(query.charAt(startowner)!='=')
+	  return -1; // syntax error
+	startowner++;
+	while(query.charAt(startowner)==' ')startowner++;
+	if(query.charAt(startowner)!='\'')
+	  return -1; // syntax error
+	startowner++;
+	int endowner=query.indexOf('\'',startowner);
+	if(endowner==-1)
+	  return -1; // syntax error
+	queryTableName="\""+query.substring(startowner,endowner)+"\".ALL_TABLES";
+       }
+      else
+       {
+        // else querying the timestamp isn't going to work, do without timestamps
+        Frontier.Log("don't know how to query timestamp for table "+queryTableName);
+        return -1;
+       }
+     }
+
+    SQLTimes times=getSQLTimesObject(queryTableName,false);
+    if(times==null)
+      return 0;
+    return times.getCachedLastModified();
+   }
+
+  public long fp_getLastModified(java.sql.Connection con) throws Exception
+   {
+    if(queryTableName==null)
+      throw new Exception("SQLPlugin usage error -- fp_cachedLastModified must be called and return zero before calling fp_getLastModified");
+    SQLTimes times=getSQLTimesObject(queryTableName,true);
+    // put out a log message here because this can be a time-consuming DB op.
+    Frontier.Log("getting last-modified time of "+queryTableName);
+    long last_modified=times.getLastModified(con);
+    return last_modified;
    }
  }
 
