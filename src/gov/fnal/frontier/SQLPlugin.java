@@ -91,7 +91,18 @@ public class SQLPlugin implements FrontierPlugin
     int row_count=0;
     try
      {
-      stmt=con.prepareStatement(query);
+      if(query.indexOf(':')==-1)
+        stmt=con.prepareStatement(query);
+      else
+       {
+	// Have query with question marks signifying bind variables
+	//  and values for the variables following the queries separated
+	//  by colons.  Pass those as separate parameters.
+        String[] tokens=query.split(":");
+	stmt=con.prepareStatement(tokens[0]);
+	for(int i=1;i<tokens.length;i++)
+	  stmt.setString(i,tokens[i]);
+       }
       stmt.setFetchSize(100); /* huge performance boost for small rows */
       			      /* causes much better row prefetching */
 			      /* 1000 & 10000 are slightly faster but cause
