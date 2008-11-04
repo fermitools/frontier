@@ -27,12 +27,14 @@ public final class Frontier
   private static boolean use_fdo_cache;     // If true, the FDO info is created once (
                                             // based on XSD or else)
   
-    
-  public long time_expire=-1;
+  public static long validate_last_modified_seconds=-1;
+
+  public long max_age=-1;
+  public long error_max_age=Frontier.errorDefaultMaxAge();
   public boolean noCache=false;
   public int payloads_num;
   public ArrayList aPayloads=null;
-  
+  public long if_modified_since=-1;
   
   
   private static String getPropertyString(ResourceBundle rb,String name) throws Exception
@@ -60,6 +62,11 @@ public final class Frontier
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
+
+    String str=getPropertyString(prb,"ValidateLastModifiedSeconds");
+    if(str!=null)
+      validate_last_modified_seconds=Long.parseLong(str);
+    Frontier.Log("validate last-modified secs: "+validate_last_modified_seconds);
 
     conf_cache_expire_hourofday[LONGCACHE]=getPropertyString(prb,"LongCacheExpireHourOfDay");
     conf_cache_expire_seconds[LONGCACHE]=getPropertyString(prb,"LongCacheExpireSeconds");
@@ -101,7 +108,7 @@ public final class Frontier
    }
           
 
-  public Frontier(HttpServletRequest req,HttpServletResponse res) throws Exception 
+  public Frontier(HttpServletRequest req) throws Exception 
    {
     if(!initialized) init();
 
@@ -115,6 +122,20 @@ public final class Frontier
     commandList=Command.parse(req);
     payloads_num=commandList.size();
     aPayloads=new ArrayList();
+    if(validate_last_modified_seconds>0)
+     {
+      if_modified_since=req.getDateHeader("if-modified-since");
+      if(if_modified_since!=-1)
+	Frontier.Log("if-modified-since: "+req.getHeader("if-modified-since"));
+     }
+    if(conf_cache_expire_seconds[SHORTCACHE]!=null)
+     {
+      //if set and less than the default error max age, use the short cache
+      //  short cache age also for errors
+      long age=Long.parseLong(conf_cache_expire_seconds[SHORTCACHE]);
+      if(age<error_max_age)
+        error_max_age=age;
+     }
     int cachelength=LONGCACHE;
     for(int i=0;i<payloads_num;i++)
      {
@@ -123,20 +144,21 @@ public final class Frontier
       if(p.noCache) noCache=true;
       String ttl=cmd.fds.getOptionalString("ttl");
       if((ttl!=null)&&(ttl.equals("short"))) cachelength=SHORTCACHE;
-      if(time_expire<0) time_expire=p.time_expire;
-      if(p.time_expire<time_expire) time_expire=p.time_expire;
+      long p_max_age=p.time_expire/1000;
+      if(max_age<0) max_age=p_max_age;
+      if(p_max_age<max_age) max_age=p_max_age;
       aPayloads.add(p);
      }
     if(conf_cache_expire_seconds[cachelength]!=null)
      {
       //if set, use configured expiration seconds for requested cache length
-      //  instead of Payload's milliseconds
-      time_expire=Long.parseLong(conf_cache_expire_seconds[cachelength])*1000;
+      //  instead of Payload's
+      max_age=Long.parseLong(conf_cache_expire_seconds[cachelength]);
      }
-    Calendar cal=Calendar.getInstance();
-    long now=cal.getTimeInMillis();
     if(conf_cache_expire_hourofday[cachelength]!=null)
      {
+      Calendar cal=Calendar.getInstance();
+      long now=cal.getTimeInMillis();
       //use expiration hour-of-day if it is set and sooner
       int hourofday=Integer.parseInt(conf_cache_expire_hourofday[cachelength]);
       if(hourofday<=cal.get(Calendar.HOUR_OF_DAY))
@@ -144,21 +166,57 @@ public final class Frontier
       cal.set(Calendar.HOUR_OF_DAY,hourofday);
       cal.set(Calendar.MINUTE,0);
       cal.set(Calendar.SECOND,0);
-      long diff=cal.getTimeInMillis()-now;
-      if(diff<time_expire)
-	time_expire=diff;
+      long diff=(cal.getTimeInMillis()-now)/1000;
+      if(diff<max_age)
+	max_age=diff;
      }
-    Frontier.Log("seconds to expiration="+(time_expire/1000));
-    time_expire+=now;
+    //Frontier.Log("max-age="+max_age);
    }
 
-  public static long errorExpireTime()
+  public static long errorDefaultMaxAge()
    {
-    Calendar cal=Calendar.getInstance();
-    long now=cal.getTimeInMillis();
-    return now+5*60*1000;		// errors expire in 5 minutes
+    return 5*60;	// errors expire in 5 minutes
    }
    
+  public long cachedLastModified() throws Exception
+   {
+    if(validate_last_modified_seconds<=0)
+      return -1;
+    long last_modified=0;
+    for(int i=0;i<payloads_num;i++)
+     {
+      Payload p=(Payload)aPayloads.get(i);          
+      long lm=p.cachedLastModified();
+      if(lm==-1)
+        return -1;
+      if(lm>last_modified)
+        last_modified=lm;
+     }
+    return last_modified;
+   }
+
+  public long getLastModified(ServletOutputStream out) throws Exception
+   {
+    long last_modified=0;
+    for(int i=0;i<payloads_num;i++)
+     {
+      Payload p=(Payload)aPayloads.get(i);          
+      long lm=p.getLastModified(out);
+      if(lm>last_modified)
+        last_modified=lm;
+     }
+    return last_modified;
+   }
+
+  public void close(ServletOutputStream sos)
+   {
+    for(int i=0;i<payloads_num;i++)
+     {
+      Payload p=(Payload)aPayloads.get(i);          
+      p.close(sos);
+     }
+   }
+
   private void logClientDesc(HttpServletRequest req) throws Exception
    {
     String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); 
@@ -188,12 +246,15 @@ public final class Frontier
    }
                 
      
-  public static void Log(String msg)
+  // synchronize it to be very sure that log messages don't get 
+  //  interleaved and because a SimpleDateFormat instance can't be used
+  //  by multiple threads at the same time
+  public static synchronized void Log(String msg)
    {
     StringBuffer buf=new StringBuffer("");
     buf.append(conf_server_name);
     buf.append(' ');
-    buf.append(date_fmt.format(new java.util.Date()));
+    buf.append(date_fmt.format(new Date()));
     buf.append(' ');
     buf.append(Thread.currentThread().getName());
     buf.append(' ');
@@ -215,6 +276,11 @@ public final class Frontier
   public static String getDsName()
    {
     return conf_ds_name;
+   }
+  
+  public static String getServerName()
+   {
+    return conf_server_name;
    }
   
   
