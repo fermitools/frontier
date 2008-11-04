@@ -1,5 +1,33 @@
 $Id$
 
+3.12 2008/11/04 (dwd)
+    - Add new configuration variable ValidateLastModifiedSeconds which
+      defines the number of seconds between querying for modification
+      times in a LAST_MODIFIED_TIMES table in the same account as
+      each query.  The modified time of each table is cached
+      internally for that number of seconds.  The time is used to send
+      a Last-Modified header.  Squid in turn uses that value once
+      the item expires to send an If-Modified-Since header.  When
+      that is received, if the time has not changed send back
+      an http '304 NOT MODIFIED' response.  This all combines to
+      allow much more frequent object expirations without overloading
+      the frontier infrastructure, because most times very little
+      data is transferred, only the query and NOT MODIFIED.
+    - Use "Cache-Control: max-age" instead of "Expires" headers in
+      the response.  Squid handles both and the latter are more
+      difficult to calculate and manage.
+    - Support bind variables in queries, with a question mark where
+      each variable is to be inserted.  The values for the variables
+      must be appended to the query, separated by colons (:).  This
+      helps performance a bit at least on Oracle, because it is able
+      to cache the parsed value of the query and re-use it rather than
+      caching many similar queries.
+    - Handle global errors more robustly, so they should always be 
+      able to be parsed by the client.  Previously some kinds of
+      errors would result in invalid xml code in the response.
+    - Give more debug information in the log if the command parser
+      sees a premature end of command.
+
 3.11 2008/04/14 (dwd)
     - Set the maximum keepalive time (which includes the time it takes
       to allocate a connection to the DB) to 5 minutes
