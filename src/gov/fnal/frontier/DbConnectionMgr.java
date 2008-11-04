@@ -103,7 +103,6 @@ public class DbConnectionMgr
       timerTask.shutdown();
      }
     Frontier.Log("DB mgr connection acquired");
-    ResponseFormat.data_start(sos);
     return connection;
    }
 
@@ -111,7 +110,6 @@ public class DbConnectionMgr
   public void release(Connection dbConnection,ServletOutputStream sos) throws Exception 
    {
     if(dbConnection!=null) dbConnection.close();
-    if (sos!=null) ResponseFormat.data_end(sos);
    }
    
    
