@@ -12,7 +12,11 @@ $Id$
       an http '304 NOT MODIFIED' response.  This all combines to
       allow much more frequent object expirations without overloading
       the frontier infrastructure, because most times very little
-      data is transferred, only the query and NOT MODIFIED.
+      data is transferred, only the query and NOT MODIFIED.  This
+      requires that every account loaded with this option have
+      a LAST_MODIFIED_TIMES table kept up to date.  One way is
+      provided to do this in Oracle, using a PL/SQL script called
+      setup_modtimes.sql.
     - Use "Cache-Control: max-age" instead of "Expires" headers in
       the response.  Squid handles both and the latter are more
       difficult to calculate and manage.
