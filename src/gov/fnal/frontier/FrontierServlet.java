@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.11";
+  private static final String frontierVersion="3.12";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
