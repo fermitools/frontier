@@ -58,7 +58,7 @@ public class Payload
     // BUILTINS
     if(cmd.obj_name.equals("frontier_request") && cmd.obj_version.equals("1"))
      {
-      fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,true);
+      fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds,true);
       //fdo_init() MUST NOT BE CALLED FOR BUILTINS!
       MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
       time_expire=md.getExpire();
@@ -85,9 +85,9 @@ public class Payload
       int len=(int)blob.length();
       byte[] b=blob.getBytes((long)1,len);
       
-      if(xsd_type.equals("xml"))       fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version);
-      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version);
-      else if(xsd_type.equals("plugin")) fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version);
+      if(xsd_type.equals("xml"))       fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
+      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
+      else if(xsd_type.equals("plugin")) fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
       else                             throw new Exception("Unsupported xsd_type "+xsd_type+".");
       
       fdo.fdo_init(b);
@@ -105,7 +105,21 @@ public class Payload
      }     
    }
    
-   
+  public void start(ServletOutputStream out) throws Exception
+   {
+    fdo.fdo_start(out);
+   }
+
+  public long cachedLastModified() throws Exception
+   {
+    return fdo.fdo_cachedLastModified();
+   }
+
+  public long getLastModified(ServletOutputStream out) throws Exception
+   {
+    return fdo.fdo_getLastModified(out);
+   }
+
   public void send(ServletOutputStream out) throws Exception
    {
     Encoder enc=null;
@@ -126,7 +140,7 @@ public class Payload
       case Command.CMD_GET:
        enc=new BlobTypedEncoder(out,encparam);
        try { 
-	   rec_num=fdo.fdo_get(enc,cmd.method,cmd.fds,out); 
+	   rec_num=fdo.fdo_get(enc,cmd.method,out); 
 	   // System.out.println("Number of records after fdo_get: " + rec_num);
        }
        finally 
@@ -154,7 +168,7 @@ public class Payload
       case Command.CMD_WRITE:
        enc=new BlobTypedEncoder(out,encparam);
        try { 
-	   rec_num=fdo.fdo_write(enc,cmd.method,cmd.fds,out); 
+	   rec_num=fdo.fdo_write(enc,cmd.method,out); 
 	   // System.out.println("Number of records after fdo_write: " + rec_num);
        }
        finally 
@@ -184,4 +198,9 @@ public class Payload
      }
     return md5_ascii.toString();
    }  
+
+  public void close(ServletOutputStream sos)
+   {
+    fdo.fdo_close(sos);
+   }
  }
