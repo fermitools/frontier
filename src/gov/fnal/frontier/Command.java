@@ -71,7 +71,7 @@ public class Command
       c.method=param[3];
       if(c.method==null) c.method="DEFAULT";       
        
-      if(get_next_param(param,env,query_str)) throw new Exception("Pass incomplete - 4th down, 10 yds to go!");
+      if(get_next_param(param,env,query_str)) throw new Exception("command parse completed prematurely! param0: "+param[0]+", name: "+c.obj_name+", version: "+c.obj_version+", method: "+c.method+", query_str: "+query_str);
       
       if(param[0].equals("encoding")) c.encoder=param[1];
       else throw new Exception("Unexpected parameter ["+param[0]+"="+param[1]+"]");
