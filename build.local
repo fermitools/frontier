@@ -123,7 +123,7 @@
   <property name="docs.home"         value="${basedir}/docs"/>
   <property name="src.home"          value="${basedir}/src"/>
   <property name="web.home"          value="${basedir}/web"/>
-  <property name="catalina.home"     value="/scratch/veseli/devel/tomcat"/>
+  <property name="catalina.home"     value="${basedir}/../../TOMCAT/apache-tomcat-5.5.15"/>
 
   <property name="test.home"         value="${build.home}/test"/>
   <property name="test.data.home"    value="${test.home}/data"/>
