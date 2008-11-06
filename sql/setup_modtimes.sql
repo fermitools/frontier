@@ -12,6 +12,8 @@
 /*  have to be run once for each account.  An additional 'ALL_TABLES' entry  */
 /*  timestamp is updated whenever any new table is created or dropped.       */
 /* Written by Dave Dykstra, July 2008.                                       */
+/* $Id$
+ */
 
 
 CREATE OR REPLACE PROCEDURE chtable_callback(ntfnds IN SYS.CHNF$_DESC) AS
@@ -74,7 +76,7 @@ BEGIN
   OPEN lastmod_cursor;
   FETCH lastmod_cursor INTO tabname;
   IF lastmod_cursor%NOTFOUND THEN
-    EXECUTE IMMEDIATE 'CREATE TABLE last_modified_times(table_name VARCHAR2(100), change_time Date)';
+    EXECUTE IMMEDIATE 'CREATE TABLE last_modified_times(table_name VARCHAR2(100), change_time Date, CONSTRAINT last_modified_times_pk PRIMARY KEY (table_name))';
     EXECUTE IMMEDIATE 'GRANT select ON last_modified_times TO public';
   END IF;
   CLOSE lastmod_cursor;
