@@ -8,6 +8,133 @@
     <h1>Frontier Project Notes</h1>
 
 
+<h2>Client release procedure</h2>
+
+These are the steps to release the client:
+
+<ol>
+
+<li>
+Update the RELEASE_NOTES with everything that has changed since the last version
+<li>
+Update the version number in Makefile
+<li>
+Commit all your changes to CVS
+<li>
+Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
+<li>
+In a scratch directory, and with CVSROOT set to
+cvsuser@cdcvs.fnal.gov:/cvs/cd do
+<br>
+<tt>cvs co -r v2_7_0 frontier/client</tt>
+<br>
+<tt>cd frontier/client</tt>
+<li>
+<tt>make all-dist</tt>
+<li>
+<tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
+<li>
+<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/clientreleasenotes.txt</tt>
+<li>
+<tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
+version numbers for the client sources and binary
+<li>
+<tt>scp tmp/*src* lxplus.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
+<!--
+<li>
+Fill out 
+<a href=https://spi.cern.ch/login/requestAfsSpaceForm.php>
+CERN Request AFS space for an external package</a>,
+external package name <tt>frontier_client</tt>, version
+of package <tt>2.7.0</tt>, and volume name of the
+package <tt>fnclnt270</tt>.
+-->
+<li>
+Send an email to <a href=mailto:project-lcg-peb-spi-support@cern.ch>
+project-lcg-peb-spi-support@cern.ch</a> and ask them to build the
+new frontier_client release and give them a copy of or link to the
+<a href=http://frontier.cern.ch/dist/clientreleasenotes.txt>release notes</a>
+for the new version.
+<li>
+Request that the new client be used as an update external package in the
+<a href=https://cmstags.cern.ch/cgi-bin/CmsTC/CmsTCLogin>CMS Tag Collector</a>.
+
+</ol>
+
+<h2>Servlet release procedure</h2>
+
+These are the steps to release the frontier servlet:
+
+<ol>
+
+<li>
+Update src/gov/fnal/frontier/RELEASE_NOTES with everything that has
+changed since the last version
+<li>
+Update the version number in src/gov/fnal/frontier/FrontierServlet.java
+<li>
+Commit all your changes to CVS
+<li>
+Set a cvs tag at the top level (above src and client) in the format
+<tt>servlet_3_12</tt>.  This will unnecessarily add tags in the client
+directory, which can optionally be removed with cvs tag -d in the
+client directory.
+<li>
+In a scratch directory, and with CVSROOT set to
+cvsuser@cdcvs.fnal.gov:/cvs/cd do
+<br>
+<tt>cvs co -r servlet_3_12 frontier</tt>
+<li>
+Prepare and release the sources:
+<br>
+<tt>mkdir Frontier_3_12</tt>
+<br>
+<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_3_12</tt>
+<br>
+<tt>tar zcf Frontier_servlet__3.12__src.tar.gz Frontier_3_12</tt>
+<br>
+<tt>scp Frontier_servlet__3.12__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
+<li>
+Prepare and release the binaries:
+<br>
+<tt>cd Frontier_3_12</tt>
+<br>
+<tt>ant -f build.local clean</tt>
+<br>
+<tt>ant -Dcatalina.home=$CATALINA_HOME -f build.local dist</tt>
+<br>
+(where CATALINA_HOME is set to the top level directory of a tomcat
+installation)
+<br>
+<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.12.war</tt>
+<br>
+<tt>scp src/gov/fnal/frontier/RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
+<li>
+ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
+version number for the server sources and binary
+<li>
+To install on the server (this is in a script called upgradeservlet):
+<ul>
+<li>
+unpack the war file with "jar xf" in a new temporary directory
+<li>
+cd to WEB-INF in the temporary directory and save copies of web.xml
+and classes/config.properties.  Copy in the old versions
+of those files from the old tomcat directory
+(/var/lib/tomcat5/webapps/SERVLET/WEB-INF where SERVLET is the servlet
+name) and merge in any new changes from the release.
+<li>
+Rename the old SERVLET to something else and rename the new temporary
+directory into its place.  This can be done while tomcat is live and it
+should notice the update.
+</ul>
+
+</ol>
+
+<hr>
+<h3>NOTE: most of the rest of this page is badly out of date.  Contact
+Dave Dykstra if you need current procedures.</h3>
+
 <h2>Required Products</h2>
 
 <ul>
@@ -245,133 +372,10 @@ $ unitTest_FrontierAccess_CmsNewFrontier
 
 </ol>
 
-<h2>Client release procedure</h2>
-
-These are the steps to release the client:
-
-<ol>
-
-<li>
-Update the RELEASE_NOTES with everything that has changed since the last version
-<li>
-Update the version number in Makefile
-<li>
-Commit all your changes to CVS
-<li>
-Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
-<li>
-In a scratch directory, and with CVSROOT set to
-cvsuser@cdcvs.fnal.gov:/cvs/cd do
-<br>
-<tt>cvs co -r v2_7_0 frontier/client</tt>
-<br>
-<tt>cd frontier/client
-<li>
-<tt>make all-dist</tt>
-<li>
-<tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
-<li>
-<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/clientreleasenotes.txt</tt>
-<li>
-<tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
-version numbers for the client sources and binary
-<li>
-<tt>scp tmp/*src* lxplus.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
-<!--
-<li>
-Fill out 
-<a href=https://spi.cern.ch/login/requestAfsSpaceForm.php>
-CERN Request AFS space for an external package</a>,
-external package name <tt>frontier_client</tt>, version
-of package <tt>2.7.0</tt>, and volume name of the
-package <tt>fnclnt270</tt>.
--->
-<li>
-Send an email to <a href=mailto:project-lcg-peb-spi-support@cern.ch>
-project-lcg-peb-spi-support@cern.ch</a> and ask them to build the
-new frontier_client release and give them a copy of or link to the
-<a href=http://frontier.cern.ch/dist/clientreleasenotes.txt>release notes</a>
-for the new version.
-<li>
-Request that the new client be used as an update external package in the
-<a href=https://cmstags.cern.ch/cgi-bin/CmsTC/CmsTCLogin>CMS Tag Collector</a>.
-
-</ol>
-
-<h2>Servlet release procedure</h2>
-
-These are the steps to release the frontier servlet:
-
-<ol>
-
-<li>
-Update src/gov/fnal/frontier/RELEASE_NOTES with everything that has
-changed since the last version
-<li>
-Update the version number in src/gov/fnal/frontier/FrontierServlet.java
-<li>
-Commit all your changes to CVS
-<li>
-Set a cvs tag at the top level (above src and client) in the format
-<tt>servlet_3_12</tt>.  This will unnecessarily add tags in the client
-directory, which can optionally be removed with cvs tag -d in the
-client directory.
-<li>
-In a scratch directory, and with CVSROOT set to
-cvsuser@cdcvs.fnal.gov:/cvs/cd do
-<br>
-<tt>cvs co -r servlet_3_12 frontier</tt>
-<li>
-Prepare and release the sources:
-<br>
-<tt>mkdir Frontier_3_12</tt>
-<br>
-<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_3_12</tt>
-<br>
-<tt>tar zcf Frontier_servlet__3.12__src.tar.gz Frontier_3_12</tt>
-<br>
-<tt>scp Frontier_servlet__3.12__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
-<li>
-Prepare and release the binaries:
-<br>
-<tt>cd Frontier_3_12</tt>
-<br>
-<tt>ant -f build.local clean</tt>
-<br>
-<tt>ant -Dcatalina.home=$CATALINA_HOME -f build.local dist</tt>
-<br>
-(where CATALINA_HOME is set to the top level directory of a tomcat
-installation)
-<br>
-<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.12.war</tt>
-<br>
-<tt>scp src/gov/fnal/frontier/RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
-<li>
-ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
-version number for the server sources and binary
-<li>
-To install on the server (this is in a script called upgradeservlet):
-<ul>
-<li>
-unpack the war file with "jar xf" in a new temporary directory
-<li>
-cd to WEB-INF in the temporary directory and save copies of web.xml
-and classes/config.properties.  Copy in the old versions
-of those files from the old tomcat directory
-(/var/lib/tomcat5/webapps/SERVLET/WEB-INF where SERVLET is the servlet
-name) and merge in any new changes from the release.
-<li>
-Rename the old SERVLET to something else and rename the new temporary
-directory into its place.  This can be done while tomcat is live and it
-should notice the update.
-</ul>
-
-</ol>
-
 <hr>
 <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- hhmts star -->
-Last modified: 11 March 2008
+Last modified: 10 November 2008
 <!-- hhmts end -->
 </body>
 </html>
