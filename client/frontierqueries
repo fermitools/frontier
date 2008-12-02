@@ -1,0 +1,93 @@
+#!/bin/bash
+# Parse a log file created by setting FRONTIER_LOG_LEVEL=debug and
+#  FRONTIER_LOG_FILE=filename and print to stdout one query per line.
+# The query result size is also printed in the form (NNN/XX%) where NNN
+#  is the full size in bytes and optionally /XX% is the compression ratio
+#  if it was compressed.  The size is by default at the end of the
+#  line but with a -sizefirst option it is at the beginning.
+# Before the query will be a hyphen (-) if the query is satisfied from
+#  the frontier internal cache, an asterisk (*) if it is a "short"
+#  expiration time query that is sent out, or a blank if it is a "long"
+#  expiration time query that is sent out.
+# The -sort option sorts the output by full size.  Implies -sizefirst.
+# Written by Dave Dykstra
+# $Id$
+#  
+SORT=cat
+if [ "$1" = "-sizefirst" ]; then
+    PRINTORDER="size, mark, query"
+    shift
+elif [ "$1" = "-sort" ]; then
+    PRINTORDER="size, mark, query"
+    SORT="sort -t( -k 2 -n"
+    shift
+else
+    PRINTORDER="mark, query, size"
+fi
+if [ $# != 1 ]; then
+	echo "Usage: $0 [-sizefirst|-sort] frontier_client.log" >&2
+	exit 1
+fi
+awk '
+BEGIN{
+    inquery=0
+    query=""
+}
+/encoding request/{
+    if (query != "") {
+	print '"$PRINTORDER"'
+    }
+    mark=" "
+    start=index($0, "t [")
+    query=substr($0,start+3)
+    end=index(query, "]")
+    if (end==0) {
+	end=length(query)+1
+	inquery=1
+    }
+    query=substr(query,1,end-1)
+    if (inquery==1)
+	next
+}
+(inquery==1){
+   end=index($0, "]") 
+    if (end==0) {
+        end=length($0)+1
+    }
+    else {
+	inquery=0
+    }
+    query=query substr($0,1,end-1)
+}
+/no-cache/{
+    mark="*"
+}
+/<GET .*&ttl=short/{
+    mark="*"
+}
+/HIT .* client cache/{
+    mark="-"
+}
+/full size/{
+    start=index($0,"full size")
+    fullsize=substr($0,start+10)
+    end=index(fullsize,")")
+    fullsize=substr(fullsize,1,end-1)
+    start=index($0,"uncompressing")
+    if (start != 0) {
+	compressedsize=substr($0,start+14)
+	end=index(compressedsize," ")
+	compressedsize=substr(compressedsize,1,end-1)
+	compressedpercent=sprintf("/%.1f%%",(compressedsize*100/fullsize))
+    }
+    else {
+        compressedpercent=""
+    }
+    size="(" fullsize compressedpercent ")"
+}
+END{
+    if (query != "") {
+	print '"$PRINTORDER"'
+    }
+}
+' $1 | $SORT
