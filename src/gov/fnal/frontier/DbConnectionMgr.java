@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletOutputStream;
 
 /**
@@ -24,6 +25,7 @@ public class DbConnectionMgr
   private static DbConnectionMgr instance=null;
   private static Boolean mutex=new Boolean(true);
   private DataSource dataSource=null;
+  private ReentrantLock acquireLock=new ReentrantLock(true);
 
   public static DbConnectionMgr getDbConnectionMgr() throws Exception
    {
@@ -51,39 +53,45 @@ public class DbConnectionMgr
 
   private class KeepAliveTimerTask extends java.util.TimerTask
    {
-   ServletOutputStream sos=null;
-   boolean shuttingDown=false;
-   String threadName=null;
-   int count=0;
-   public KeepAliveTimerTask(String name,ServletOutputStream os)
-    {
-     threadName=name;
-     sos = os;
-    }
-   public synchronized void run()
-    {
+    ServletOutputStream sos=null;
+    boolean shuttingDown=false;
+    String threadName=null;
+    int count=0;
+    public KeepAliveTimerTask(String name,ServletOutputStream os)
+     {
+      threadName=name;
+      sos = os;
+     }
+    public synchronized void run()
+     {
       if (!shuttingDown)
        {
         Thread.currentThread().setName(threadName);
 	count++;
         try {ResponseFormat.keepalive(sos);}catch(Exception e){}
-        Frontier.Log("DB mgr acquire sent keepalive "+count);
+        Frontier.Log("DB acquire sent keepalive "+count);
 	if(count>=60)
 	 {
-	  // give up after 5 minutes
-	  Frontier.Log("DB mgr acquire keepalive giving up");
+	  // Give up after 5 minutes
+	  // Note that when the DB is down, at least on SLC4 it takes about
+	  //  6-1/3rd minutes for dataSource.getConnection() to return
+	  Frontier.Log("DB acquire keepalive giving up");
 	  shuttingDown=true;
 	  cancel();
 	 }
        }
-    }
-   public synchronized void shutdown()
-    {
-     // set this boolean to avoid further output in case the
-     // run function has already been set to go
-     shuttingDown=true;
-     cancel();
-    }
+     }
+    public synchronized void shutdown()
+     {
+      // set this boolean to avoid further output in case the
+      // run function has already been set to go
+      shuttingDown=true;
+      cancel();
+     }
+    public boolean isShutdown()
+     {
+      return shuttingDown;
+     }
    }
 
   public Connection acquire(ServletOutputStream sos) throws Exception 
@@ -95,14 +103,31 @@ public class DbConnectionMgr
     timer.schedule(timerTask,5000,5000);
     try
      {
-      connection=dataSource.getConnection();
+      Frontier.Log("Acquiring DB connection lock");
+      // use a fair lock that queues tasks in order rather than using
+      //  the more simple but unfair "synchronized" member function
+      acquireLock.lock();
+      try
+       {
+	// check if the corresponding timerTask has already given up,
+	//  and if so, don't try to get the connection because it
+	//  can take a very long time of the DB server is down
+        if(timerTask.isShutdown())
+          throw new Exception("Timed out waiting to acquire DB connection");
+        Frontier.Log("Acquiring DB connection");
+        connection=dataSource.getConnection();
+       }
+      finally
+       {
+        acquireLock.unlock();
+       }
      }
     finally
      {
       timer.cancel();
       timerTask.shutdown();
      }
-    Frontier.Log("DB mgr connection acquired");
+    Frontier.Log("DB connection acquired");
     return connection;
    }
 
