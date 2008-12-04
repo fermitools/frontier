@@ -1,5 +1,24 @@
 $Id$
 
+3.14 2008/12/04 (dwd)
+    - Avoid accumulating threads indefinitely when a database is down,
+      by maintaining a lock for getting connections to the database and
+      raising an exception immediately if the 5-minute keepalive
+      thread had already given up by the time the lock is acquired.
+      Previously all the threads would in turn wait 6+ minutes to try
+      to open a socket to the database server and would tie up so many
+      resources that they began to interfere with connections to other
+      databases.
+    - Avoid a couple null pointer exceptions that happened when
+      required pieces were missing from a request.  Instead, raise
+      more helpful exceptions for "no query string" and "no
+      X-Frontier-ID".
+    - Also avoid a null pointer exception leading to a "MUST NEVER
+      HAPPEN HERE" internal error when there's no stack trace
+      available in an exception.
+    - Remove an extraneous blank in exception log entries that
+      sometimes made the log appear as if it had an extra blank line.
+
 3.13 2008/11/05 (dwd)
     - Make sure that a '?' bind variable substitution exists in query
       before looking for colons, because colon is occasionally used in
