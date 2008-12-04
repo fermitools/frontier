@@ -21,7 +21,10 @@ public final class FrontierServlet extends HttpServlet
 
   private static String throwableDescript(Throwable e)
    {
-    String msg=e.toString().trim()+" at "+e.getStackTrace()[0];
+    String msg=e.toString().trim();
+    StackTraceElement[] stacktrace=e.getStackTrace();
+    if(stacktrace.length>0)
+      msg+=" at "+stacktrace[0];
     if(msg.startsWith("java.lang."))
       msg=msg.substring(10);
     return msg;
@@ -103,7 +106,7 @@ public final class FrontierServlet extends HttpServlet
        }
       catch(Throwable e)
        {
-        Frontier.Log("Error initializing Frontier object: ",e);
+        Frontier.Log("Error initializing Frontier object:",e);
 	setAgeExpires(request,response,Frontier.errorDefaultMaxAge());
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
         ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
@@ -130,7 +133,7 @@ public final class FrontierServlet extends HttpServlet
        }
       catch(Throwable e)
        {
-        Frontier.Log("Error getting cached last-modified time: ",e);
+        Frontier.Log("Error getting cached last-modified time:",e);
         setAgeExpires(request,response,frontier.error_max_age);
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
 	globalErrorMsg=throwableDescript(e);
@@ -153,7 +156,7 @@ public final class FrontierServlet extends HttpServlet
 	   }
 	  catch(Throwable e)
 	   {
-	    Frontier.Log("Error acquiring database: ",e);
+	    Frontier.Log("Error acquiring database:",e);
 	    setAgeExpires(request,response,frontier.error_max_age);
 	    ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
 	    return;
@@ -203,7 +206,7 @@ public final class FrontierServlet extends HttpServlet
 		 }
 		catch(Throwable e)
 		 {
-		  Frontier.Log("Error getting last-modified time: ",e);
+		  Frontier.Log("Error getting last-modified time:",e);
 		  setAgeExpires(request,response,frontier.error_max_age);
 		  ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
 		  return;
@@ -219,7 +222,7 @@ public final class FrontierServlet extends HttpServlet
            }
           catch(Throwable e)
            {
-            Frontier.Log("Error while processing payload "+i+": ",e);
+            Frontier.Log("Error while processing payload "+i+":",e);
             ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
 	    if(!response.isCommitted())
 	     {
@@ -247,7 +250,7 @@ public final class FrontierServlet extends HttpServlet
      }
     catch(Throwable e)
      {
-      Frontier.Log("Internal Error: MUST NEVER HAPPEN HERE!: ",e);
+      Frontier.Log("Internal Error: MUST NEVER HAPPEN HERE!:",e);
       // sometimes global error message gets through here to client and
       //  sometimes it causes an XML error, depending on where failure occurred
       ResponseFormat.putGlobalError(out,"Internal Error: "+throwableDescript(e));
