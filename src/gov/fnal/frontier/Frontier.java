@@ -219,6 +219,8 @@ public final class Frontier
 
   private void logClientDesc(HttpServletRequest req) throws Exception
    {
+    if(req.getQueryString()==null)
+      throw new Exception("no query");
     String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); 
     StringBuffer client_desc=new StringBuffer("");
     client_desc.append("servlet_version:");
@@ -230,6 +232,8 @@ public final class Frontier
     client_desc.append(" raddr ");
     client_desc.append(req.getRemoteAddr());
     client_desc.append(" frontier-id: ");
+    if(req.getHeader("x-frontier-id")==null)
+      throw new Exception("X-frontier-id header missing");
     client_desc.append(req.getHeader("x-frontier-id"));
     for(Enumeration en=req.getHeaderNames();en.hasMoreElements();)
      {
