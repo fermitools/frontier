@@ -232,9 +232,11 @@ public final class Frontier
     client_desc.append(" raddr ");
     client_desc.append(req.getRemoteAddr());
     client_desc.append(" frontier-id: ");
-    if(req.getHeader("x-frontier-id")==null)
-      throw new Exception("X-frontier-id header missing");
-    client_desc.append(req.getHeader("x-frontier-id"));
+    String frontierId=req.getHeader("x-frontier-id");
+    if(frontierId==null)
+      client_desc.append("missing");
+    else
+      client_desc.append(frontierId);
     for(Enumeration en=req.getHeaderNames();en.hasMoreElements();)
      {
       String name=(String)en.nextElement();
@@ -247,6 +249,8 @@ public final class Frontier
        }
      }            
     Log(client_desc.toString());
+    if(frontierId==null)
+      throw new Exception("X-frontier-id header missing");
    }
                 
      
