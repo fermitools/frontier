@@ -200,7 +200,10 @@ public final class FrontierServlet extends HttpServlet
 		  else
 		   {
 		    String lastmod=dateHeader(last_modified);
-		    Frontier.Log("last-modified time: "+lastmod);
+		    if(if_modified_since>0)
+			Frontier.Log("modified at time: "+lastmod);
+		    else
+			Frontier.Log("last-modified time: "+lastmod);
 		    response.setHeader("Last-Modified",lastmod);
 		   }
 		 }
