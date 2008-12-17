@@ -1,5 +1,12 @@
 $Id$
 
+3.15 2008/12/17 (dwd)
+    - Distinguish in the log when an item has been modified after an
+      if-modified-since by noting it as 'modified at time'.
+    - When the X-Frontier-Id header is missing, still put in the
+      initial log entry as much as is known so we can find out where
+      the request is coming from.
+
 3.14 2008/12/04 (dwd)
     - Avoid accumulating threads indefinitely when a database is down,
       by maintaining a lock for getting connections to the database and
