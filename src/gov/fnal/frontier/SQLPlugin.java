@@ -260,7 +260,10 @@ public class SQLPlugin implements FrontierPlugin
     SQLTimes times=getSQLTimesObject(queryTableName,false);
     if(times==null)
       return 0;
-    return times.getCachedLastModified();
+    long last_modified=times.getCachedLastModified();
+    if(last_modified>0)
+      Frontier.Log("using cached last-modified time of "+queryTableName);
+    return last_modified;
    }
 
   public long fp_getLastModified(java.sql.Connection con) throws Exception
@@ -268,7 +271,6 @@ public class SQLPlugin implements FrontierPlugin
     if(queryTableName==null)
       throw new Exception("SQLPlugin usage error -- fp_cachedLastModified must be called and return zero before calling fp_getLastModified");
     SQLTimes times=getSQLTimesObject(queryTableName,true);
-    // put out a log message here because this can be a time-consuming DB op.
     Frontier.Log("getting last-modified time of "+queryTableName);
     long last_modified=times.getLastModified(con);
     return last_modified;
