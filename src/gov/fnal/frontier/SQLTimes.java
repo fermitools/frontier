@@ -14,8 +14,8 @@ class SQLTimes
   private long last_validated;
   private String queryTableOwner;
   private String queryTableObjectName;
-  private static final String timestamp_sql1="select to_char(change_time, 'mm/dd/yyyy hh24:mi:ss') as our_time from ";
-  private static final String timestamp_sql2=".last_modified_times where table_name=?";
+  private static final String timestamp_sql1="select to_char(change_time, 'mm/dd/yyyy hh24:mi:ss') from ";
+  private static final String timestamp_sql2=" where table_owner=? and table_name=?";
 
   public SQLTimes(String tableName)
    {
@@ -24,9 +24,14 @@ class SQLTimes
     int dotIndex=tableName.indexOf('.');
     queryTableOwner=tableName.substring(0,dotIndex);
     queryTableObjectName=tableName.substring(dotIndex+1);
-    // remove any quotes from the table object part
+    // remove any quotes from each part
     // if there weren't any quotes, make it upper case
-    char firstchar=queryTableObjectName.charAt(0);
+    char firstchar=queryTableOwner.charAt(0);
+    if((firstchar=='"')||(firstchar=='\''))
+     queryTableOwner=queryTableOwner.substring(1,queryTableOwner.length()-1);
+    else
+      queryTableOwner=queryTableOwner.toUpperCase();
+    firstchar=queryTableObjectName.charAt(0);
     if((firstchar=='"')||(firstchar=='\''))
      queryTableObjectName=queryTableObjectName.substring(1,queryTableObjectName.length()-1);
     else
@@ -60,26 +65,26 @@ class SQLTimes
     PreparedStatement stmt=null;
     ResultSet rs=null;
     String stamp=null;
-    // can't pass the queryTableOwner as bind variable, splice it in
-    String timequery=timestamp_sql1+queryTableOwner+timestamp_sql2;
+    // can't pass the table name as bind variable, splice it in
+    String timequery=timestamp_sql1+Frontier.last_modified_table_name+timestamp_sql2;
     try
      {
       stmt=con.prepareStatement(timequery);
-      stmt.setString(1,queryTableObjectName);
-      String queryTableParam="where ? = "+queryTableObjectName;
+      stmt.setString(1,queryTableOwner);
+      stmt.setString(2,queryTableObjectName);
       try
        {
         rs=stmt.executeQuery();
        }
       catch(Exception e)
        {
-        Exception newe=new Exception("Error querying for "+queryTableObjectName+" from "+queryTableOwner+".LAST_MODIFIED_TIMES: "+e.getMessage().trim());
+        Exception newe=new Exception("Error querying for "+queryTableOwner+"."+queryTableObjectName+" in "+Frontier.last_modified_table_name+": "+e.getMessage().trim());
 	newe.setStackTrace(e.getStackTrace());
 	throw newe;
        }
       if(!rs.next())
        {
-        throw new Exception(queryTableObjectName+" not found in "+queryTableOwner+".LAST_MODIFIED_TIMES");
+        throw new Exception(queryTableOwner+"."+queryTableObjectName+" not found in "+Frontier.last_modified_table_name);
        }
       else
        {
