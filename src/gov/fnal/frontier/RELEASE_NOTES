@@ -1,5 +1,12 @@
 $Id$
 
+3.17 2009/02/26 (dwd)
+    - Add new configuration variable LastModifiedTableName that
+      defines the name of the single table where modification times
+      are kept for the whole database, rather than reading them
+      from a LAST_MODIFIED_TIMES table in each account.  This is
+      now required if ValidateLastModifiedSeconds is set.
+
 3.16 2008/12/19 (dwd)
     - Log 'modified at time' also when the modification time was
       cached
