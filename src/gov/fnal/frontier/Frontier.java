@@ -28,6 +28,7 @@ public final class Frontier
                                             // based on XSD or else)
   
   public static long validate_last_modified_seconds=-1;
+  public static String last_modified_table_name;
 
   public long max_age=-1;
   public long error_max_age=Frontier.errorDefaultMaxAge();
@@ -65,8 +66,14 @@ public final class Frontier
 
     String str=getPropertyString(prb,"ValidateLastModifiedSeconds");
     if(str!=null)
+     {
       validate_last_modified_seconds=Long.parseLong(str);
-    Frontier.Log("validate last-modified secs: "+validate_last_modified_seconds);
+      Frontier.Log("validate last-modified secs: "+validate_last_modified_seconds);
+      last_modified_table_name=getPropertyString(prb,"LastModifiedTableName");
+      if(last_modified_table_name==null)
+        throw new Exception("LastModifiedTableName (required by ValidateLastModifiedSeconds) is missing in FrontierConfig");
+      Frontier.Log("last-modified table name: "+last_modified_table_name);
+     }
 
     conf_cache_expire_hourofday[LONGCACHE]=getPropertyString(prb,"LongCacheExpireHourOfDay");
     conf_cache_expire_seconds[LONGCACHE]=getPropertyString(prb,"LongCacheExpireSeconds");
