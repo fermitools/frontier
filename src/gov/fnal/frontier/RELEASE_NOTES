@@ -1,5 +1,11 @@
 $Id$
 
+3.16 2008/12/19 (dwd)
+    - Log 'modified at time' also when the modification time was
+      cached
+    - Log 'using cached last-modified time of' the account.table
+      when a cached modification time was found
+
 3.15 2008/12/17 (dwd)
     - Distinguish in the log when an item has been modified after an
       if-modified-since by noting it as 'modified at time'.
