@@ -5,7 +5,7 @@
 # for url safety), retrieves data, and decodes results
 # Author: Sinisa Veseli November 2005
 # Update: Lee Lueking added --stats-only flag for perf testing
-# Update: Dave Dykstra added version number put into frontier id
+# Update: Dave Dykstra added version number into frontier id and other mods
 #
 # example of usage
 # ./fnget.py --url=http://lxfs6043.cern.ch:8000/Frontier3D/Frontier 
@@ -22,7 +22,7 @@ import curses.ascii
 import time
 import os.path
 
-frontierId = "fnget.py 1.3"
+frontierId = "fnget.py 1.4"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
@@ -93,8 +93,126 @@ if statsFlag:
 else:
   print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart)
 
+#---------------- define timeout on urllib2 socket ops -------------#
+#  Extracted from http://code.google.com/p/timeout-urllib2/
+
+from httplib import HTTPConnection as _HC
+import socket
+from urllib2 import HTTPHandler as _H
+
+def sethttptimeout(timeout):
+  """Use TimeoutHTTPHandler and set the timeout value.
+  
+  Args:
+    timeout: the socket connection timeout value.
+  """
+  if _under_26():
+    opener = urllib2.build_opener(TimeoutHTTPHandler(timeout))
+    urllib2.install_opener(opener)
+  else:
+    raise Error("This python version has timeout builtin")
+
+def _clear(sock):
+  sock.close()
+  return None
+
+def _under_26():
+  import sys
+  if sys.version_info[0] < 2: return True
+  if sys.version_info[0] == 2:
+    return sys.version_info[1] < 6
+  return False
+
+class Error(Exception): pass
+
+class HTTPConnectionTimeoutError(Error): pass
+
+class TimeoutHTTPConnection(_HC):
+  """A timeout control enabled HTTPConnection.
+  
+  Inherit httplib.HTTPConnection class and provide the socket timeout
+  control.
+  """
+  _timeout = None
+
+  def __init__(self, host, port=None, strict=None, timeout=None):
+    """Initialize the object.
+
+    Args:
+      host: the connection host.
+      port: optional port.
+      strict: strict connection.
+      timeout: socket connection timeout value.
+    """
+    _HC.__init__(self, host, port, strict)
+    self._timeout = timeout or TimeoutHTTPConnection._timeout
+    if self._timeout: self._timeout = float(self._timeout)
+
+  def connect(self):
+    """Perform the socket level connection.
+
+    A new socket object will get built everytime. If the connection
+    object has _timeout attribute, it will be set as the socket
+    timeout value.
+
+    Raises:
+      HTTPConnectionTimeoutError: when timeout is hit
+      socket.error: when other general socket errors encountered.
+    """
+    msg = "getaddrinfo returns an empty list"
+    err = socket.error
+    for res in socket.getaddrinfo(self.host, self.port, 0,
+                                  socket.SOCK_STREAM):
+      af, socktype, proto, canonname, sa = res
+      try:
+        try:
+          self.sock = socket.socket(af, socktype, proto)
+          if self._timeout: self.sock.settimeout(self._timeout)
+          if self.debuglevel > 0:
+            print "connect: (%s, %s)" % (self.host, self.port)
+          self.sock.connect(sa)
+        except socket.timeout, msg:
+          err = socket.timeout
+          if self.debuglevel > 0:
+            print 'connect timeout:', (self.host, self.port)
+          self.sock = _clear(self.sock)
+          continue
+        break
+      except socket.error, msg:
+        if self.debuglevel > 0:
+          print 'general connect fail:', (self.host, self.port)
+        self.sock = _clear(self.sock)
+        continue
+      break
+    if not self.sock:
+      if err == socket.timeout:
+        raise HTTPConnectionTimeoutError, msg
+      raise err, msg
+
+class TimeoutHTTPHandler(_H):
+  """A timeout enabled HTTPHandler for urllib2."""
+  def __init__(self, timeout=None, debuglevel=0):
+    """Initialize the object.
+
+    Args:
+      timeout: the socket connect timeout value.
+      debuglevel: the debuglevel level.
+    """
+    _H.__init__(self, debuglevel)
+    TimeoutHTTPConnection._timeout = timeout
+
+  def http_open(self, req):
+    """Use TimeoutHTTPConnection to perform the http_open"""
+    return self.do_open(TimeoutHTTPConnection, req)
+
+#---------------- end timeout on socket ops ----------------#
+
 t1 = time.time()
-result = urllib2.urlopen(request).read()
+if _under_26():
+  sethttptimeout(10)
+  result = urllib2.urlopen(request).read()
+else:
+  result = urllib2.urlopen(request,None,10).read()
 t2 = time.time()
 queryEnd = time.localtime()
 if statsFlag:
