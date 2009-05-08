@@ -22,7 +22,7 @@ import curses.ascii
 import time
 import os.path
 
-frontierId = "fnget.py 1.4"
+frontierId = "fnget.py 1.5"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
@@ -93,8 +93,15 @@ if statsFlag:
 else:
   print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart)
 
+def _under_24():
+  import sys
+  if sys.version_info[0] < 2: return True
+  if sys.version_info[0] == 2:
+    return sys.version_info[1] < 4
+  return False
+
 #---------------- define timeout on urllib2 socket ops -------------#
-#  Extracted from http://code.google.com/p/timeout-urllib2/
+#  Adapted from http://code.google.com/p/timeout-urllib2/
 
 from httplib import HTTPConnection as _HC
 import socket
@@ -208,7 +215,10 @@ class TimeoutHTTPHandler(_H):
 #---------------- end timeout on socket ops ----------------#
 
 t1 = time.time()
-if _under_26():
+if _under_24():
+  print >> sys.stderr, "*WARNING:* no timeout available in python older than 2.4"
+  result = urllib2.urlopen(request).read()
+elif _under_26():
   sethttptimeout(10)
   result = urllib2.urlopen(request).read()
 else:
