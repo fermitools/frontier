@@ -23,5 +23,5 @@ public interface FrontierDataObject
   public int fdo_write(Encoder enc,String method,ServletOutputStream os) throws Exception;
   public long fdo_cachedLastModified() throws Exception;
   public long fdo_getLastModified(ServletOutputStream os) throws Exception;
-  public void fdo_close(ServletOutputStream os);
+  public void fdo_close(ServletOutputStream os) throws Exception;
  }
