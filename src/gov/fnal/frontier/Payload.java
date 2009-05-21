@@ -199,7 +199,7 @@ public class Payload
     return md5_ascii.toString();
    }  
 
-  public void close(ServletOutputStream sos)
+  public void close(ServletOutputStream sos) throws Exception
    {
     fdo.fdo_close(sos);
    }

@@ -215,7 +215,7 @@ public final class Frontier
     return last_modified;
    }
 
-  public void close(ServletOutputStream sos)
+  public void close(ServletOutputStream sos) throws Exception
    {
     for(int i=0;i<payloads_num;i++)
      {
