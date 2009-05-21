@@ -107,7 +107,7 @@ public class PluginDataObject implements FrontierDataObject
     return plugin.fp_getLastModified(acquiredConnection);
    }
 
-  public void fdo_close(ServletOutputStream sos)
+  public void fdo_close(ServletOutputStream sos) throws Exception
    {
     if(acquiredConnection!=null)
      {
@@ -117,7 +117,8 @@ public class PluginDataObject implements FrontierDataObject
        }
       catch(Exception e)
        {
-        Frontier.Log("Error releasing DB connection"+e);
+        Frontier.Log("Error releasing DB connection "+e);
+	throw e;
        }
       acquiredConnection=null;
      }
