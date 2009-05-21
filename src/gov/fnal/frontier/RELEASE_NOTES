@@ -1,5 +1,15 @@
 $Id$
 
+3.18 2009/05/21 (dwd)
+    - If there's an exception when releaseing the database connection, force
+      the servlet to restart by touching WEB-INF/classes/config.properties.
+      That's quite ugly, but I couldn't think of a better way to do it.  We
+      saw a case where this happened and it ended up hanging the servlet and
+      eventually the whole tomcat, so it is important to take of this.
+      NOTE: if installed by root but run under a different user id, as
+      is often the case when it is installed by rpm, this approach will
+      not work!
+
 3.17 2009/02/26 (dwd)
     - Add new configuration variable LastModifiedTableName that
       defines the name of the single table where modification times
