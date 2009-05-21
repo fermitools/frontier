@@ -95,6 +95,7 @@ public final class FrontierServlet extends HttpServlet
     Thread.currentThread().setName("id="+count_total);
 
     String globalErrorMsg="";
+    Exception globalCloseException=null;
     try
      {
       out=response.getOutputStream();      
@@ -246,7 +247,14 @@ public final class FrontierServlet extends HttpServlet
 	     }
             break;
            }
-	  p.close(out);
+	  try 
+	   {
+	    p.close(out);
+	   }
+	  catch(Exception e)
+	   {
+	    globalCloseException=e;
+	   }
          }
        }
       finally
@@ -270,7 +278,17 @@ public final class FrontierServlet extends HttpServlet
 	// this causes client to re-try with cache flush
         ResponseFormat.putGlobalError(out,globalErrorMsg);
        }
-      if(frontier!=null)frontier.close(out);
+      if((frontier!=null)&&(globalCloseException==null))
+       {
+	try
+	 {
+	  frontier.close(out);
+	 }
+	catch(Exception e)
+	 {
+	  globalCloseException=e;
+	 }
+       }
       ResponseFormat.close(out);
 
       if(response.isCommitted())
@@ -288,6 +306,23 @@ public final class FrontierServlet extends HttpServlet
       synchronized (mutex) 
        {
         --count_current;
+       }
+
+      if(globalCloseException!=null)
+       {
+        String touchpath=getServletConfig().getServletContext().getRealPath("WEB-INF/classes/config.properties");
+	Frontier.Log("FATAL ERROR closing payload:",globalCloseException);
+	Frontier.Log("Touching "+touchpath+" to force restart of servlet");
+	try 
+	 {
+	  File file=new File(touchpath);
+	  if(!file.setLastModified(Calendar.getInstance().getTimeInMillis()))
+	    Frontier.Log("Touching file failed");
+	 }
+	catch(Exception e)
+	 {
+	  Frontier.Log("Ignoring error with touch:",e);
+	 }
        }
      }
    }
