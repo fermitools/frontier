@@ -36,8 +36,8 @@
 int frontier_socket();
 void frontier_socket_close(int s);
 int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,int timeoutsecs);
-int frontier_write(int s,const char *buf,int len,int timeoutsecs);
-int frontier_read(int s, char *buf,int size,int timeoutsecs);
+int frontier_write(int s,const char *buf,int len,int timeoutsecs,struct addrinfo *addr);
+int frontier_read(int s, char *buf,int size,int timeoutsecs,struct addrinfo *addr);
 
 
 struct s_FrontierAddrInfo
@@ -58,6 +58,7 @@ struct s_FrontierUrlInfo
   FrontierAddrInfo firstfai;
   FrontierAddrInfo *fai;
   FrontierAddrInfo *lastfai;
+  time_t whenresolved;
  };
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
@@ -65,6 +66,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec);
 int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 
+#define FRONTIER_RERESOLVE_SECS (60*5)
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 #define FRONTIER_MAX_PERSIST_SIZE (16*1024)
 
@@ -92,6 +94,7 @@ struct s_FrontierHttpClnt
   int connect_timeout_secs;
   int read_timeout_secs;
   int write_timeout_secs;
+  struct addrinfo *cur_addr;
     
   int err_code;
   int data_size;
