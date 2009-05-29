@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
+#include <time.h>
 #include <netdb.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -161,7 +163,16 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
   int ret;
   struct addrinfo *addr;
   FrontierAddrInfo *fai;
+  time_t now=time(0);
   
+  if(fui->fai->addr)
+   {
+    if((now-fui->whenresolved)<FRONTIER_RERESOLVE_SECS)
+      return FRONTIER_OK;
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-resolving host %s",fui->host);
+   }
+  fui->whenresolved=now;
+
   bzero(&hints,sizeof(struct addrinfo));
   
   hints.ai_family=PF_INET;
