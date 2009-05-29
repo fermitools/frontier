@@ -146,7 +146,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
  }
  
  
-static int socket_write(int s,const char *buf, int len, int timeoutsecs)
+static int socket_write(int s,const char *buf, int len, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
   fd_set wfds;
@@ -166,7 +166,8 @@ static int socket_write(int s,const char *buf, int len, int timeoutsecs)
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"write timed out after %d seconds",timeoutsecs);
+    frontier_setErrorMsg(__FILE__,__LINE__,"write to %s timed out after %d seconds",
+      inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   if(!FD_ISSET(s,&wfds))
@@ -189,7 +190,7 @@ static int socket_write(int s,const char *buf, int len, int timeoutsecs)
  }
 
  
-int frontier_write(int s,const char *buf, int len, int timeoutsecs)
+int frontier_write(int s,const char *buf, int len, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
   int total;
@@ -200,7 +201,7 @@ int frontier_write(int s,const char *buf, int len, int timeoutsecs)
   total=0;
   while(repeat--)
    {
-    ret=socket_write(s,buf+total,len-total,timeoutsecs);
+    ret=socket_write(s,buf+total,len-total,timeoutsecs,addr);
     if(ret<0) return ret;
     total+=ret;
     if(total==len) return total;
@@ -212,7 +213,7 @@ int frontier_write(int s,const char *buf, int len, int timeoutsecs)
 
  
 
-int frontier_read(int s, char *buf, int size, int timeoutsecs)
+int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
   fd_set rfds;
@@ -233,7 +234,8 @@ int frontier_read(int s, char *buf, int size, int timeoutsecs)
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"read timed out after %d seconds",timeoutsecs);
+    frontier_setErrorMsg(__FILE__,__LINE__,"read from %s timed out after %d seconds",
+      inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
   if(!FD_ISSET(s,&rfds))
