@@ -65,10 +65,11 @@ int main(int argc, char **argv)
 static void print_usage(char **argv)
  {
   std::cout<<"Usage: \n"<<argv[0]<<" -h\n\tPrint this info\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] [-n] -f file_name\n\tRead query from file_name\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] [-n] \n\tRead query from stdin\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] -f file_name\n\tRead query from file_name\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] \n\tRead query from stdin\n";
   std::cout<<"\n  [-r] means to force a reload\n";
   std::cout<<"  [-n] means do not print data\n";
+  std::cout<<"  [-c N] repeat the query N count times\n";
  }
  
 int do_main(int argc, char **argv)
@@ -85,6 +86,8 @@ int do_main(int argc, char **argv)
   int arg_ind;
   int do_reload=0;
   int do_print=1;
+  int repeat_count=1;
+  int idx;
   std::string sql("");
   
   try
@@ -108,6 +111,11 @@ int do_main(int argc, char **argv)
        {
         do_print=0;
         arg_ind++;
+       }
+      if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
+       {
+        repeat_count=atoi(argv[arg_ind+1]);
+	arg_ind+=2;
        }
       if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
        {
@@ -156,90 +164,94 @@ int do_main(int argc, char **argv)
     std::list<std::string> proxyList;
     //frontier::DataSource ds(serverList, proxyList);
     frontier::Connection con(serverList, proxyList);
-    frontier::Session ses(&con);
-    con.setReload(do_reload);
 
-    frontier::Request req(req_data,frontier::BLOB);
-    req.addKey("p1",param);
+    for(idx=0;idx<repeat_count;idx++)
+     {
+      frontier::Session ses(&con);
+      con.setReload(do_reload);
 
-    std::vector<const frontier::Request*> vrq;
-    vrq.push_back(&req);
-    ses.getData(vrq);
+      frontier::Request req(req_data,frontier::BLOB);
+      req.addKey("p1",param);
 
-    ses.setCurrentLoad(1);
-    
-    int field_num=0;
-    
-    std::cout<<"\nObject fields:\n";
-    
-    ses.next();
-    // MetaData consists of one record with filed names.
-    // Let's go over all fields:
-    std::string name,type;
-    
-    while(!ses.isEOR()) {
-      ses.assignString(&name);
-      ses.assignString(&type);
-      ++field_num;
-      std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
-    }
-         
-    int nrec=ses.getNumberOfRecords();
-    std::cout<<"\nResult contains "<< nrec<<" objects.\n";
-        
-    while(ses.next()) {
-      if(!do_print)continue;
-      for(int k=0;k<field_num;k++) {
-        ses.getAnyData(&ad);
-        switch(ad.type()) {
-          //case frontier::BLOB_TYPE_BYTE:       vc=ses.getByte(); break;
-          case frontier::BLOB_TYPE_INT4:       
-            vi=ad.getInt(); 
-            std::cout<<vi; 
-            break;
-          case frontier::BLOB_TYPE_INT8:       
-            vl=ad.getLongLong(); 
-            std::cout<<vl; 
-            break;
-          case frontier::BLOB_TYPE_FLOAT:      
-            vf=ad.getFloat(); 
-            std::cout<<vf; 
-            break;
-          case frontier::BLOB_TYPE_DOUBLE:     
-            vd=ad.getDouble(); 
-            std::cout<<vd; 
-            break;
-          case frontier::BLOB_TYPE_TIME:       
-            vl=ad.getLongLong(); 
-            std::cout<<vl; 
-            break;
-          case frontier::BLOB_TYPE_ARRAY_BYTE: 
-            if(!ad.getRawStrP()) {
-              std::cout<<"NULL";
-            }
-	    else if (ad.getRawStrS() == 0)
-              std::cout<<"''"; 
-            else {
-              vs=ad.getString(); 
-              str_escape_quota(vs);
-              std::cout<<'\''<<(*vs)<<'\''<<'('<<ad.getRawStrS()<<')'; 
-            }
-            break;	  
-          default: 
-            std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; 
-            exit(1);
-        }
-        if(k+1<field_num) {
-          std::cout<<" ";
-        }
-        ad.clean();
+      std::vector<const frontier::Request*> vrq;
+      vrq.push_back(&req);
+      ses.getData(vrq);
+
+      ses.setCurrentLoad(1);
+      
+      int field_num=0;
+      
+      std::cout<<"\nObject fields:\n";
+      
+      ses.next();
+      // MetaData consists of one record with filed names.
+      // Let's go over all fields:
+      std::string name,type;
+      
+      while(!ses.isEOR()) {
+	ses.assignString(&name);
+	ses.assignString(&type);
+	++field_num;
+	std::cout<<field_num<<" "<<(name)<<" "<<(type)<<std::endl;
       }
-      ad.clean();
-      std::cout<<std::endl;
-    }
-    if(!ses.isEOF()) {
-      std::cout<<"Error: must be EOF here\n";
-      exit(1);
+	   
+      int nrec=ses.getNumberOfRecords();
+      std::cout<<"\nResult contains "<< nrec<<" objects.\n";
+	  
+      while(ses.next()) {
+	if(!do_print)continue;
+	for(int k=0;k<field_num;k++) {
+	  ses.getAnyData(&ad);
+	  switch(ad.type()) {
+	    //case frontier::BLOB_TYPE_BYTE:       vc=ses.getByte(); break;
+	    case frontier::BLOB_TYPE_INT4:       
+	      vi=ad.getInt(); 
+	      std::cout<<vi; 
+	      break;
+	    case frontier::BLOB_TYPE_INT8:       
+	      vl=ad.getLongLong(); 
+	      std::cout<<vl; 
+	      break;
+	    case frontier::BLOB_TYPE_FLOAT:      
+	      vf=ad.getFloat(); 
+	      std::cout<<vf; 
+	      break;
+	    case frontier::BLOB_TYPE_DOUBLE:     
+	      vd=ad.getDouble(); 
+	      std::cout<<vd; 
+	      break;
+	    case frontier::BLOB_TYPE_TIME:       
+	      vl=ad.getLongLong(); 
+	      std::cout<<vl; 
+	      break;
+	    case frontier::BLOB_TYPE_ARRAY_BYTE: 
+	      if(!ad.getRawStrP()) {
+		std::cout<<"NULL";
+	      }
+	      else if (ad.getRawStrS() == 0)
+		std::cout<<"''"; 
+	      else {
+		vs=ad.getString(); 
+		str_escape_quota(vs);
+		std::cout<<'\''<<(*vs)<<'\''<<'('<<ad.getRawStrS()<<')'; 
+	      }
+	      break;	  
+	    default: 
+	      std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; 
+	      exit(1);
+	  }
+	  if(k+1<field_num) {
+	    std::cout<<" ";
+	  }
+	  ad.clean();
+	}
+	ad.clean();
+	std::cout<<std::endl;
+      }
+      if(!ses.isEOF()) {
+	std::cout<<"Error: must be EOF here\n";
+	exit(1);
+      }
     }
   }
   catch(const frontier::ConfigurationError& e) {
