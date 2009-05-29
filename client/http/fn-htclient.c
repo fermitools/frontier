@@ -181,7 +181,7 @@ static int http_read(FrontierHttpClnt *c)
   //printf("\nhttp_read\n");
   //bzero(c->buf,FRONTIER_HTTP_BUF_SIZE);
   c->data_pos=0;  
-  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE,c->read_timeout_secs);
+  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE,c->read_timeout_secs,c->cur_addr);
 
   return c->data_size;
  }
@@ -283,11 +283,8 @@ static int open_connection(FrontierHttpClnt *c)
     c->using_proxy=0;
    }
      
-  if(!fui->fai->addr)
-   {
-    ret=frontier_resolv_host(fui);
-    if(ret) return ret;
-   }
+  ret=frontier_resolv_host(fui);
+  if(ret) return ret;
   addr=fui->fai->addr;
 
   c->socket=frontier_socket();
@@ -303,6 +300,8 @@ static int open_connection(FrontierHttpClnt *c)
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
+
+  c->cur_addr=addr;
    
   return ret;
 }
@@ -380,7 +379,7 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
    
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"request <%s>",buf);
    
-  ret=frontier_write(c->socket,buf,len,c->write_timeout_secs);
+  ret=frontier_write(c->socket,buf,len,c->write_timeout_secs,c->cur_addr);
   if(ret<0) return ret;
   return FRONTIER_OK;
  }
@@ -458,7 +457,7 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
     if(len>0)
      {
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
-      ret=frontier_write(c->socket,body,len,c->write_timeout_secs);
+      ret=frontier_write(c->socket,body,len,c->write_timeout_secs,c->cur_addr);
       if(ret<0) return ret;
      }
 
