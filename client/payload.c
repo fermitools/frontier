@@ -26,6 +26,7 @@
 #include <frontier_client/frontier.h>
 #include "fn-internal.h"
 #include "fn-base64.h"
+#include "fn-zlib.h"
 #include "zlib.h"
 #include <stdio.h>
 #include <strings.h>
@@ -101,9 +102,8 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   char *md5_ctx=0;
   int i;
   int zipped=0;
-  int bin_size;
-  /* uLongf needed for 64-bit uncompress! */
-  uLongf blob_size;
+  long bin_size;
+  long blob_size;
   unsigned char *bin_data=0;
   unsigned char *p;
   FrontierMemBuf *mb;
@@ -197,7 +197,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
       goto errcleanup;
      }
     blob_size=fpl->full_size;
-    switch(uncompress(fpl->blob,&blob_size,bin_data,bin_size))
+    switch(fn_gunzip(fpl->blob,&blob_size,bin_data,bin_size))
      {
       case Z_OK:
 	break;
