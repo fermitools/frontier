@@ -183,6 +183,8 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
      }
    }
 
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"starting frontier client version %s",frontier_api_version);
+
   uid=getuid();
   pwent=getpwuid(uid);
   pid=getpid();
@@ -194,7 +196,7 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,pid,pwent->pw_name,uid,(x509Subject!=NULL)?x509Subject:pwent->pw_gecos);
   
   initialized=1;
-  
+
   return FRONTIER_OK;
  }
 
