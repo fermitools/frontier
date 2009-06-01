@@ -1,5 +1,28 @@
 $Id$
 
+v2_7_10 - 01 June 2009 (dwd)
+ - Use inflate zlib API instead of uncompress when uncompressing
+    payloads, analogous to the deflate change put in v2_7_9.  Pete
+    Elmer requested this too although he said it wasn't as important
+    as deflate.
+ - If 5 minutes has elapsed since a DNS name was looked up and the
+   name is needed again, re-lookup the name.  This also erases
+   the information about whether a particular address had an error so
+   failing addresses in a round-robin DNS will be tried once again.
+ - Added the destination IP address to read and write timeout warning
+    messages.
+ - Changed debug log output to close the log file only when the
+    frontier channel is closed, not after every message.  This makes
+    logging to AFS more than an order of magnitude faster, making the
+    performance impact of logging to AFS now imperceptible.
+ - Added printing the frontier client version number at the beginning of
+    debug logs.
+ - Added frontierqueries and fnget.py scripts to installation bin.
+ - Added -c option to fn-req test application to repeat the query a
+    specified number of times on the same connection.  This is useful
+    for load testing with small queries (as long as they are larger
+    than clientcachemaxresultsize).
+
 v2_7_9 - 10 October 2008 (dwd)
  - Use deflate zlib API instead of compress2 when compressing URLs in
     order to keep it initialized and avoid many large (~250KB)
