@@ -99,7 +99,7 @@ all: htclient libexpat $(LIBCLIENT) $(BINAPP) $(STATICBINAPP)
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
 distdir := $(shell pwd)/dist
-files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.*
+files := ./RELEASE_NOTES ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.*
 src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
 distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
 distfile_gz := $(distfile).gz
