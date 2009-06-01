@@ -374,6 +374,7 @@ static void channel_delete(Channel *chn)
   if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
   frontier_mem_free(chn);
   fn_gzip_cleanup();
+  frontier_log_close();
  }
 
 
