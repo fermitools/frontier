@@ -33,6 +33,7 @@
 #define FRONTIER_LOGLEVEL_NOLOG		3
 
 void frontier_log(int level, const char *file, int line, const char *fmt, ...);
+void frontier_log_close();
 
 #endif /* FRONTIER_LOG_H */
 
