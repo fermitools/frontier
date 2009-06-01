@@ -99,7 +99,7 @@ all: htclient libexpat $(LIBCLIENT) $(BINAPP) $(STATICBINAPP)
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
 distdir := $(shell pwd)/dist
-files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.* ./ups/*.table
+files := ./RELEASE_NOTES ./README ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.*
 src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
 distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
 distfile_gz := $(distfile).gz
@@ -144,12 +144,10 @@ else
 	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
 endif
 	cp -r include $(distdir)
-	cp -r ups $(distdir)
 	cp $(BINAPP) $(distdir)/bin
 	chmod 755 $(BINSCRIPTS)
 	cp $(BINSCRIPTS) $(distdir)/bin
 	cp RELEASE_NOTES $(distdir)
-	cp README $(distdir)
 	@echo "Making $@"
 	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
 	rm -f $(distfile_gz); gzip $(distfile)
