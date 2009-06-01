@@ -44,6 +44,8 @@ extern int frontier_log_level;
 extern char *frontier_log_file;
 extern int frontier_log_dup;
 
+static int log_fd=-1;
+
 static const char *log_desc[]=
  {
   "debug",
@@ -55,7 +57,6 @@ static const char *log_desc[]=
 void frontier_log(int level,const char *file,int line,const char *fmt,...)
  {
   int ret;
-  int fd;
   va_list ap;
   
   if(level<frontier_log_level) return;
@@ -81,9 +82,20 @@ void frontier_log(int level,const char *file,int line,const char *fmt,...)
     fsync(1);
     if(!frontier_log_file) return;
    }
-  fd=open(frontier_log_file,O_CREAT|O_APPEND|O_WRONLY,0644);
-  if(fd<0) return;
-  write(fd,_frontier_log_msg,ret+1);
-  close(fd);
+  if(log_fd<0)
+   {
+    log_fd=open(frontier_log_file,O_CREAT|O_APPEND|O_WRONLY,0644);
+    if(log_fd<0) return;
+   }
+  write(log_fd,_frontier_log_msg,ret+1);
+ }
+
+void frontier_log_close()
+ {
+  if(log_fd>=0)
+   {
+    close(log_fd);
+    log_fd=-1;
+   }
  }
 
