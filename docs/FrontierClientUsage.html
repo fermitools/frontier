@@ -111,6 +111,9 @@ clientcachemaxresultsize - maximum result size (in bytes) that will
 be cached in a local cache inside the frontier client.  Default 500.
 Identical queries whose results are cached locally will not 
 go to a proxy or server to retrieve the answer.
+<li>
+failovertoserver - when set to a value of 'no', prevents failing over
+to direct connections to servers if proxy connections fail.  Default 'yes'.
 </ul>
 
 <p>
