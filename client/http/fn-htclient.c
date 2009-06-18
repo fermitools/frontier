@@ -476,6 +476,17 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
       frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
       return FRONTIER_ENETWORK;    
      }
+    if((ret==FRONTIER_ESYS)&&(try==0))
+     {
+      /*System error 104 Connection reset by peer has been seen on*/
+      /*heavily-loaded localhost squids (on a node with 8 cores).*/
+      /*Close, reopen, and retry.*/
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Retrying after system error");
+      frontierHttpClnt_close(c);
+      frontierHttpClnt_open(c);
+      continue;
+     }
+    /*if there was no continue, don't try again*/
     break;
    }
 
