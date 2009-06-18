@@ -2,10 +2,10 @@ $Id$
 
 v2_7_11 - 18 June 2009 (dwd)
  - Whenever a system error happens on a proxy or server connection,
-   retry query once on a new connection.  This works around a
-   'connection reset by peer' problem seen on a percentage of CMS HLT
-   8-core nodes when 7 parallel applications connecting to localhost
-   squids was tried for the first time.
+    retry query once on a new connection.  This works around a
+    'connection reset by peer' problem seen on a percentage of CMS HLT
+    8-core nodes when 7 parallel applications connecting to localhost
+    squids was tried for the first time.
  - Add new failovertoserver option to complex connection strings.
     When set equal to no, direct connections to servers will not be
     attempted after failures contacting a proxy.  Default yes.
@@ -17,9 +17,9 @@ v2_7_10 - 01 June 2009 (dwd)
     Elmer requested this too although he said it wasn't as important
     as deflate.
  - If 5 minutes has elapsed since a DNS name was looked up and the
-   name is needed again, re-lookup the name.  This also erases
-   the information about whether a particular address had an error so
-   failing addresses in a round-robin DNS will be tried once again.
+    name is needed again, re-lookup the name.  This also erases
+    the information about whether a particular address had an error so
+    failing addresses in a round-robin DNS will be tried once again.
  - Added the destination IP address to read and write timeout warning
     messages.
  - Changed debug log output to close the log file only when the
