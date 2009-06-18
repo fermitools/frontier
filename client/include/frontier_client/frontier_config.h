@@ -55,6 +55,7 @@ struct s_FrontierConfig
   char *force_reload;
   int retrieve_zip_level;
   int client_cache_max_result_size;
+  int failover_to_server;
  };
 typedef struct s_FrontierConfig FrontierConfig;
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode);
@@ -87,6 +88,8 @@ void frontierConfig_setDefaultPhysicalServers(const char *physical_servers);
 char *frontierConfig_getDefaultPhysicalServers();
 void frontierConfig_setClientCacheMaxResultSize(FrontierConfig *cfg,int size);
 int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg);
+void frontierConfig_setFailoverToServer(FrontierConfig *cfg,int notno);
+int frontierConfig_getFailoverToServer(FrontierConfig *cfg);
 
 #endif /* FRONTIER_CONFIG_H */
 
