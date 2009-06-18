@@ -1,5 +1,16 @@
 $Id$
 
+v2_7_11 - 18 June 2009 (dwd)
+ - Whenever a system error happens on a proxy or server connection,
+   retry query once on a new connection.  This works around a
+   'connection reset by peer' problem seen on a percentage of CMS HLT
+   8-core nodes when 7 parallel applications connecting to localhost
+   squids was tried for the first time.
+ - Add new failovertoserver option to complex connection strings.
+    When set equal to no, direct connections to servers will not be
+    attempted after failures contacting a proxy.  Default yes.
+ - Remove the little fn-any application from the installation bin.
+
 v2_7_10 - 01 June 2009 (dwd)
  - Use inflate zlib API instead of uncompress when uncompressing
     payloads, analogous to the deflate change put in v2_7_9.  Pete
