@@ -76,7 +76,7 @@ OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o 
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
-BINAPP		=	fn-any fn-req
+BINAPP		=	fn-req
 BINSCRIPTS	= 	fnget.py frontierqueries
 
 ifeq ($(DYLIBTYPE),dylib)
@@ -307,7 +307,7 @@ fn-req.static: libfrontier_client.so fn-req
 
 
 clean:
-	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each $(BINAPP) $(STATICBINAPP)
+	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each fn-any $(BINAPP) $(STATICBINAPP)
 	(cd expat && make clean)
 	(cd http && make clean)
 	rm -rf .libs
