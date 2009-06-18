@@ -120,7 +120,10 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontierConfig_setForceReload(cfg,default_force_reload);
 
   // Default on this is not set in environment so just set it here
-  cfg->client_cache_max_result_size = FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE;
+  frontierConfig_setClientCacheMaxResultSize(cfg,FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE);
+
+  // FailoverToServer is always true unless turned off in complex server string
+  frontierConfig_setFailoverToServer(cfg,1);
 
   // Add configured server and proxy.
   *errorCode=frontierConfig_addServer(cfg,server_url);
@@ -155,7 +158,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
-
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Failover to server is %s",cfg->failover_to_server ? "yes" : "no");
 
   return cfg;
 
@@ -359,6 +362,16 @@ int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg)
   return cfg->client_cache_max_result_size;
  }
 
+void frontierConfig_setFailoverToServer(FrontierConfig *cfg,int notno)
+ {
+  cfg->failover_to_server=notno;
+ }
+
+int frontierConfig_getFailoverToServer(FrontierConfig *cfg)
+ {
+  return cfg->failover_to_server;
+ }
+
 static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
  {
   char *str = frontier_str_copy(server_spec);
@@ -445,6 +458,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
 	else if (strcmp(keyp, "forcereload") == 0)
 	  frontierConfig_setForceReload(cfg, valp);
+	else if (strcmp(keyp, "failovertoserver") == 0)
+	  frontierConfig_setFailoverToServer(cfg, (strcmp(valp,"no")!=0));
 	else if (strcmp(keyp, "loadbalance") == 0)
 	 {
 	  if (strcmp(valp, "proxies") == 0)
