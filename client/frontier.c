@@ -650,6 +650,11 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
 	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxyname(clnt));
 	continue;
        }
+      if(!frontierConfig_getFailoverToServer(chn->cfg))
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,"No more proxies. Last error was: %s",err_last_buf);
+	break;
+       }
       frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying direct connect to server %s",frontierHttpClnt_curservername(clnt));
       continue;
      }
@@ -661,7 +666,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
       continue;      
      }
 
-    frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies, last error: %s",err_last_buf);
+    frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies. Last error was: %s",err_last_buf);
     break;
    }
    
