@@ -26,7 +26,12 @@ public final class Frontier
   
   private static boolean use_fdo_cache;     // If true, the FDO info is created once (
                                             // based on XSD or else)
-  
+ 
+  private static int verbosityLevel=0;      // Higher numbers show more messages.
+                                            // In addition, from level 2, file name
+					    //    and line numbers appear.
+  private static boolean highVerbosity=false; // true when verbosityLevel >= 4
+
   public static long validate_last_modified_seconds=-1;
   public static String last_modified_table_name;
 
@@ -36,8 +41,17 @@ public final class Frontier
   public int payloads_num;
   public ArrayList aPayloads=null;
   public long if_modified_since=-1;
-  
-  
+
+
+  public static int getVerbosityLevel() 
+   {
+    return verbosityLevel;
+   }
+  public static boolean getHighVerbosity() 
+   {
+    return highVerbosity;
+   }
+
   private static String getPropertyString(ResourceBundle rb,String name) throws Exception
    {
     try
@@ -63,6 +77,14 @@ public final class Frontier
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
+
+    // Verbosity level related
+    String verbosity=getPropertyString(prb,"VerbosityLevel");
+    if (verbosity!=null)
+      verbosityLevel=Integer.parseInt(verbosity);
+    highVerbosity=(verbosityLevel>=4);
+    if (verbosityLevel>0)
+      Frontier.Log("VerbosityLevel set to "+verbosityLevel);
 
     String str=getPropertyString(prb,"ValidateLastModifiedSeconds");
     if(str!=null)
@@ -187,9 +209,11 @@ public final class Frontier
    
   public long cachedLastModified() throws Exception
    {
+    if(highVerbosity)Frontier.Log("cachedLastModified()");
     if(validate_last_modified_seconds<=0)
       return -1;
     long last_modified=0;
+    // look for max last_modified of cachedLastModified() of each payload
     for(int i=0;i<payloads_num;i++)
      {
       Payload p=(Payload)aPayloads.get(i);          
@@ -199,15 +223,18 @@ public final class Frontier
       if(lm>last_modified)
         last_modified=lm;
      }
+    if(highVerbosity)Frontier.Log("cachedLastModified(): last_modified: "+last_modified);
     return last_modified;
    }
 
   public long getLastModified(ServletOutputStream out) throws Exception
    {
+    if(highVerbosity)Frontier.Log("Frontier.java:getLastModified()");
     long last_modified=0;
     for(int i=0;i<payloads_num;i++)
      {
       Payload p=(Payload)aPayloads.get(i);          
+      if(highVerbosity)Frontier.Log("Frontier.java:getLastModified(): payload: "+i);
       long lm=p.getLastModified(out);
       if(lm>last_modified)
         last_modified=lm;
@@ -259,8 +286,18 @@ public final class Frontier
     if(frontierId==null)
       throw new Exception("X-frontier-id header missing");
    }
-                
-     
+
+   public static String getLineInfo()
+    {
+     return getLineInfo(2);
+    }
+
+   public static String getLineInfo(int stackIndex)
+    {
+     StackTraceElement ste=new Throwable().getStackTrace()[stackIndex];
+     return ste.getFileName()+" +"+ste.getLineNumber();
+    }
+
   // synchronize it to be very sure that log messages don't get 
   //  interleaved and because a SimpleDateFormat instance can't be used
   //  by multiple threads at the same time
@@ -273,11 +310,13 @@ public final class Frontier
     buf.append(' ');
     buf.append(Thread.currentThread().getName());
     buf.append(' ');
+    if(verbosityLevel>=2)
+      buf.append(getLineInfo(2));
+    buf.append(' ');
     buf.append(msg);
     System.out.println(buf.toString());
    }
 
-     
   public static void Log(String msg,Throwable e)
    {     
     ByteArrayOutputStream baos=new ByteArrayOutputStream();
