@@ -83,6 +83,7 @@ public final class FrontierServlet extends HttpServlet
 
   public void service(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
    {
+    if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service()");
     ServletOutputStream out=null;
     Frontier frontier=null;
     
@@ -103,7 +104,9 @@ public final class FrontierServlet extends HttpServlet
       response.setCharacterEncoding("US-ASCII");
       try
        {
+        if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): before Frontier(request)");
         frontier=new Frontier(request);
+        if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): after Frontier(request)");
        }
       catch(Throwable e)
        {
@@ -115,14 +118,19 @@ public final class FrontierServlet extends HttpServlet
         return; // this and all other returns here will drop down to "finally"
        }
        
-      if(frontier.noCache) response.setHeader("Pragma","no-cache");
+      if(frontier.noCache){ 
+        if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): frontier.noCache");
+        response.setHeader("Pragma","no-cache");
+      }
       setAgeExpires(request,response,frontier.max_age);
+      if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): setAgeExpires: frontier.max_age: "+ frontier.max_age);
 
       long last_modified=-1;
       long if_modified_since=frontier.if_modified_since;
       try
        {
 	last_modified=frontier.cachedLastModified();
+        if(Frontier.getHighVerbosity())Frontier.Log("last_modified: "+last_modified+": "+dateHeader(last_modified)+" if_modified_since: "+if_modified_since+": "+dateHeader(if_modified_since));
 	if((if_modified_since>0)&&(if_modified_since==last_modified))
          {
           response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
@@ -144,6 +152,7 @@ public final class FrontierServlet extends HttpServlet
       ResponseFormat.begin(out,frontierVersion,xmlVersion);
       ResponseFormat.transaction_start(out,frontier.payloads_num);
       
+      if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): before per payload loop");
       try
        {
         for(int i=0;i<frontier.payloads_num;i++)
@@ -194,6 +203,7 @@ public final class FrontierServlet extends HttpServlet
 		//  keepalives, and those have to be after payload_start().
 		try
 		 {
+                  if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
 		  last_modified=frontier.getLastModified(out);
 		  if((if_modified_since>0)&&(if_modified_since==last_modified))
 		   {
