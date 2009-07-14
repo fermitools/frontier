@@ -5,15 +5,19 @@ import gov.fnal.frontier.plugin.*;
 import gov.fnal.frontier.codec.*;
 import java.sql.*;
 import java.util.Hashtable;
+import java.util.HashSet;
 import com.jcraft.jzlib.*;
+import java.util.regex.*;
+import java.util.Iterator;
 
 public class SQLPlugin implements FrontierPlugin
  {
   private static Hashtable tableNames=new Hashtable();
 
+  private HashSet queryTableNames=null;
+
   private String query;
   private String queryLower;
-  private String queryTableName=null;
 
   public SQLPlugin(FrontierDataStream fds) throws Exception
    {
@@ -129,7 +133,8 @@ public class SQLPlugin implements FrontierPlugin
        }
       enc.writeEOR();
             
-      while(rs.next()) {
+      while(rs.next())
+       {
 	row_count++;
         for(int i=1;i<=cnum;i++)
          {
@@ -155,10 +160,10 @@ public class SQLPlugin implements FrontierPlugin
      }
     catch(Exception e)
      {
-      if(queryTableName!=null)
+      if(queryTableNames!=null)
        {
-        // prefix queryTableName to the exception message
-        Exception newe=new Exception("While querying "+queryTableName+": "+e.getMessage().trim());
+        // prefix queryTableNames to the exception message
+        Exception newe=new Exception("While querying "+queryTableNames.toString()+": "+e.getMessage().trim());
         newe.setStackTrace(e.getStackTrace());
         throw newe;
        }
@@ -186,55 +191,73 @@ public class SQLPlugin implements FrontierPlugin
     throw new Exception("Not implemented");
    }
 
-  protected static synchronized SQLTimes getSQLTimesObject(String tableName, boolean createIfNecessary)
+  protected static synchronized SQLTimes getSQLTimesObject(HashSet qTableNames,boolean createIfNecessary)
    {
-    SQLTimes times=(SQLTimes)tableNames.get(tableName);
+    SQLTimes times=(SQLTimes)tableNames.get(qTableNames);
     if((times==null)&&createIfNecessary)
      {
-      times=new SQLTimes(tableName);
-      tableNames.put(tableName,times);
+      times=new SQLTimes(qTableNames);
+      tableNames.put(qTableNames,times);
      }
     return times;
    }
 
-  public long fp_cachedLastModified() throws Exception
+  private HashSet getQueryTableNames(String sql) 
    {
-    if(!queryLower.startsWith("select "))
-      return -1;
-    int startfrom=queryLower.indexOf(" from ");
-    if(startfrom==-1)
-      return -1;
-    startfrom+=6;
-    int endfrom;
-    if(queryLower.startsWith("(select",startfrom))
+    // parse in stages:
+    // 1) until: an endword
+    // 2) split tables per: , 
+    // 3) split between table name and alias via: space
+
+    HashSet tablesSet=new QueryTableSet();
+
+    // 1) until: an endword
+    String patternStr="(order|union|intersect|minus|model|having|group|start|where|\\))"; // the \\) is not generic enough
+    String[] allTables=sql.split(patternStr,2);
+    if(Frontier.getHighVerbosity())Frontier.Log("All tables: "+allTables[0]);
+
+    // 2) split tables per: , 
+    patternStr=",";
+    String[] tables=allTables[0].split(patternStr);
+    if(Frontier.getHighVerbosity())
      {
-      //nested select
-      startfrom=queryLower.indexOf(" from ",startfrom+7);
-      if(startfrom==-1)
-	return -1;
-      startfrom+=6;
-      int endparen=queryLower.indexOf(')',startfrom);
-      endfrom=queryLower.indexOf(' ',startfrom);
-      if((endparen<endfrom)||(endfrom==-1))
-        endfrom=endparen;
+      for (int i=0;i<tables.length;i++)
+        Frontier.Log("A table: "+tables[i]);
      }
-    else
-      endfrom=queryLower.indexOf(' ',startfrom);
-    //take the table name from mixed-case query, not lower-case queryLower
-    if(endfrom==-1)
-      queryTableName=query.substring(startfrom);
-    else
-      queryTableName=query.substring(startfrom,endfrom);
-    if(queryTableName.indexOf('.')==-1)
+
+    // 3) split between table name and alias via: space
+    patternStr="[\\s]+";
+    for (int i=0; i<tables.length; i++)
      {
-      // one of the special system tables without a '.'
-      // if it starts with ALL_ and has a OWNER='XXX' then use a
-      //   special queryTableName of "XXX".ALL_TABLES
-      int startowner=queryLower.indexOf(" owner",startfrom);
-      if(startowner==-1)
-        startowner=queryLower.indexOf(".owner",startfrom);
-      if((startowner>startfrom)&&(queryLower.substring(startfrom,startfrom+4).equals("all_")))
-       {
+      tables[i]=(" "+tables[i]).split(patternStr)[1];
+      tablesSet.add(tables[i]);
+      if(Frontier.getHighVerbosity())Frontier.Log("A table without alias: "+tables[i]);
+     }
+
+    return tablesSet;
+   }
+
+  private long isAllTable(int startfrom) throws Exception 
+   {    
+    int numTables=queryTableNames.size();
+   
+    Iterator it=queryTableNames.iterator();
+    String queryTableName=(String)it.next(); // The first table name
+
+    boolean isAllTable=(queryTableName.indexOf('.')==-1);
+    if(Frontier.getHighVerbosity())Frontier.Log("numTables: "+numTables+", queryTableName: "+queryTableName);
+
+    if(!isAllTable)
+      return 0;
+      
+    // one of the special system tables without a '.'
+    // if it starts with ALL_ and has a OWNER='XXX' then use a
+    //   special queryTableName of "XXX".ALL_TABLES
+    int startowner=queryLower.indexOf(" owner",startfrom); // This assumes only one table
+    if(startowner==-1)
+      startowner=queryLower.indexOf(".owner",startfrom);
+    if((startowner>startfrom)&&(queryLower.substring(startfrom,startfrom+4).equals("all_")))
+     {
 	startowner+=6;
 	while(query.charAt(startowner)==' ')startowner++;
 	if(query.charAt(startowner)!='=')
@@ -247,31 +270,91 @@ public class SQLPlugin implements FrontierPlugin
 	int endowner=query.indexOf('\'',startowner);
 	if(endowner==-1)
 	  return -1; // syntax error
-	queryTableName="\""+query.substring(startowner,endowner)+"\".ALL_TABLES";
-       }
-      else
-       {
+        // replace queryTableNames by resulting table name
+        queryTableNames.clear();
+        queryTableNames.add("\""+query.substring(startowner,endowner)+"\".ALL_TABLES");
+     }
+    else
+     {
         // else querying the timestamp isn't going to work, do without timestamps
         Frontier.Log("don't know how to query timestamp for table "+queryTableName);
         return -1;
+     }
+     return 0;
+   }
+
+  /* 
+    Parsing: handled by fp_cachedLastModified() and getQueryTableNames() 
+    Queries are expected to be of these forms:
+      'select ... from table_nameS patternStr ...' 
+      'select ... from table_nameS'
+      'select ... from (select ... from table_nameS patternStr ...'
+      'select ... from (select ... from table_nameS)'
+    where
+      patternStr="(order|union|intersect|minus|model|having|group|start|where|\\))";
+      table_nameAndAlias='tableName alias'	
+      table_nameS='tableNameAndAlias [, tableNameAndAlias [, tableNameAndAlias ...]]'
+    Special case, handled by isAllTable(): 
+     ALL_x ... OWNER ...
+     Example:
+      SELECT ... FROM ALL_TABLES WHERE OWNER='CMS_COND_FRONTIER'
+  */
+  public long fp_cachedLastModified() throws Exception
+   {
+    if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified()");
+    // - Must start with 'select X'
+    if(!queryLower.startsWith("select ")){
+      if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() !'select '");
+      return -1;
+    }
+    // - Must start with 'select ... from '
+    int startfrom=queryLower.indexOf(" from ");
+    if(startfrom==-1)
+     {
+      if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() startfrom==-1");
+      return -1;
+     }
+    startfrom+=6;
+    // May be" 'select ... from (select ..."
+    if(queryLower.startsWith("(select",startfrom))
+     {
+      //nested select
+      startfrom=queryLower.indexOf(" from ",startfrom+7);
+      if(startfrom==-1)
+       {
+        if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() startfrom==-1");
+	return -1;
        }
+      startfrom+=6;
+     }
+    String sql=queryLower.substring(startfrom);
+    queryTableNames=getQueryTableNames(sql); // new
+
+    if(isAllTable(startfrom)<0)
+     {
+      if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() isAllTable()<0");
+      return -1;
      }
 
-    SQLTimes times=getSQLTimesObject(queryTableName,false);
+    SQLTimes times=getSQLTimesObject(queryTableNames,false);
     if(times==null)
+     {
+      if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() times==null");
       return 0;
+     }
     long last_modified=times.getCachedLastModified();
     if(last_modified>0)
-      Frontier.Log("using cached last-modified time of "+queryTableName);
+      Frontier.Log("using cached last-modified time of "+queryTableNames.toString());
+    if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() last_modified: "+last_modified);
     return last_modified;
    }
 
   public long fp_getLastModified(java.sql.Connection con) throws Exception
    {
-    if(queryTableName==null)
+    if(queryTableNames==null)
       throw new Exception("SQLPlugin usage error -- fp_cachedLastModified must be called and return zero before calling fp_getLastModified");
-    SQLTimes times=getSQLTimesObject(queryTableName,true);
-    Frontier.Log("getting last-modified time of "+queryTableName);
+    SQLTimes times=getSQLTimesObject(queryTableNames,true);
+    Frontier.Log("getting last-modified time of "+queryTableNames.toString());
     long last_modified=times.getLastModified(con);
     return last_modified;
    }
