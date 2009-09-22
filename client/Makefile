@@ -98,7 +98,8 @@ all: htclient libexpat $(LIBCLIENT) $(BINAPP) $(STATICBINAPP)
 
 package := frontier_client
 tmpdir := $(shell pwd)/tmp
-distdir := $(shell pwd)/dist
+installdir := $(shell pwd)/dist
+distdir := $(installdir)
 files := ./RELEASE_NOTES ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.*
 src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
 distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
@@ -130,7 +131,12 @@ $(tmpdir) $(distdir):
 
 dist: $(distfile_gz)
 
-$(distfile_gz): $(tmpdir) $(distdir) all
+$(distfile_gz): $(tmpdir) install
+	@echo "Making $@"
+	rm -f $(distfile); (cd $(distdir); tar cvf $(distfile) $(files))
+	rm -f $(distfile_gz); gzip $(distfile)
+
+install: $(distdir) all
 	mkdir -p $(distdir)/lib
 	mkdir -p $(distdir)/bin
 	rm -f $(distdir)/lib/lib*.$(DYLIBTYPE)*
@@ -148,9 +154,6 @@ endif
 	chmod 755 $(BINSCRIPTS)
 	cp $(BINSCRIPTS) $(distdir)/bin
 	cp RELEASE_NOTES $(distdir)
-	@echo "Making $@"
-	rm -f $(distfile); (cd dist; tar cvf $(distfile) $(files))
-	rm -f $(distfile_gz); gzip $(distfile)
 
 
 ### END KIT RELATED STUFF. 
