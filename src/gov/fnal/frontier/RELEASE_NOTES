@@ -1,5 +1,14 @@
 $Id$
 
+3.20 2009/10/02 (dwd)
+    - Added a global error to a response where one had inadvertently
+      been left out, after a failure acquiring the database.  Global
+      errors cause the client to force a refresh to clean the error
+      out of the cache, and a case was found after a database overload
+      last week where a 'Timed out waiting to acquire the DB' error
+      was cached indefinitely because it wasn't marked as a global
+      error.
+
 3.19 2009/07/14 (dwd)
     Changes for this release primarily written by David Front.
     - Support queries on multiple tables at once when tracking
