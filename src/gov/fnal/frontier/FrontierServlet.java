@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.19";
+  private static final String frontierVersion="3.20";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
@@ -167,7 +167,17 @@ public final class FrontierServlet extends HttpServlet
 	  catch(Throwable e)
 	   {
 	    Frontier.Log("Error acquiring database:",e);
-	    setAgeExpires(request,response,frontier.error_max_age);
+	    if(response.isCommitted())
+	     {
+	      // signal global error to tell client to clear cache
+	      Frontier.Log("too late to affect header, signaling global error");
+	      globalErrorMsg=throwableDescript(e);
+	     }
+	    else
+	     {
+	      // tell it to cache the message for a short time
+	      setAgeExpires(request,response,frontier.error_max_age);
+	     }
 	    ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
 	    return;
 	   }
