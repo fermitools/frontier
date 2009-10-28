@@ -202,36 +202,39 @@ public class SQLPlugin implements FrontierPlugin
     return times;
    }
 
-  private HashSet getQueryTableNames(String sql) 
+  private HashSet getQueryTableNames(String str) 
    {
-    // parse in stages:
-    // 1) until: an endword
-    // 2) split tables per: , 
-    // 3) split between table name and alias via: space
+    // table name ends in either whitespace or comma or close-paren
+    Pattern endtablepat=Pattern.compile("[\\s,)]");
+    Matcher endmatcher=endtablepat.matcher(str);
+    // Another table follows if there's a comma following the previous
+    //  matched table name, optionally preceded by an alias.
+    // The \\G[^\\s,]+ skips past the table name, and it's used because
+    //  there's otherwise no way to anchor the regex to the beginning of
+    //  the rest of the string (up-arrow matches beginning of whole string).
+    Pattern anothertablepat=Pattern.compile("\\G[^\\s,)]+[\\s]*[^\\s,)]*,[\\s]*");
+    Matcher anothermatcher=anothertablepat.matcher(str);
 
     HashSet tablesSet=new QueryTableSet();
+    int starttablename=0;
 
-    // 1) until: an endword
-    String patternStr="(order|union|intersect|minus|model|having|group|start|where|\\))"; // the \\) is not generic enough
-    String[] allTables=sql.split(patternStr,2);
-    if(Frontier.getHighVerbosity())Frontier.Log("All tables: "+allTables[0]);
-
-    // 2) split tables per: , 
-    patternStr=",";
-    String[] tables=allTables[0].split(patternStr);
-    if(Frontier.getHighVerbosity())
+    while(true)
      {
-      for (int i=0;i<tables.length;i++)
-        Frontier.Log("A table: "+tables[i]);
-     }
-
-    // 3) split between table name and alias via: space
-    patternStr="[\\s]+";
-    for (int i=0; i<tables.length; i++)
-     {
-      tables[i]=(" "+tables[i]).split(patternStr)[1];
-      tablesSet.add(tables[i]);
-      if(Frontier.getHighVerbosity())Frontier.Log("A table without alias: "+tables[i]);
+      if(!endmatcher.find(starttablename))
+       {
+        if(Frontier.getHighVerbosity())Frontier.Log("getQueryTableNames: no end match, adding name "+str.substring(starttablename));
+        tablesSet.add(str.substring(starttablename));
+	break;
+       }
+      int endtablename=endmatcher.start();
+      if(Frontier.getHighVerbosity())Frontier.Log("getQueryTableNames: adding name "+str.substring(starttablename,endtablename));
+      tablesSet.add(str.substring(starttablename,endtablename));
+      if(!anothermatcher.find())
+       {
+        if(Frontier.getHighVerbosity())Frontier.Log("getQueryTableNames: no more names found");
+	break;
+       }
+      starttablename=anothermatcher.end();
      }
 
     return tablesSet;
@@ -286,13 +289,12 @@ public class SQLPlugin implements FrontierPlugin
   /* 
     Parsing: handled by fp_cachedLastModified() and getQueryTableNames() 
     Queries are expected to be of these forms:
-      'select ... from table_nameS patternStr ...' 
+      'select ... from table_nameS ...' 
       'select ... from table_nameS'
-      'select ... from (select ... from table_nameS patternStr ...'
+      'select ... from (select ... from table_nameS ...'
       'select ... from (select ... from table_nameS)'
     where
-      patternStr="(order|union|intersect|minus|model|having|group|start|where|\\))";
-      table_nameAndAlias='tableName alias'	
+      table_nameAndAlias='tableName [alias]'	
       table_nameS='tableNameAndAlias [, tableNameAndAlias [, tableNameAndAlias ...]]'
     Special case, handled by isAllTable(): 
      ALL_x ... OWNER ...
@@ -327,8 +329,7 @@ public class SQLPlugin implements FrontierPlugin
        }
       startfrom+=6;
      }
-    String sql=queryLower.substring(startfrom);
-    queryTableNames=getQueryTableNames(sql); // new
+    queryTableNames=getQueryTableNames(queryLower.substring(startfrom));
 
     if(isAllTable(startfrom)<0)
      {
