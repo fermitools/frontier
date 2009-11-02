@@ -22,45 +22,20 @@ import javax.servlet.ServletOutputStream;
  */
 public class DbConnectionMgr 
  {
-  private static DbConnectionMgr instance=null;
-  private static Boolean mutex=new Boolean(true);
-  private DataSource dataSource=null;
-  private ReentrantLock acquireLock=new ReentrantLock(true);
-
-  public static DbConnectionMgr getDbConnectionMgr() throws Exception
-   {
-    if(instance!=null) return instance;
-    
-    synchronized(mutex)
-     {
-      if(instance!=null) return instance;      
-      DbConnectionMgr m=new DbConnectionMgr();
-      instance=m;
-     }
-    return instance;
-   }
-
-  
-  private DbConnectionMgr() throws Exception
-   {
-    Context initContext=new InitialContext();
-    Context envContext=(Context)initContext.lookup("java:/comp/env");
-    //System.out.println("Looking for ["+Frontier.getDsName()+"]");
-    dataSource = (DataSource)envContext.lookup(Frontier.getDsName());
-    //dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
-    if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
-   }
-
+  private static final int SECONDS_BETWEEN_KEEPALIVES=5;
   private class KeepAliveTimerTask extends java.util.TimerTask
    {
     ServletOutputStream sos=null;
     boolean shuttingDown=false;
     String threadName=null;
+    String waitfor=null;
     int count=0;
-    public KeepAliveTimerTask(String name,ServletOutputStream os)
+    int maxcount=0;
+    public KeepAliveTimerTask(String name,ServletOutputStream os,String what,int seconds)
      {
       threadName=name;
       sos = os;
+      setWaitFor(what,seconds);
      }
     public synchronized void run()
      {
@@ -69,13 +44,10 @@ public class DbConnectionMgr
         Thread.currentThread().setName(threadName);
 	count++;
         try {ResponseFormat.keepalive(sos);}catch(Exception e){}
-        Frontier.Log("DB acquire sent keepalive "+count);
-	if(count>=60)
+        Frontier.Log(waitfor+" sent keepalive "+count);
+	if(count>=maxcount)
 	 {
-	  // Give up after 5 minutes
-	  // Note that when the DB is down, at least on SLC4 it takes about
-	  //  6-1/3rd minutes for dataSource.getConnection() to return
-	  Frontier.Log("DB acquire keepalive giving up");
+	  Frontier.Log(waitfor+" keepalive giving up");
 	  shuttingDown=true;
 	  cancel();
 	 }
@@ -92,15 +64,68 @@ public class DbConnectionMgr
      {
       return shuttingDown;
      }
+    private synchronized void setWaitFor(String what,int seconds)
+     {
+      waitfor=what;
+      count=0;
+      // round count up
+      maxcount=(seconds+SECONDS_BETWEEN_KEEPALIVES-1)/SECONDS_BETWEEN_KEEPALIVES;
+     }
+   }
+
+  private static DbConnectionMgr instance=null;
+  private static Boolean mutex=new Boolean(true);
+  private DataSource dataSource=null;
+  private ReentrantLock acquireLock=new ReentrantLock(true);
+  private Timer keepAliveTimer=null;
+  private KeepAliveTimerTask keepAliveTimerTask=null;
+
+  public static DbConnectionMgr getDbConnectionMgr() throws Exception
+   {
+    if(instance!=null) return instance;
+    
+    synchronized(mutex)
+     {
+      if(instance!=null) return instance;      
+      DbConnectionMgr m=new DbConnectionMgr();
+      instance=m;
+     }
+    return instance;
+   }
+
+  private DbConnectionMgr() throws Exception
+   {
+    Context initContext=new InitialContext();
+    Context envContext=(Context)initContext.lookup("java:/comp/env");
+    //System.out.println("Looking for ["+Frontier.getDsName()+"]");
+    dataSource = (DataSource)envContext.lookup(Frontier.getDsName());
+    //dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
+    if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
+   }
+
+  public void cancelKeepAlive()
+   {
+    if(keepAliveTimer!=null)
+     {
+      keepAliveTimer.cancel();
+      keepAliveTimer=null;
+     }
+    if(keepAliveTimerTask!=null)
+     {
+      keepAliveTimerTask.shutdown();
+      keepAliveTimerTask=null;
+     }
    }
 
   public Connection acquire(ServletOutputStream sos) throws Exception 
    {
     Connection connection;
-    Timer timer=new Timer();
-    KeepAliveTimerTask timerTask=
-        new KeepAliveTimerTask(Thread.currentThread().getName()+"-ka",sos);
-    timer.schedule(timerTask,5000,5000);
+    keepAliveTimer=new Timer();
+    keepAliveTimerTask=
+        new KeepAliveTimerTask(Thread.currentThread().getName()+"-ka",sos,
+	    "DB acquire",Frontier.getMaxDbAcquireSeconds());
+    keepAliveTimer.schedule(keepAliveTimerTask,
+    	SECONDS_BETWEEN_KEEPALIVES*1000,SECONDS_BETWEEN_KEEPALIVES*1000);
     try
      {
       Frontier.Log("Acquiring DB connection lock");
@@ -109,10 +134,10 @@ public class DbConnectionMgr
       acquireLock.lock();
       try
        {
-	// check if the corresponding timerTask has already given up,
-	//  and if so, don't try to get the connection because it
-	//  can take a very long time of the DB server is down
-        if(timerTask.isShutdown())
+	// check if the corresponding keepAliveTimerTask has already given
+	//  up, and if so, don't try to get the connection because it
+	//  can take a very long time if the DB server is down
+        if(keepAliveTimerTask.isShutdown())
           throw new Exception("Timed out waiting to acquire DB connection");
         Frontier.Log("Acquiring DB connection");
         connection=dataSource.getConnection();
@@ -122,18 +147,26 @@ public class DbConnectionMgr
         acquireLock.unlock();
        }
      }
-    finally
+    catch(Exception e)
      {
-      timer.cancel();
-      timerTask.shutdown();
+      // if error starting, cancel keepAliveTask, otherwise leave
+      //  until release() which must be guaranteed to be called
+      cancelKeepAlive();
+      throw e;
      }
     Frontier.Log("DB connection acquired");
+    int seconds=Frontier.getMaxDbExecuteSeconds();
+    if(seconds==0)
+      cancelKeepAlive();
+    else
+      keepAliveTimerTask.setWaitFor("DB execute",seconds);
     return connection;
    }
 
  
   public void release(Connection dbConnection,ServletOutputStream sos) throws Exception 
    {
+    cancelKeepAlive();
     if(dbConnection!=null) dbConnection.close();
    }
    
