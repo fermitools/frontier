@@ -80,7 +80,7 @@ public class SQLPlugin implements FrontierPlugin
    }
    
    
-  public int fp_get(java.sql.Connection con,Encoder enc,String method) throws Exception
+  public int fp_get(java.sql.Connection con,DbConnectionMgr mgr,Encoder enc,String method) throws Exception
    {
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
     
@@ -95,6 +95,7 @@ public class SQLPlugin implements FrontierPlugin
     int row_count=0;
     try
      {
+      Frontier.Log("Executing DB query");
       if((query.indexOf(':')==-1)||(query.indexOf('?')==-1))
         stmt=con.prepareStatement(query);
       else
@@ -113,6 +114,9 @@ public class SQLPlugin implements FrontierPlugin
 			         executeQuery to abort with OutOfMemoryError
 				 for some queries with larger rows. */
       rs=stmt.executeQuery();
+      mgr.cancelKeepAlive();
+      Frontier.Log("DB query finished");
+
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
       
@@ -273,6 +277,8 @@ public class SQLPlugin implements FrontierPlugin
 	int endowner=query.indexOf('\'',startowner);
 	if(endowner==-1)
 	  return -1; // syntax error
+	if(startowner==endowner)
+	  return -1; // empty owner
         // replace queryTableNames by resulting table name
         queryTableNames.clear();
         queryTableNames.add("\""+query.substring(startowner,endowner)+"\".ALL_TABLES");
