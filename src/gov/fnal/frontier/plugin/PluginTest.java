@@ -1,6 +1,7 @@
 package gov.fnal.frontier.plugin;
 
 import gov.fnal.frontier.fdo.*;
+import gov.fnal.frontier.*;
 import java.sql.*;
 
 public class PluginTest implements FrontierPlugin
@@ -20,7 +21,7 @@ public class PluginTest implements FrontierPlugin
    }
    
    
-  public int fp_get(java.sql.Connection con,Encoder enc,String method) throws Exception
+  public int fp_get(java.sql.Connection con,DbConnectionMgr mgr,Encoder enc,String method) throws Exception
    {
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
     PreparedStatement stmt=null;
