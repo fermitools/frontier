@@ -32,8 +32,12 @@ public final class Frontier
 					    //    and line numbers appear.
   private static boolean highVerbosity=false; // true when verbosityLevel >= 4
 
-  public static long validate_last_modified_seconds=-1;
+  public static int validate_last_modified_seconds=-1;
   public static String last_modified_table_name;
+  // Note that when the DB is down, at least on SLC4 it takes about
+  //  6-1/3rd minutes for DataSource.getConnection() to return
+  public static int max_db_acquire_seconds=300;
+  public static int max_db_execute_seconds=10;
 
   public long max_age=-1;
   public long error_max_age=Frontier.errorDefaultMaxAge();
@@ -47,6 +51,7 @@ public final class Frontier
    {
     return verbosityLevel;
    }
+
   public static boolean getHighVerbosity() 
    {
     return highVerbosity;
@@ -86,10 +91,23 @@ public final class Frontier
     if (verbosityLevel>0)
       Frontier.Log("VerbosityLevel set to "+verbosityLevel);
 
+    String maxsecs=getPropertyString(prb,"MaxDbAcquireSeconds");
+    if(maxsecs!=null)
+     {
+      max_db_acquire_seconds=Integer.parseInt(maxsecs);
+      Frontier.Log("max DB acquire secs: "+max_db_acquire_seconds);
+     }
+    maxsecs=getPropertyString(prb,"MaxDbExecuteSeconds");
+    if(maxsecs!=null)
+     {
+      max_db_execute_seconds=Integer.parseInt(maxsecs);
+      Frontier.Log("max DB execute secs: "+max_db_execute_seconds);
+     }
+
     String str=getPropertyString(prb,"ValidateLastModifiedSeconds");
     if(str!=null)
      {
-      validate_last_modified_seconds=Long.parseLong(str);
+      validate_last_modified_seconds=Integer.parseInt(str);
       Frontier.Log("validate last-modified secs: "+validate_last_modified_seconds);
       last_modified_table_name=getPropertyString(prb,"LastModifiedTableName");
       if(last_modified_table_name==null)
@@ -347,4 +365,15 @@ public final class Frontier
    {
     return use_fdo_cache;
    }
+
+  public static int getMaxDbAcquireSeconds()
+   {
+    return max_db_acquire_seconds;
+   }
+
+  public static int getMaxDbExecuteSeconds()
+   {
+    return max_db_execute_seconds;
+   }
+
  } // class Frontier
