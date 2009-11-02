@@ -1,5 +1,27 @@
 $Id$
 
+3.21 2009/11/02 (dwd)
+    - Changed the parsing for multiple table names.  Now looks for an
+      optional table alias followed by a comma to indicate that another
+      table name is coming, rather than searching for a specific list of
+      keywords.  The keywords were matching portions of some table names
+      in CMS.
+    - Added support for continuing to send keepalive messages to the
+      client while waiting for the database to execute a query.  This
+      was needed in ATLAS because it has some queries that can take
+      over 10 seconds to execute the first time, until it gets into an
+      Oracle cache.  Added config.properties option MaxDbExecuteSeconds
+      to control the amount of time allowed, default 10 seconds.  The
+      frontier_client's own readtimeoutsecs option (which also defaults
+      to 10 seconds) is added to that before it times out.
+    - Added an additional config.properties option MaxDbAcquireSeconds
+      which is how long to send keepalives while waiting to acquire the
+      database connection.  Defaults to 300 seconds which was the value
+      previously hardcoded.
+    - If a query contains the form "WHERE OWNER=''" (which happened once
+      in CMS) then no longer attempt to look up a modification timestamp
+      for that owner, just let the query proceed without a timestamp.
+
 3.20 2009/10/02 (dwd)
     - Added a global error to a response where one had inadvertently
       been left out, after a failure acquiring the database.  Global
