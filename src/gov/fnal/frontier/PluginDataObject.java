@@ -71,7 +71,7 @@ public class PluginDataObject implements FrontierDataObject
     int rec_num=0;
     
     if(acquiredConnection==null)acquiredConnection=dbm.acquire(sos);
-    rec_num=plugin.fp_get(acquiredConnection,enc,method);
+    rec_num=plugin.fp_get(acquiredConnection,dbm,enc,method);
     return rec_num;
    }
    
