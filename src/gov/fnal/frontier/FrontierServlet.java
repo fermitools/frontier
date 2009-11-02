@@ -182,98 +182,106 @@ public final class FrontierServlet extends HttpServlet
 	    return;
 	   }
 
-	  if(frontier.payloads_num==1)
+	  // if reach this point, p.close must be called to release database
+	  //  and cancel keepalive timer
+	  try
 	   {
-	    if(response.isCommitted())
+	    if(frontier.payloads_num==1)
 	     {
-	      // The database was acquired with keepalives
-	      if(last_modified==0)
-	        Frontier.Log("response committed, too late to query for last-modified time");
-	     }
-	    else
-	     {
-	      // The database was acquired without keepalives, now set
-	      //  last-modified time.   Didn't want to set it before
-	      //  even if it was cached because don't want error messages
-	      //  to stay cached forever.
-	      if(last_modified>0)
+	      if(response.isCommitted())
 	       {
-		String lastmod=dateHeader(last_modified);
-		if(if_modified_since>0)
-		  Frontier.Log("modified at time: "+lastmod+" (cached)");
-		else
-		  Frontier.Log("last-modified time: "+lastmod+" (cached)");
-		response.setHeader("Last-Modified",lastmod);
+		// The database was acquired with keepalives
+		if(last_modified==0)
+		  Frontier.Log("response committed, too late to query for last-modified time");
 	       }
-	      else if(last_modified==0)
+	      else
 	       {
-		// Read the last modified time from the database.
-		// Need to do it here because acquiring the database could
-		//  have taken a long time and may have needed to send
-		//  keepalives, and those have to be after payload_start().
-		try
+		// The database was acquired without keepalives, now set
+		//  last-modified time.   Didn't want to set it before
+		//  even if it was cached because don't want error messages
+		//  to stay cached forever.
+		if(last_modified>0)
 		 {
-                  if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
-		  last_modified=frontier.getLastModified(out);
-		  if((if_modified_since>0)&&(if_modified_since==last_modified))
+		  String lastmod=dateHeader(last_modified);
+		  if(if_modified_since>0)
+		    Frontier.Log("modified at time: "+lastmod+" (cached)");
+		  else
+		    Frontier.Log("last-modified time: "+lastmod+" (cached)");
+		  response.setHeader("Last-Modified",lastmod);
+		 }
+		else if(last_modified==0)
+		 {
+		  // Read the last modified time from the database.
+		  // Need to do it here because acquiring the database could
+		  //  have taken a long time and may have needed to send
+		  //  keepalives, and those have to be after payload_start().
+		  try
 		   {
-		    response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-		    Frontier.Log("not modified");
+		    if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
+		    last_modified=frontier.getLastModified(out);
+		    if((if_modified_since>0)&&(if_modified_since==last_modified))
+		     {
+		      response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+		      Frontier.Log("not modified");
+		      return;
+		     }
+		    else
+		     {
+		      String lastmod=dateHeader(last_modified);
+		      if(if_modified_since>0)
+			  Frontier.Log("modified at time: "+lastmod);
+		      else
+			  Frontier.Log("last-modified time: "+lastmod);
+		      response.setHeader("Last-Modified",lastmod);
+		     }
+		   }
+		  catch(Throwable e)
+		   {
+		    Frontier.Log("Error getting last-modified time:",e);
+		    setAgeExpires(request,response,frontier.error_max_age);
+		    ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
 		    return;
 		   }
-		  else
-		   {
-		    String lastmod=dateHeader(last_modified);
-		    if(if_modified_since>0)
-			Frontier.Log("modified at time: "+lastmod);
-		    else
-			Frontier.Log("last-modified time: "+lastmod);
-		    response.setHeader("Last-Modified",lastmod);
-		   }
-		 }
-		catch(Throwable e)
-		 {
-		  Frontier.Log("Error getting last-modified time:",e);
-		  setAgeExpires(request,response,frontier.error_max_age);
-		  ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
-		  return;
 		 }
 	       }
 	     }
-	   }
 
-          try
-           {
-            p.send(out);
-            ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num,p.full_size);
-           }
-          catch(Throwable e)
-           {
-            Frontier.Log("Error while processing payload "+i+":",e);
-            ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
-	    if(!response.isCommitted())
+	    try
 	     {
-	      // still have a chance to affect cache age and last-modified 
-	      setAgeExpires(request,response,frontier.error_max_age);
-	      // this leaves an empty header but it doesn't hurt and
-	      //  there doesn't appear to be any way to delete a header
-	      response.setHeader("Last-Modified","");
+	      p.send(out);
+	      ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num,p.full_size);
 	     }
-	    else
+	    catch(Throwable e)
 	     {
-	      // also signal global error to tell client to clear cache
-	      Frontier.Log("too late to affect header, also signaling global error");
-	      globalErrorMsg=throwableDescript(e);
+	      Frontier.Log("Error while processing payload "+i+":",e);
+	      ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
+	      if(!response.isCommitted())
+	       {
+		// still have a chance to affect cache age and last-modified 
+		setAgeExpires(request,response,frontier.error_max_age);
+		// this leaves an empty header but it doesn't hurt and
+		//  there doesn't appear to be any way to delete a header
+		response.setHeader("Last-Modified","");
+	       }
+	      else
+	       {
+		// also signal global error to tell client to clear cache
+		Frontier.Log("too late to affect header, also signaling global error");
+		globalErrorMsg=throwableDescript(e);
+	       }
+	      break;
 	     }
-            break;
-           }
-	  try 
-	   {
-	    p.close(out);
 	   }
-	  catch(Exception e)
+	  finally
 	   {
-	    globalCloseException=e;
+	    try 
+	     {
+	      p.close(out);
+	     }
+	    catch(Exception e)
+	     {
+	      globalCloseException=e;
+	     }
 	   }
          }
        }
