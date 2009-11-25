@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 // this class extends HashSet just to make a prettier toString() for printing
-public class QueryTableSet extends HashSet 
+public class QueryTableSet<T> extends HashSet<T>
  {
   public String toString()
    {
