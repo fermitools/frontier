@@ -1,5 +1,16 @@
 $Id$
 
+3.22 2009/11/25 (dwd)
+    - There was a serious flaw with the implementation of sending
+      keepalives during DB execute: it was only able to track one at
+      a time, and as a result multiple simultaneous connections to the
+      DB caused a null pointer exception and soon was unable to
+      connect to the DB anymore.  It's now able to track any number of
+      simultaneous connections.
+    - Added -Xlint:unchecked javac compile option, and cleaned up all
+      the warnings it added to unchecked generic types.
+    - Made the indentation on keepalive XML elements prettier.
+
 3.21 2009/11/02 (dwd)
     - Changed the parsing for multiple table names.  Now looks for an
       optional table alias followed by a comma to indicate that another
