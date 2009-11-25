@@ -125,7 +125,7 @@ public class ResponseFormat
 
   static void keepalive(ServletOutputStream out) throws Exception
    {
-    out.print("   <keepalive />\n");
+    out.print("\n   <keepalive />");
     commit(out); /* make sure keepalive is sent immediately */
    }
   
