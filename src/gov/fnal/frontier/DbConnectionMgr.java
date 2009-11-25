@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletOutputStream;
 
@@ -31,12 +32,21 @@ public class DbConnectionMgr
     String waitfor=null;
     int count=0;
     int maxcount=0;
-    public KeepAliveTimerTask(String name,ServletOutputStream os,String what,int seconds)
+    Timer keepAliveTimer=null;
+
+    public KeepAliveTimerTask(String name,ServletOutputStream os,String what,int seconds,Timer timer)
      {
       threadName=name;
-      sos = os;
+      sos=os;
+      keepAliveTimer=timer;
       setWaitFor(what,seconds);
      }
+
+    public Timer getTimer()
+     {
+      return keepAliveTimer;
+     }
+
     public synchronized void run()
      {
       if (!shuttingDown)
@@ -53,17 +63,21 @@ public class DbConnectionMgr
 	 }
        }
      }
+
     public synchronized void shutdown()
      {
       // set this boolean to avoid further output in case the
       // run function has already been set to go
       shuttingDown=true;
+      keepAliveTimer.cancel();
       cancel();
      }
+
     public boolean isShutdown()
      {
       return shuttingDown;
      }
+
     private synchronized void setWaitFor(String what,int seconds)
      {
       waitfor=what;
@@ -77,8 +91,11 @@ public class DbConnectionMgr
   private static Boolean mutex=new Boolean(true);
   private DataSource dataSource=null;
   private ReentrantLock acquireLock=new ReentrantLock(true);
-  private Timer keepAliveTimer=null;
-  private KeepAliveTimerTask keepAliveTimerTask=null;
+  // Could use a list instead of a HashMap because there will be only
+  //  a small number of entries, but a hashed interface is convenient.
+  // Using HashMap instead of Hashtable because it is more modern and
+  //  because I prefer to make the synchronization be obvious.
+  private HashMap<String,KeepAliveTimerTask> keepAliveTasks=new HashMap<String,KeepAliveTimerTask>();
 
   public static DbConnectionMgr getDbConnectionMgr() throws Exception
    {
@@ -103,28 +120,40 @@ public class DbConnectionMgr
     if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
    }
 
+  private synchronized void saveTimerTask(KeepAliveTimerTask task)
+   {
+     keepAliveTasks.put(Thread.currentThread().getName(),task);
+   }
+
+  private synchronized KeepAliveTimerTask getTimerTask()
+   {
+     return keepAliveTasks.get(Thread.currentThread().getName());
+   }
+
+  private synchronized void deleteTimerTask()
+   {
+     keepAliveTasks.remove(Thread.currentThread().getName());
+   }
+
   public void cancelKeepAlive()
    {
-    if(keepAliveTimer!=null)
+    KeepAliveTimerTask task=getTimerTask();
+    if(task!=null)
      {
-      keepAliveTimer.cancel();
-      keepAliveTimer=null;
-     }
-    if(keepAliveTimerTask!=null)
-     {
-      keepAliveTimerTask.shutdown();
-      keepAliveTimerTask=null;
+      task.shutdown();
+      deleteTimerTask();
+      if(Frontier.getHighVerbosity())Frontier.Log("Cancelled KeepAlive timer task");
      }
    }
 
   public Connection acquire(ServletOutputStream sos) throws Exception 
    {
     Connection connection;
-    keepAliveTimer=new Timer();
-    keepAliveTimerTask=
+    Timer timer=new Timer();
+    KeepAliveTimerTask task=
         new KeepAliveTimerTask(Thread.currentThread().getName()+"-ka",sos,
-	    "DB acquire",Frontier.getMaxDbAcquireSeconds());
-    keepAliveTimer.schedule(keepAliveTimerTask,
+	    "DB acquire",Frontier.getMaxDbAcquireSeconds(),timer);
+    timer.schedule(task,
     	SECONDS_BETWEEN_KEEPALIVES*1000,SECONDS_BETWEEN_KEEPALIVES*1000);
     try
      {
@@ -134,10 +163,10 @@ public class DbConnectionMgr
       acquireLock.lock();
       try
        {
-	// check if the corresponding keepAliveTimerTask has already given
+	// check if the corresponding KeepAliveTimerTask has already given
 	//  up, and if so, don't try to get the connection because it
 	//  can take a very long time if the DB server is down
-        if(keepAliveTimerTask.isShutdown())
+        if(task.isShutdown())
           throw new Exception("Timed out waiting to acquire DB connection");
         Frontier.Log("Acquiring DB connection");
         connection=dataSource.getConnection();
@@ -149,17 +178,20 @@ public class DbConnectionMgr
      }
     catch(Exception e)
      {
-      // if error starting, cancel keepAliveTask, otherwise leave
+      // if error starting, shutdown keepAliveTask, otherwise leave
       //  until release() which must be guaranteed to be called
-      cancelKeepAlive();
+      task.shutdown();
       throw e;
      }
     Frontier.Log("DB connection acquired");
     int seconds=Frontier.getMaxDbExecuteSeconds();
     if(seconds==0)
-      cancelKeepAlive();
+      task.shutdown();
     else
-      keepAliveTimerTask.setWaitFor("DB execute",seconds);
+     {
+      task.setWaitFor("DB execute",seconds);
+      saveTimerTask(task);
+     }
     return connection;
    }
 
@@ -167,7 +199,11 @@ public class DbConnectionMgr
   public void release(Connection dbConnection,ServletOutputStream sos) throws Exception 
    {
     cancelKeepAlive();
-    if(dbConnection!=null) dbConnection.close();
+    if(dbConnection!=null)
+     {
+      dbConnection.close();
+      Frontier.Log("DB connection released");
+     }
    }
    
    
