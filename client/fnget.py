@@ -237,12 +237,24 @@ if decodeFlag:
   print "Query result:\n", result
   dom = parseString(result)
   dataList = dom.getElementsByTagName("data")
+  keepalives = 0
   # Control characters represent records, but I won't bother with that now,
   # and will simply replace those by space.
   for data in dataList:
-    if data.firstChild is not None:
+    for node in data.childNodes:
+      # <keepalive /> elements may be present, combined with whitespace text
+      if node.nodeName == "keepalive":
+	# this is of type Element
+	keepalives += 1
+        continue
+      # else assume of type Text
+      if node.data.strip() == "":
+        continue
+      if keepalives > 0:
+	print keepalives, "keepalives received\n"
+	keepalives = 0
 
-      row = base64.decodestring(data.firstChild.data)
+      row = base64.decodestring(node.data)
       if retrieveZiplevel != "":
         row = zlib.decompress(row)
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
