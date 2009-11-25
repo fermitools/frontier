@@ -21,8 +21,8 @@ public class Xsd2DataObjectHelper extends DefaultHandler
   public String obj_name;
   public String obj_version;
   public String xsd_version;
-  public ArrayList aFields;
-  public HashMap mapMethods;
+  public ArrayList<FieldDesc> aFields;
+  public HashMap<String,MethodInfo> mapMethods;
 
   // Returns source od DTD for validating
   class LocalResolver implements EntityResolver 
@@ -75,12 +75,12 @@ public class Xsd2DataObjectHelper extends DefaultHandler
     protected StringBuffer sql_buf;
     protected String sql_str;
     protected String sql_type;
-    protected ArrayList aParams;
+    protected ArrayList<FieldDesc> aParams;
     
     protected MethodInfo(String n,String d,boolean c,long e,String t,String a) throws Exception
      {
       super(n,d,c,e,t,a);
-      aParams=new ArrayList();
+      aParams=new ArrayList<FieldDesc>();
      }
      
      
@@ -96,8 +96,8 @@ public class Xsd2DataObjectHelper extends DefaultHandler
    {
     obj_name=requested_name;
     obj_version=requested_version;
-    aFields=new ArrayList();
-    mapMethods=new HashMap();
+    aFields=new ArrayList<FieldDesc>();
+    mapMethods=new HashMap<String,MethodInfo>();
    }
 
    
@@ -140,7 +140,7 @@ public class Xsd2DataObjectHelper extends DefaultHandler
    
   protected MethodInfo getMethodInfo(String method) throws Exception
    {
-    MethodInfo mi=(MethodInfo)mapMethods.get(method);
+    MethodInfo mi=mapMethods.get(method);
     if(mi==null) throw new Exception("Method "+method+" was not found for object "+obj_name+":"+obj_version+".");
     return mi;
    }

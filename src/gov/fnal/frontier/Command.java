@@ -25,9 +25,9 @@ public class Command
    }
  
    
-  public static ArrayList parse(HttpServletRequest req) throws Exception
+  public static ArrayList<Command> parse(HttpServletRequest req) throws Exception
    {
-    ArrayList ret=new ArrayList();
+    ArrayList<Command> ret=new ArrayList<Command>();
     
     String req_method=req.getMethod();
     if(req_method.equals("GET"))
@@ -47,7 +47,7 @@ public class Command
    
    
    
-  private static void set_get_command(ArrayList cmd_list,String query_str) throws Exception
+  private static void set_get_command(ArrayList<Command> cmd_list,String query_str) throws Exception
    {
     //System.out.println("Query string ["+query_str+"]");
     String[] param=new String[4];

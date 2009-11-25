@@ -26,11 +26,11 @@ public class FieldDesc
     "blob"
    };
    
-  public static HashMap mapType;
+  public static HashMap<String,Integer> mapType;
   
   static
    {
-    mapType=new HashMap();
+    mapType=new HashMap<String,Integer>();
     for(int i=0;i<type_name.length;i++)
      {
       mapType.put(type_name[i],new Integer(i));

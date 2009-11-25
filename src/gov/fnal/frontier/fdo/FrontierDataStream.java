@@ -7,14 +7,14 @@ public class FrontierDataStream
   public static final int BY_NAME=0;
   
   private int mode;
-  private HashMap mapParam;
+  private HashMap<String,String> mapParam;
   private int count;
   
  
   public FrontierDataStream(int mode)
    {
     this.mode=mode;
-    mapParam=new HashMap();
+    mapParam=new HashMap<String,String>();
     count=0;
    }
    

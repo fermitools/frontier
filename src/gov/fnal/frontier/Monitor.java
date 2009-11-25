@@ -17,7 +17,7 @@ public class Monitor extends Thread
                                        // fails in a row before the monitor gives up.
 
   private long   delay;
-  private Vector destList = new Vector();
+  private Vector<String> destList = new Vector<String>();
   private ApMon  monalisa;
   private String nodeName;
   private int    fail_count;           // Monitor loop in a row fails counter

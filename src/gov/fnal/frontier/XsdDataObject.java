@@ -32,10 +32,10 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
   public String obj_name;
   public String obj_version;
   public String xsd_version;
-  public ArrayList aFields;
+  public ArrayList<FieldDesc> aFields;
   public StringBuffer main_sql;
   public StringBuffer tail_sql;
-  public ArrayList aWhere;
+  public ArrayList<WhereClause> aWhere;
 
   // Returns source od DTD fr validating
   class LocalResolver implements EntityResolver 
@@ -81,8 +81,8 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
    {
     StringBuffer clause=new StringBuffer("");
     String str_clause;
-    ArrayList aParams=new ArrayList();
-    HashMap aMap=new HashMap();
+    ArrayList<FieldDesc> aParams=new ArrayList<FieldDesc>();
+    HashMap<String,Integer> aMap=new HashMap<String,Integer>();
    }// end of WhereClause
    
 
@@ -109,11 +109,11 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     String xml=prepareXml(body);
     XMLReader parser=null;
     boolean validation=true;
-    aFields=new ArrayList();
+    aFields=new ArrayList<FieldDesc>();
     current_element=null;
     main_sql=new StringBuffer("select ");
     tail_sql=new StringBuffer("");
-    aWhere=new ArrayList();
+    aWhere=new ArrayList<WhereClause>();
 
     parser=XMLReaderFactory.createXMLReader(DEFAULT_PARSER_NAME);
     LocalResolver lres=new LocalResolver();
@@ -180,7 +180,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
       stmt=con.prepareStatement(sql.toString());
       for(int i=0;i<wc.aParams.size();i++)
        {
-        FieldDesc param=(FieldDesc)wc.aParams.get(i);
+        FieldDesc param=wc.aParams.get(i);
         String val=frontier_data_stream.getString(param.n);
         //System.out.println("Param "+i+" ["+param.n+":"+val+"]");
         stmt.setString(i+1,val);
@@ -190,7 +190,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
        {
         for(int i=0;i<aFields.size();i++)
          {
-          FieldDesc field=(FieldDesc)aFields.get(i);
+          FieldDesc field=aFields.get(i);
           switch(field.t)
            {
             case FieldDesc.F_INT:    enc.writeInt(rs.getInt(i+1)); break;
@@ -229,7 +229,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     //System.out.println("XsdDataObject.fdo_meta()");
     for(int i=0;i<aFields.size();i++)
      {
-      FieldDesc field=(FieldDesc)aFields.get(i);
+      FieldDesc field=aFields.get(i);
       enc.writeString(FieldDesc.type_name[field.t]);
       enc.writeString(field.n);
      }
@@ -264,7 +264,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     
     for(int i=0;i<aWhere.size();i++)
      {
-      WhereClause wc=(WhereClause)aWhere.get(i);
+      WhereClause wc=aWhere.get(i);
       if(wc.aParams.size()!=keys.length) continue;
       
       boolean failed=false;
@@ -348,7 +348,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     if(current_element.equals("param"))
      {
       // The last one is the current
-      WhereClause wc=(WhereClause)aWhere.get(aWhere.size()-1);
+      WhereClause wc=aWhere.get(aWhere.size()-1);
       FieldDesc param=new FieldDesc(attrs.getValue("key"),attrs.getValue("type"));
       int pos=Integer.parseInt(attrs.getValue("position"));
       if(wc.aParams.size()>=pos) throw new SAXException("Params are out of order!");
@@ -366,7 +366,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     
     if(local.equals("where")) 
      {
-      WhereClause wc=(WhereClause)aWhere.get(aWhere.size()-1);
+      WhereClause wc=aWhere.get(aWhere.size()-1);
       while(true)
        {
         int pos=wc.clause.indexOf("@param");
@@ -397,7 +397,7 @@ public class XsdDataObject extends DefaultHandler implements FrontierDataObject
     if(current_element.equals("clause"))
      {
       // The last one is the current
-      WhereClause wc=(WhereClause)aWhere.get(aWhere.size()-1);
+      WhereClause wc=aWhere.get(aWhere.size()-1);
       wc.clause.append(ch,start,length);
       return;
      }

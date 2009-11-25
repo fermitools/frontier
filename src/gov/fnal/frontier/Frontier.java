@@ -43,7 +43,7 @@ public final class Frontier
   public long error_max_age=Frontier.errorDefaultMaxAge();
   public boolean noCache=false;
   public int payloads_num;
-  public ArrayList aPayloads=null;
+  public ArrayList<Payload> aPayloads=null;
   public long if_modified_since=-1;
 
 
@@ -160,7 +160,7 @@ public final class Frontier
     if(!initialized) init();
 
     DbConnectionMgr connMgr=null;
-    ArrayList commandList=null;
+    ArrayList<Command> commandList=null;
     
     if(monitor!=null) monitor.increment();
 
@@ -168,7 +168,7 @@ public final class Frontier
     connMgr=DbConnectionMgr.getDbConnectionMgr();
     commandList=Command.parse(req);
     payloads_num=commandList.size();
-    aPayloads=new ArrayList();
+    aPayloads=new ArrayList<Payload>();
     if(validate_last_modified_seconds>0)
      {
       if_modified_since=req.getDateHeader("if-modified-since");

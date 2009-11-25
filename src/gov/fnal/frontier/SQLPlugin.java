@@ -12,9 +12,9 @@ import java.util.Iterator;
 
 public class SQLPlugin implements FrontierPlugin
  {
-  private static Hashtable tableNames=new Hashtable();
+  private static Hashtable<HashSet<String>,SQLTimes> tableNames=new Hashtable<HashSet<String>,SQLTimes>();
 
-  private HashSet queryTableNames=null;
+  private HashSet<String> queryTableNames=null;
 
   private String query;
   private String queryLower;
@@ -195,9 +195,9 @@ public class SQLPlugin implements FrontierPlugin
     throw new Exception("Not implemented");
    }
 
-  protected static synchronized SQLTimes getSQLTimesObject(HashSet qTableNames,boolean createIfNecessary)
+  protected static synchronized SQLTimes getSQLTimesObject(HashSet<String> qTableNames,boolean createIfNecessary)
    {
-    SQLTimes times=(SQLTimes)tableNames.get(qTableNames);
+    SQLTimes times=tableNames.get(qTableNames);
     if((times==null)&&createIfNecessary)
      {
       times=new SQLTimes(qTableNames);
@@ -206,7 +206,7 @@ public class SQLPlugin implements FrontierPlugin
     return times;
    }
 
-  private HashSet getQueryTableNames(String str) 
+  private HashSet<String> getQueryTableNames(String str) 
    {
     // table name ends in either whitespace or comma or close-paren
     Pattern endtablepat=Pattern.compile("[\\s,)]");
@@ -219,7 +219,7 @@ public class SQLPlugin implements FrontierPlugin
     Pattern anothertablepat=Pattern.compile("\\G[^\\s,)]+[\\s]*[^\\s,)]*,[\\s]*");
     Matcher anothermatcher=anothertablepat.matcher(str);
 
-    HashSet tablesSet=new QueryTableSet();
+    HashSet<String> tablesSet=new QueryTableSet<String>();
     int starttablename=0;
 
     while(true)

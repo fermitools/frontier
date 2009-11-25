@@ -9,7 +9,7 @@ import javax.servlet.ServletOutputStream;
 
 public class Payload
  {
-  private static Hashtable htFdo=new Hashtable(); 
+  private static Hashtable<String,FrontierDataObject> htFdo=new Hashtable<String,FrontierDataObject>(); 
   
   private DbConnectionMgr dbm;
   private Command cmd;
@@ -45,7 +45,7 @@ public class Payload
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
-    if(Frontier.isFdoCache()) fdo=(FrontierDataObject)htFdo.get(key);
+    if(Frontier.isFdoCache()) fdo=htFdo.get(key);
     if(fdo!=null)
      {
       //System.out.println("Got "+key+" from cache");

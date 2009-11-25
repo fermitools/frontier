@@ -11,22 +11,22 @@ public class MethodDesc
   protected String transaction;
   protected String access;
   
-  private static HashMap hm_domain;
-  private static HashMap hm_transaction;
-  private static HashMap hm_access;
+  private static HashMap<String,String> hm_domain;
+  private static HashMap<String,String> hm_transaction;
+  private static HashMap<String,String> hm_access;
   
   static
    {
-    hm_domain=new HashMap();
+    hm_domain=new HashMap<String,String>();
     hm_domain.put("get","1");
     hm_domain.put("insert","2");
     hm_domain.put("update","3");
     
-    hm_transaction=new HashMap();
+    hm_transaction=new HashMap<String,String>();
     hm_transaction.put("free","1");
     hm_transaction.put("required","2");
     
-    hm_access=new HashMap();
+    hm_access=new HashMap<String,String>();
     hm_access.put("public","1");
     hm_access.put("certificate","2");
     hm_access.put("admin","3");
