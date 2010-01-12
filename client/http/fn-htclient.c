@@ -399,13 +399,15 @@ static int read_connection(FrontierHttpClnt *c)
   if((strncmp(buf,"HTTP/1.0 5",10)==0)||(strncmp(buf,"HTTP/1.1 5",10)==0))
    {
     /* 5xx HTTP error code indicates server error */
-    frontier_setErrorMsg(__FILE__,__LINE__,"server error (%s)",buf);
+    frontier_setErrorMsg(__FILE__,__LINE__,"server error (%s) proxy=%s server=%s",
+	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
     return FRONTIER_ESERVER;
    }
 
   if((strncmp(buf,"HTTP/1.0 200 ",13)!=0)&&(strncmp(buf,"HTTP/1.1 200 ",13)!=0))
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s)",buf);
+    frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s) proxy=%s server=%s",
+	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
     return FRONTIER_EPROTO;
    }
       
@@ -473,7 +475,8 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
         if(frontierHttpClnt_open(c)==FRONTIER_OK)continue;
         frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-connect failed");
        }
-      frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
+      frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server proxy=%s server=%s",
+	frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
       return FRONTIER_ENETWORK;    
      }
     if((ret==FRONTIER_ESYS)&&(try==0))
