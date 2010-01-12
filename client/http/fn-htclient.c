@@ -470,8 +470,8 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
 	/*long waits.  Close, reopen, and retry.*/
         frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"got empty response, re-connecting and retrying");
         frontierHttpClnt_close(c);
-        frontierHttpClnt_open(c);
-	continue;
+        if(frontierHttpClnt_open(c)==FRONTIER_OK)continue;
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-connect failed");
        }
       frontier_setErrorMsg(__FILE__,__LINE__,"empty response from server");
       return FRONTIER_ENETWORK;    
@@ -483,8 +483,8 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
       /*Close, reopen, and retry.*/
       frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Retrying after system error");
       frontierHttpClnt_close(c);
-      frontierHttpClnt_open(c);
-      continue;
+      if(frontierHttpClnt_open(c)==FRONTIER_OK)continue;
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-connect failed");
      }
     /*if there was no continue, don't try again*/
     break;
