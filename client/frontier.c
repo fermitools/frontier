@@ -136,6 +136,7 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   pid_t pid;
   char *appId;
   char *x509Subject;
+  char *pwname, *pwgecos;
   
   if(initialized) return FRONTIER_OK;
 
@@ -187,13 +188,20 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
 
   uid=getuid();
   pwent=getpwuid(uid);
+  if(pwent==NULL)
+    pwname=pwgecos="pwent_failed";
+  else
+   {
+    pwname=pwent->pw_name;
+    pwgecos=pwent->pw_gecos;
+   }
   pid=getpid();
   appId=getenv("CMSSW_VERSION");
   if(appId==NULL)
     appId="client";
   x509Subject=getX509Subject();
 
-  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,pid,pwent->pw_name,uid,(x509Subject!=NULL)?x509Subject:pwent->pw_gecos);
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,pid,pwname,uid,(x509Subject!=NULL)?x509Subject:pwgecos);
   
   initialized=1;
 
@@ -399,6 +407,8 @@ void frontier_closeChannel(FrontierChannel fchn)
 void frontier_setReload(FrontierChannel u_channel,int reload)
  {
   Channel *chn=(Channel*)u_channel;  
+  if(chn->user_reload!=reload)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"changing chan %d reload flag to %d",chn->seqnum,reload);
   chn->user_reload=reload;
  }
  
@@ -492,7 +502,7 @@ static int get_data(Channel *chn,const char *uri,const char *body)
        {
         //too big, don't append any more chunks that might fit
         client_cache_bufsize=-1;
-        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"result too large to cache");
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"result too large for client cache");
        }
      }
     ret=write_data(chn->resp,buf,ret);
