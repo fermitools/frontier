@@ -41,9 +41,9 @@ v2_7_9 - 10 October 2008 (dwd)
  - Treat 5XX HTTP errors as server errors instead proxy errors,
     so the retry algorithm will move on to the next server instead
     of the next proxy
- - Send 'Cache-Control: max-age=1' header on every request, as an
+ - Send 'Cache-Control: max-stale=1' header on every request, as an
     indication to the frontier server that the 5XX errors are handled
-    properly and it may send back 'Cache-Control: send-if-error=1'
+    properly and it may send back 'Cache-Control: stale-if-error=1'
     which tells squid 2.7 to return a 504 error if the server later
     goes down after the data is expired rather than returning stale
     data.
