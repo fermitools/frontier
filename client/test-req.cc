@@ -95,7 +95,7 @@ int do_main(int argc, char **argv)
     frontier::init();
     
     arg_ind=1;
-    if(argc>=2)
+    while(arg_ind<argc)
      {
       if(strcmp(argv[arg_ind],"-h")==0)
        {
@@ -103,29 +103,22 @@ int do_main(int argc, char **argv)
         exit(0);
        }
       if(strcmp(argv[arg_ind],"-r")==0)
-       {
         do_reload=1;
-        arg_ind++;
-       }
-      if(strcmp(argv[arg_ind],"-n")==0)
-       {
+      else if(strcmp(argv[arg_ind],"-n")==0)
         do_print=0;
-        arg_ind++;
-       }
-      if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
+      else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
        {
         repeat_count=atoi(argv[arg_ind+1]);
-	arg_ind+=2;
+	arg_ind++;
        }
-      if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
-       {
+      else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
         file_name=argv[arg_ind+1];
-       }
-      if(!file_name && argc>arg_ind)
+      else if(!file_name && argc>arg_ind)
        {
         print_usage(argv);
         exit(1);
        }
+      arg_ind++;
      }
      
     std::ifstream in_file;
