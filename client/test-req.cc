@@ -97,17 +97,17 @@ int do_main(int argc, char **argv)
     arg_ind=1;
     if(argc>=2)
      {
-      if(strcmp(argv[1],"-h")==0)
+      if(strcmp(argv[arg_ind],"-h")==0)
        {
         print_usage(argv);
         exit(0);
        }
-      if(strcmp(argv[1],"-r")==0)
+      if(strcmp(argv[arg_ind],"-r")==0)
        {
         do_reload=1;
         arg_ind++;
        }
-      if(strcmp(argv[1],"-n")==0)
+      if(strcmp(argv[arg_ind],"-n")==0)
        {
         do_print=0;
         arg_ind++;
