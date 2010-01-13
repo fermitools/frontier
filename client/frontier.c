@@ -218,6 +218,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   const char *p;
   fn_client_cache_list *cache_listp;
   char *servlet;
+  int n;
+  int longfresh=0;
 
   chn=frontier_mem_alloc(sizeof(Channel));
   if(!chn) 
@@ -352,6 +354,40 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
      }
     chn->client_cache=cache_listp;
    }
+
+  // calculate the url suffixes for short and long time-to-live
+  p=frontierConfig_getFreshkey(chn->cfg);
+  n=strlen(p);
+  if(strncmp(p,"long",4)==0)
+   {
+    longfresh=1;
+    p+=4;
+    n-=4;
+   }
+  if(n>0)
+    n+=strlen("&freshkey=");
+  chn->ttlshort_suffix=(char *)frontier_mem_alloc(strlen("&ttl=short")+n+1);
+  chn->ttllong_suffix=(char *)frontier_mem_alloc((longfresh?n:0)+1);
+  if(!chn->ttlshort_suffix||!chn->ttllong_suffix)
+   {
+    *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
+    channel_delete(chn);    
+    return (void*)0;
+   }
+  strcpy(chn->ttlshort_suffix,"&ttl=short");
+  *chn->ttllong_suffix='\0';
+  if(n>0)
+   {
+    strcat(chn->ttlshort_suffix,"&freshkey=");
+    strcat(chn->ttlshort_suffix,p);
+    if(longfresh)
+     {
+      strcat(chn->ttllong_suffix,"&freshkey=");
+      strcat(chn->ttllong_suffix,p);
+     }
+   }
+
   frontierHttpClnt_setConnectTimeoutSecs(chn->ht_clnt,
   		frontierConfig_getConnectTimeoutSecs(chn->cfg));
   frontierHttpClnt_setReadTimeoutSecs(chn->ht_clnt,
@@ -380,6 +416,8 @@ static void channel_delete(Channel *chn)
   if(chn->resp)frontierResponse_delete(chn->resp);
   frontierConfig_delete(chn->cfg);
   if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
+  if(chn->ttlshort_suffix)frontier_mem_free(chn->ttlshort_suffix);
+  if(chn->ttllong_suffix)frontier_mem_free(chn->ttllong_suffix);
   frontier_mem_free(chn);
   fn_gzip_cleanup();
   frontier_log_close();
@@ -470,7 +508,8 @@ static int get_data(Channel *chn,const char *uri,const char *body)
      where the length of time is defined by the server.  Add the suffix
      even when reloads are forced to make sure the same URL is cleared
      in the caches. */
-  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,chn->user_reload ? "&ttl=short" : "");
+  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,
+    chn->user_reload ? chn->ttlshort_suffix : chn->ttllong_suffix);
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
   
   ret=frontierHttpClnt_open(chn->ht_clnt);
