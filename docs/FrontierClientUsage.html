@@ -102,6 +102,13 @@ and a value of "long"  forces an immediate refresh on all queries.
 If not present, may come from environment variable 
 FRONTIER_FORCERELOAD.  Default "none".
 <li>
+freshkey - anything in the value is added to the URLs used for queries,
+so that if a new value is used the queries will be guaranteed to not
+be in the cache.  If the value begins with "long" that is removed and
+the rest of the value is added to all queries, otherwise the value is
+added to only "short" time-to-live queries.  If not present, may come
+from environment variable FRONTIER_FRESHKEY.  Default is no extra key.
+<li>
 loadbalance - value of 'proxies' or 'servers' (both may be listed
 with loadbalance=proxies and loadbalance=servers) to cause frontier
 client to do its own loadbalancing between the listed proxies and
