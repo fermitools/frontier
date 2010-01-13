@@ -1,5 +1,30 @@
 $Id$
 
+v2_7_12 - 13 January 2010 (dwd)
+ - Add a new freshkey option to complex connection strings.  Anything
+    in the value is added to the URLs used for queries, so that if a new
+    value is used the queries will be guaranteed to not be in a cache.
+    If the value begins with "long" that is removed and the rest of the
+    value is added to all queries, otherwise the value is added to only
+    "short" time-to-live queries.  If not present in the connection
+    string, may come from environment variable FRONTIER_FRESHKEY.
+    Default is no extra key.
+ - Avoid a possible segmentation fault when a connection socket needs
+    to be re-opened but the open fails.
+ - Avoid a segmentation fault when getpwent() fails (due to a problem
+    in the operating system).
+ - Include current proxy and server name in some http-level error
+    messages where it might be helpful to know.
+ - Separate out install target from dist target, and make the dist target
+    work even when 'distdir' is not the default.  The directory can now
+    be set with either installdir= or distdir= on the make command line.
+ - Change fn-req tool to handle more than one command line option at
+    once.
+ - Change fnget.py tool to handle keepalive messages that can come from
+    the frontier server for queries that take a long time to service.
+ - Switch from the GNU Lesser General Public License to the Fermitools
+    (BSD) license.
+
 v2_7_11 - 18 June 2009 (dwd)
  - Whenever a system error happens on a proxy or server connection,
     retry query once on a new connection.  This works around a
