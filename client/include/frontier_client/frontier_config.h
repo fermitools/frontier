@@ -38,6 +38,7 @@
 #define FRONTIER_ENV_READTIMEOUTSECS	"FRONTIER_READTIMEOUTSECS"
 #define FRONTIER_ENV_WRITETIMEOUTSECS	"FRONTIER_WRITETIMEOUTSECS"
 #define FRONTIER_ENV_FORCERELOAD	"FRONTIER_FORCERELOAD"
+#define FRONTIER_ENV_FRESHKEY		"FRONTIER_FRESHKEY"
 
 struct s_FrontierConfig
  {
@@ -53,6 +54,7 @@ struct s_FrontierConfig
   int read_timeout_secs;
   int write_timeout_secs;
   char *force_reload;
+  char *freshkey;
   int retrieve_zip_level;
   int client_cache_max_result_size;
   int failover_to_server;
@@ -76,6 +78,8 @@ void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int level);
 int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload);
 const char *frontierConfig_getForceReload(FrontierConfig *cfg);
+void frontierConfig_setFreshkey(FrontierConfig *cfg,char *freshkey);
+const char *frontierConfig_getFreshkey(FrontierConfig *cfg);
 void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int level);
 int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level);
