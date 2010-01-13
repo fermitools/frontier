@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+#
+# Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+# All rights reserved. 
+#
+# For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+#  http://fermitools.fnal.gov/about/terms.html
+#
+
 # Simple python frontier client.
 # encodes input sql query (standard encoding has to be slightly modified 
 # for url safety), retrieves data, and decodes results

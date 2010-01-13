@@ -1,4 +1,13 @@
 #!/bin/bash
+
+#
+# Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+# All rights reserved. 
+#
+# For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+#  http://fermitools.fnal.gov/about/terms.html
+#
+
 # Parse a log file created by setting FRONTIER_LOG_LEVEL=debug and
 #  FRONTIER_LOG_FILE=filename and print to stdout one query per line.
 # The query result size is also printed in the form (NNN/XX%) where NNN
