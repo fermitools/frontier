@@ -42,6 +42,7 @@ static int default_connect_timeout_secs = -1;
 static int default_read_timeout_secs = -1;
 static int default_write_timeout_secs = -1;
 static char *default_force_reload = 0;
+static char *default_freshkey = 0;
 static int default_retrieve_zip_level = -1;
 static char *default_logical_server = 0;
 static char *default_physical_servers = 0;
@@ -81,7 +82,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
       default_connect_timeout_secs=5;
      }
     else
-     default_connect_timeout_secs=atoi(env);
+      default_connect_timeout_secs=atoi(env);
    }
   frontierConfig_setConnectTimeoutSecs(cfg,default_connect_timeout_secs);
 
@@ -93,7 +94,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
       default_read_timeout_secs=10;
      }
     else
-     default_read_timeout_secs=atoi(env);
+      default_read_timeout_secs=atoi(env);
    }
   frontierConfig_setReadTimeoutSecs(cfg,default_read_timeout_secs);
 
@@ -106,7 +107,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
       default_write_timeout_secs=5;
      }
     else
-     default_write_timeout_secs=atoi(env);
+      default_write_timeout_secs=atoi(env);
    }
   frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
 
@@ -115,9 +116,18 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
     if((env=getenv(FRONTIER_ENV_FORCERELOAD))==0)
       default_force_reload="none";
     else
-     default_force_reload=env;
+      default_force_reload=env;
    }
   frontierConfig_setForceReload(cfg,default_force_reload);
+
+  if(default_freshkey==0)
+   {
+    if((env=getenv(FRONTIER_ENV_FRESHKEY))==0)
+      default_freshkey="";
+    else
+      default_freshkey=env;
+   }
+  frontierConfig_setFreshkey(cfg,default_freshkey);
 
   // Default on this is not set in environment so just set it here
   frontierConfig_setClientCacheMaxResultSize(cfg,FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE);
@@ -157,6 +167,9 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Read timeoutsecs is %d",cfg->read_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
+  if(*cfg->freshkey!='\0')
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Freshkey is %s",cfg->freshkey);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Failover to server is %s",cfg->failover_to_server ? "yes" : "no");
 
@@ -216,6 +229,8 @@ void frontierConfig_delete(FrontierConfig *cfg)
   
   if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
 
+  if(cfg->freshkey!=0)frontier_mem_free(cfg->freshkey);
+
   frontier_mem_free(cfg);
  }
 
@@ -248,6 +263,17 @@ void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload)
 const char *frontierConfig_getForceReload(FrontierConfig *cfg)
  {
   return cfg->force_reload;
+ }
+
+void frontierConfig_setFreshkey(FrontierConfig *cfg,char *freshkey)
+ {
+  if(cfg->freshkey!=0)frontier_mem_free(cfg->freshkey);
+  cfg->freshkey=frontier_str_copy(freshkey);
+ }
+
+const char *frontierConfig_getFreshkey(FrontierConfig *cfg)
+ {
+  return cfg->freshkey;
  }
 
 void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
@@ -458,6 +484,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
 	else if (strcmp(keyp, "forcereload") == 0)
 	  frontierConfig_setForceReload(cfg, valp);
+	else if (strcmp(keyp, "freshkey") == 0)
+	  frontierConfig_setFreshkey(cfg, valp);
 	else if (strcmp(keyp, "failovertoserver") == 0)
 	  frontierConfig_setFailoverToServer(cfg, (strcmp(valp,"no")!=0));
 	else if (strcmp(keyp, "loadbalance") == 0)
