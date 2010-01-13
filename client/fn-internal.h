@@ -122,6 +122,8 @@ struct s_Channel
   int response_seqnum; // next sequence number for responses using this channel
   fn_client_cache_list *client_cache;
   char *client_cache_buf;
+  char *ttlshort_suffix;
+  char *ttllong_suffix;
   int client_cache_maxsize;
  };
 typedef struct s_Channel Channel;
