@@ -38,6 +38,7 @@
 int frontier_log_level;
 char *frontier_log_file;
 int frontier_log_dup = 0;
+pid_t frontier_pid;
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
 static int initialized=0;
@@ -112,22 +113,43 @@ char *frontier_str_now()
   return cnow;
  }
 
-int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
-{
-  return(frontier_initdebug(f_mem_alloc,f_mem_free,
-		getenv(FRONTIER_ENV_LOG_FILE),getenv(FRONTIER_ENV_LOG_LEVEL)));
-}
-
-int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr),
-			const char *logfilename, const char *loglevel)
+/* Calculate the X-Frontier-Id value.  Assumes frontier_pid is set.  */
+static void set_frontier_id()
  {
   uid_t uid;
   struct passwd *pwent;
-  pid_t pid;
   char *appId;
   char *x509Subject;
   char *pwname, *pwgecos;
   
+  uid=getuid();
+  pwent=getpwuid(uid);
+  if(pwent==NULL)
+    pwname=pwgecos="pwent_failed";
+  else
+   {
+    pwname=pwent->pw_name;
+    pwgecos=pwent->pw_gecos;
+   }
+  appId=getenv("CMSSW_VERSION");
+  if(appId==NULL)
+    appId="client";
+  x509Subject=getX509Subject();
+
+  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,frontier_pid,pwname,uid,(x509Subject!=NULL)?x509Subject:pwgecos);
+
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"client id: %s",frontier_id);
+ }
+  
+int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr))
+ {
+  return(frontier_initdebug(f_mem_alloc,f_mem_free,
+		getenv(FRONTIER_ENV_LOG_FILE),getenv(FRONTIER_ENV_LOG_LEVEL)));
+ }
+
+int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr),
+			const char *logfilename, const char *loglevel)
+ {
   if(initialized) return FRONTIER_OK;
 
   if(!f_mem_alloc) {f_mem_alloc=malloc; f_mem_free=free;}
@@ -136,6 +158,8 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
   frontier_mem_alloc=f_mem_alloc;
   frontier_mem_free=f_mem_free;
     
+  frontier_pid=getpid();
+
   if(!loglevel) 
    {
     frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
@@ -159,40 +183,20 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
 	frontier_log_dup=1;
 	logfilename++;
        }
-      int fd=open(logfilename,O_CREAT|O_APPEND|O_WRONLY,0644);
-      if(fd<0) 
+      frontier_log_file=frontier_str_copy(logfilename);
+      if(!frontier_log_init()) 
        {
-        printf("Can not open log file %s. Log is disabled.\n",logfilename);
+        printf("Cannot open log file %s. Log is disabled.\n",logfilename);
 	frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
+	frontier_mem_free(frontier_log_file);
         frontier_log_file=(char*)0;
-       }
-      else
-       {
-        close(fd);
-        frontier_log_file=frontier_str_copy(logfilename);
        }
      }
    }
 
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"starting frontier client version %s",frontier_api_version);
+  set_frontier_id();
 
-  uid=getuid();
-  pwent=getpwuid(uid);
-  if(pwent==NULL)
-    pwname=pwgecos="pwent_failed";
-  else
-   {
-    pwname=pwent->pw_name;
-    pwgecos=pwent->pw_gecos;
-   }
-  pid=getpid();
-  appId=getenv("CMSSW_VERSION");
-  if(appId==NULL)
-    appId="client";
-  x509Subject=getX509Subject();
-
-  snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,pid,pwname,uid,(x509Subject!=NULL)?x509Subject:pwgecos);
-  
   initialized=1;
 
   return FRONTIER_OK;
@@ -610,6 +614,23 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   FrontierHttpClnt *clnt;
   char err_last_buf[ERR_LAST_BUF_SIZE];
   int curproxy,curserver;
+  pid_t pid;
+
+  if((pid=getpid())!=frontier_pid)
+   {
+     pid_t oldpid;
+     // process must have forked
+     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"process id changed to %d",(int)pid);
+     oldpid=frontier_pid;
+     frontier_pid=pid;
+     // switch to new log if it includes %P in the name
+     frontier_log_close();
+     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"process id changed from %d",(int)oldpid);
+     // re-set id to use new pid
+     set_frontier_id();
+     // drop the socket because it is shared between parent and child
+     frontierHttpClnt_drop(chn->ht_clnt);
+   }
 
   if(!chn) 
    {
