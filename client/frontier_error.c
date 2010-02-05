@@ -24,11 +24,7 @@
 
 #define MSG_BUF_SIZE	1024
 
-static
-#ifdef _REENTRANT
-__thread
-#endif /*_REENTRANT*/
-char _frontier_error_msg[MSG_BUF_SIZE];
+static char _frontier_error_msg[MSG_BUF_SIZE];
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
