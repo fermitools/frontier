@@ -22,6 +22,7 @@
 #define FRONTIER_LOGLEVEL_ERROR		2
 #define FRONTIER_LOGLEVEL_NOLOG		3
 
+int frontier_log_init();
 void frontier_log(int level, const char *file, int line, const char *fmt, ...);
 void frontier_log_close();
 
