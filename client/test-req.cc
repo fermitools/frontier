@@ -55,11 +55,12 @@ int main(int argc, char **argv)
 static void print_usage(char **argv)
  {
   std::cout<<"Usage: \n"<<argv[0]<<" -h\n\tPrint this info\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] -f file_name\n\tRead query from file_name\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] \n\tRead query from stdin\n";
-  std::cout<<"\n  [-r] means to force a reload\n";
+  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] [-F N] [-f file_name]\n";
+  std::cout<<"  if -f file_name is missing, reads query from stdin\n";
+  std::cout<<"  [-r] means to force a reload\n";
   std::cout<<"  [-n] means do not print data\n";
   std::cout<<"  [-c N] repeat the query N count times\n";
+  std::cout<<"  [-F N] fork after Nth repitition\n";
  }
  
 int do_main(int argc, char **argv)
@@ -77,6 +78,7 @@ int do_main(int argc, char **argv)
   int do_reload=0;
   int do_print=1;
   int repeat_count=1;
+  int fork_count=0;
   int idx;
   std::string sql("");
   
@@ -99,6 +101,11 @@ int do_main(int argc, char **argv)
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
        {
         repeat_count=atoi(argv[arg_ind+1]);
+	arg_ind++;
+       }
+      else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-F")==0)
+       {
+        fork_count=atoi(argv[arg_ind+1]);
 	arg_ind++;
        }
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
@@ -150,6 +157,9 @@ int do_main(int argc, char **argv)
 
     for(idx=0;idx<repeat_count;idx++)
      {
+      if((fork_count>0)&&(idx==fork_count))
+        fork();
+
       frontier::Session ses(&con);
       con.setReload(do_reload);
 
