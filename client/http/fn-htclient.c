@@ -583,6 +583,16 @@ void frontierHttpClnt_close(FrontierHttpClnt *c)
   c->data_size=0;  
   c->content_length=-1;
  }
+
+void frontierHttpClnt_drop(FrontierHttpClnt *c)
+ {
+  if(c->socket!=-1)
+   {
+    // force the connection to drop
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
+ }
  
 void frontierHttpClnt_delete(FrontierHttpClnt *c)
  {
