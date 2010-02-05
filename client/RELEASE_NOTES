@@ -4,8 +4,8 @@ v2_7_13 - 5 February 2010 (dwd)
  - Support forking of the parent process by checking for a change in
    process ID before every query and if it has then drop the socket
    connection, close the debug log, and update the X-Frontier-ID header.
- - Added support for an optional '%P' in the file name which is replaced by
-   the current process id, including after a fork.
+ - Added support for an optional '%P' in the debug log file name which
+   is replaced by the current process id, including after a fork.
  - Added '-F N' option to fn-req tool to fork after N iterations (which
    are specified by '-C N', in order to test forking.
  - Remove trailing newlines from the 'encoding request' debug message
