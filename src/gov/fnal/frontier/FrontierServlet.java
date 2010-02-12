@@ -94,7 +94,7 @@ public final class FrontierServlet extends HttpServlet
       newid=++count_total;
       ++count_current;
      }        
-    Thread.currentThread().setName("id="+newid);
+    Thread.currentThread().setName(Frontier.getServerName()+" id="+newid);
 
     String globalErrorMsg="";
     Exception globalCloseException=null;
