@@ -1,5 +1,13 @@
 $Id$
 
+3.23 2010/02/12 (dwd)
+    - Fixed race condition in the assignment of thread id numbers.
+      This has been happening for a long time but is now more
+      important because the thread names are used for cleaning up
+      keepalive timer threads.  Also include the servlet name in the
+      thread names to ensure no clashes of names between servlets
+      (which has not been seen in practice, it is just in case).
+
 3.22 2009/11/25 (dwd)
     - There was a serious flaw with the implementation of sending
       keepalives during DB execute: it was only able to track one at
