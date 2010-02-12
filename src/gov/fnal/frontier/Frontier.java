@@ -83,6 +83,8 @@ public final class Frontier
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
     if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
+    Frontier.Log("Initializing Frontier servlet version "+FrontierServlet.frontierVersion());
+
     // Verbosity level related
     String verbosity=getPropertyString(prb,"VerbosityLevel");
     if (verbosity!=null)
@@ -326,11 +328,17 @@ public final class Frontier
     buf.append(' ');
     buf.append(date_fmt.format(new Date()));
     buf.append(' ');
-    buf.append(Thread.currentThread().getName());
+    String id=Thread.currentThread().getName();
+    int idx=id.indexOf("id=");
+    if(idx>0)
+      id=id.substring(idx); // remove part before id=
+    buf.append(id);
     buf.append(' ');
     if(verbosityLevel>=2)
+     {
       buf.append(getLineInfo(2));
-    buf.append(' ');
+      buf.append(' ');
+     }
     buf.append(msg);
     System.out.println(buf.toString());
    }
