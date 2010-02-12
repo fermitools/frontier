@@ -88,12 +88,13 @@ public final class FrontierServlet extends HttpServlet
     Frontier frontier=null;
     
     long timestamp=(new Date()).getTime();
+    int newid;
     synchronized(mutex) 
      {
-      ++count_total;
+      newid=++count_total;
       ++count_current;
      }        
-    Thread.currentThread().setName("id="+count_total);
+    Thread.currentThread().setName("id="+newid);
 
     String globalErrorMsg="";
     Exception globalCloseException=null;
