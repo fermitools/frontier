@@ -55,7 +55,7 @@ CXXOPT_LIB	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_U
 CXXOPT_APP	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 COPT		=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO         =       c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
-LINK_DYLIB	=	c++ -dynamiclib -flat_namespace  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -undefined suppress -single_module
+LINK_DYLIB	=	c++ -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -undefined suppress -single_module
 LINK		=	ar cr libfrontier_client.a
 
 INC		=	-I${EXPAT_DIR}/include ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
