@@ -1,5 +1,19 @@
 $Id$
 
+v2_7_14 - 28 April 2010 (dwd)
+ - Support compilation on Mac OSX 10.6 Snow Leopard by changing link
+   options "-flat-namespace" to "-undefined dynamic_lookup".  In
+   order to make that to then work on 10.5 Leopard, removed
+   "-undefined suppress".
+ - Link libexpat into libfrontier_client shared library so it
+   becomes an implicit dependency.
+ - Remove the default building of a local copy of the expat library
+   and instead assume the library is available in the operating system
+   if the EXPAT_DIR command line isn't provided.
+ - Clean up linking of applications in the Makefile to no longer
+   explicitly include libraries which are implicitly pulled in by
+   the libfrontier_client shared library.
+
 v2_7_13 - 5 February 2010 (dwd)
  - Support forking of the parent process by checking for a change in
    process ID before every query and if it has then drop the socket
