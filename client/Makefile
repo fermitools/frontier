@@ -13,18 +13,17 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	7.13
+FN_VER_MINOR	=	7.14
 COMPILER_TAG    =       gcc_3.2.3
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src
 
 ifndef EXPAT_DIR
-  EXPAT_DIR     =       ./expat/local
   EXPAT_LD_FLAGS=      
-  EXPAT_LIBS    =      
+  EXPAT_INC     =      
 else
-  EXPAT_LD_FLAGS=      -L${EXPAT_DIR}/lib
-  EXPAT_LIBS    =      -lexpat
+  EXPAT_LD_FLAGS=     -L${EXPAT_DIR}/lib
+  EXPAT_INC     =     -I${EXPAT_DIR}/include
 endif
 
 ifndef ZLIB_DIR
@@ -55,12 +54,12 @@ CXXOPT_LIB	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_U
 CXXOPT_APP	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 COPT		=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -fPIC -DPIC
 LINK_SO         =       c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
-LINK_DYLIB	=	c++ -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -undefined suppress -single_module
+LINK_DYLIB	=	c++ -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
-INC		=	-I${EXPAT_DIR}/include ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
+INC		=	${EXPAT_INC} ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
 LIBDIR		=
-LIBS		= 	${OPENSSL_LD_FLAGS} -lssl ${ZLIB_LD_FLAGS} -lz 
+LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl ${ZLIB_LD_FLAGS} -lz 
 
 OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
@@ -79,7 +78,7 @@ endif
 
 
 
-all: htclient libexpat $(LIBCLIENT) $(BINAPP) $(STATICBINAPP)
+all: htclient $(LIBCLIENT) $(BINAPP) $(STATICBINAPP)
 
 
 
@@ -103,7 +102,6 @@ all-dist: clean src-dist dist
 
 # Source distribution.
 src-dist: clean $(tmpdir)
-	(cd expat && make clean)
 	(cd http && make clean)
 	tar cvf $(src_distfile) $(src_files)
 	mkdir -p $(tmpdir)/$(src_distdir)
@@ -152,9 +150,6 @@ endif
 htclient:
 	(cd http && CC=$(CC) COPT="$(COPT)" make all)
 
-libexpat:
-	(cd expat && CC=$(CC) make all)	
-
 libfrontier_client.so: $(OBJ) http/.libs
 	rm -f libfrontier_client.so
 	rm -f libfrontier_client.so.$(FN_VER_MAJOR)
@@ -162,7 +157,6 @@ libfrontier_client.so: $(OBJ) http/.libs
 	rm -rf .libs
 	mkdir .libs
 	cp ./http/.libs/*.o .libs
-	if [ -d ./expat/local/lib_objects ]; then cp ./expat/local/lib_objects/*.o .libs; fi
 	cp $(OBJ) .libs
 	$(LINK_SO) .libs/*.o
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR)
@@ -175,7 +169,6 @@ libfrontier_client.dylib: $(OBJ) http/.libs
 	rm -rf .libs
 	mkdir .libs
 	cp ./http/.libs/*.o .libs
-	if [ -d ./expat/local/lib_objects ]; then cp ./expat/local/lib_objects/*.o .libs; fi
 	cp $(OBJ) .libs
 	$(LINK_DYLIB) .libs/*.o
 	ln -s libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib libfrontier_client.$(FN_VER_MAJOR).dylib
@@ -225,15 +218,13 @@ main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
 
 main: all main.o
-	$(CXX) -g -Ldist/lib ${EXPAT_LD_FLAGS} -o main main.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) -g -Ldist/lib -o main main.o -L. -lfrontier_client
 
 test-b64url.o: test-b64url.c $(HDR)
 	$(CC) $(COPT) $(INC) -c test-b64url.c
 
 test-b64url: test-b64url.o
-	$(CXX) -g -L. ${EXPAT_LD_FLAGS} -o test-b64url test-b64url.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) -g -L. -o test-b64url test-b64url.o -L. -lfrontier_client
     
 anydata.o: anydata.cc $(HDRXX) $(HDR)
 	$(CXX) $(CXXOPT_LIB) $(INC) -c anydata.cc
@@ -245,15 +236,13 @@ maincc.o: maincc.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c maincc.cc
 
 fn-maincc: maincc.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maincc maincc.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-maincc maincc.o -L. -lfrontier_client
 
 maintest.o: maintest.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c maintest.cc
 
 fn-maintest: maintest.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-maintest maintest.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-maintest maintest.o -L. -lfrontier_client
 
 FrontierExceptionMapper.o: FrontierExceptionMapper.cpp $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c FrontierExceptionMapper.cpp
@@ -262,46 +251,39 @@ getcids.o: getcids.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c getcids.cc
 
 getcids: all getcids.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o getcids getcids.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o getcids getcids.o -L. -lfrontier_client
 
 request_each.o: request_each.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -Idist/include -c request_each.cc
 
 request_each: all request_each.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -Ldist/lib ${EXPAT_LD_FLAGS} -o request_each request_each.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -Ldist/lib -o request_each request_each.o -L. -lfrontier_client
 
 test-pescalib.o: test-pescalib.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-pescalib.cc
 
 fn-pescalib: test-pescalib.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-pescalib test-pescalib.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-pescalib test-pescalib.o -L. -lfrontier_client
 
 test-any.o: test-any.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-any.cc
 
 fn-any: test-any.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-any test-any.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-any test-any.o -L. -lfrontier_client
 
 test-req.o: test-req.cc $(HDRXX)
 	$(CXX) $(CXXOPT_APP) -I./include -c test-req.cc
 
 fn-req: test-req.o $(HDRXX)
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req test-req.o \
-	  -L. -lfrontier_client ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-req test-req.o -L. -lfrontier_client
 
 # staticly linked app works better in gdb
 fn-req.static: libfrontier_client.so fn-req
-	$(CXX) $(CXXOPT_APP) -L. ${EXPAT_LD_FLAGS} -o fn-req.static test-req.o \
-	  .libs/*.o ${EXPAT_LIBS} $(LIBS)
+	$(CXX) $(CXXOPT_APP) -L. -o fn-req.static test-req.o .libs/*.o $(LIBS)
 
 
 clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each fn-any $(BINAPP) $(STATICBINAPP)
-	(cd expat && make clean)
 	(cd http && make clean)
 	rm -rf .libs
 	rm -rf $(tmpdir)
