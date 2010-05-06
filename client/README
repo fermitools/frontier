@@ -22,6 +22,4 @@ export FRONTIER_LOG_LEVEL={nolog,info,debug}
 
 
 
-For more details, guides/manuals see http://lynx.fnal.gov/ntier-wiki/
-
-Sergey Kosyakov, serge@fnal.gov
+For more details, guides/manuals see http://frontier.cern.ch
