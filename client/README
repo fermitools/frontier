@@ -1,7 +1,5 @@
 $Id$
 
-Frontier client API version: CURRENT
-
 1. To compile:
 make
 
