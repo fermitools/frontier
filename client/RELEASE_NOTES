@@ -1,5 +1,9 @@
 $Id$
 
+v2_7_15 - 14 May 2010 (dwd)
+ - Set clientcachemaxresultsize=0 by default, disabling the client
+   cache.
+
 v2_7_14 - 28 April 2010 (dwd)
  - Support compilation on Mac OSX 10.6 Snow Leopard by changing link
    options "-flat-namespace" to "-undefined dynamic_lookup".  In
