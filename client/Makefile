@@ -59,7 +59,7 @@ LINK		=	ar cr libfrontier_client.a
 
 INC		=	${EXPAT_INC} ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
 LIBDIR		=
-LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl ${ZLIB_LD_FLAGS} -lz 
+LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto ${ZLIB_LD_FLAGS} -lz 
 
 OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
