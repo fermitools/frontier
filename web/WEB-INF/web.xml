@@ -17,7 +17,7 @@
 
     <servlet-mapping>
       <servlet-name>FrontierCMS</servlet-name>
-      <url-pattern>/Frontier</url-pattern>
+      <url-pattern>/Frontier/*</url-pattern>
     </servlet-mapping>
 
     <resource-ref>
