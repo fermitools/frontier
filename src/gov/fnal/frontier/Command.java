@@ -32,7 +32,17 @@ public class Command
     String req_method=req.getMethod();
     if(req_method.equals("GET"))
      {
-      set_get_command(ret,req.getQueryString());
+      String com=req.getQueryString();
+      if(com==null)
+       {
+	// URL had slash instead of question mark
+	// Note: in order for getPathInfo to work, WEB-INF/web.xml has to have
+	//   <url-pattern>/Frontier/*</url-pattern>
+	// instead of 
+	//   <url-pattern>/Frontier</url-pattern>
+        com=req.getPathInfo();
+       }
+      set_get_command(ret,com);
      }
     else if(req_method.equals("POST"))
      {
@@ -111,6 +121,10 @@ public class Command
     st=new StringTokenizer(token,"=");
     String par=st.nextToken(); par=java.net.URLDecoder.decode(par,"US-ASCII");
     String val=st.nextToken(); val=java.net.URLDecoder.decode(val,"US-ASCII");
+
+    // if the URL had a slash (PathInfo) instead of a question mark
+    //   (QueryString) then it will be at the beginning of par; remove it
+    if(par.startsWith("/"))par=par.substring(1);
     
     param[0]=par;    
     if(par.equals("type") || par.equals("meta"))

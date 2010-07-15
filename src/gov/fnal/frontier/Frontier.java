@@ -273,9 +273,13 @@ public final class Frontier
 
   private void logClientDesc(HttpServletRequest req) throws Exception
    {
-    if(req.getQueryString()==null)
-      throw new Exception("no query");
-    String queryString=java.net.URLDecoder.decode(req.getQueryString(),"US-ASCII"); 
+    String qs;
+    if((qs=req.getQueryString())==null)
+     {
+      if((qs=req.getPathInfo())==null)
+        throw new Exception("no query");
+     }
+    String queryString=java.net.URLDecoder.decode(qs,"US-ASCII"); 
     StringBuffer client_desc=new StringBuffer("");
     client_desc.append("servlet_version:");
     client_desc.append(FrontierServlet.frontierVersion());
