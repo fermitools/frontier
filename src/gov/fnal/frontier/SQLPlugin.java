@@ -9,6 +9,7 @@ import java.util.HashSet;
 import com.jcraft.jzlib.*;
 import java.util.regex.*;
 import java.util.Iterator;
+import java.util.Date;
 
 public class SQLPlugin implements FrontierPlugin
  {
@@ -113,9 +114,10 @@ public class SQLPlugin implements FrontierPlugin
 			      /* 1000 & 10000 are slightly faster but cause
 			         executeQuery to abort with OutOfMemoryError
 				 for some queries with larger rows. */
+      long timestamp=(new Date()).getTime();
       rs=stmt.executeQuery();
       mgr.cancelKeepAlive();
-      Frontier.Log("DB query finished");
+      Frontier.Log("DB query finished msecs="+((new Date()).getTime()-timestamp));
 
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
