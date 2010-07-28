@@ -1,0 +1,9 @@
+All source files in this package called "Frontier servlet" that are
+Copyright Fermilab are covered by the 2009 Fermitools license (a
+BSD license), details in the file Fermitools-2009.txt.
+
+There is one source file src/gov/fnal/frontier/codec/Base64Coder.java
+that is copyrighted by others and covered by the GNU Lesser General
+Public License.  See the details in the file.
+
+- Dave Dykstra, 28 July 2010
