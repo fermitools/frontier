@@ -68,8 +68,7 @@ These are the steps to release the frontier servlet:
 <ol>
 
 <li>
-Update src/gov/fnal/frontier/RELEASE_NOTES with everything that has
-changed since the last version
+Update RELEASE_NOTES with everything that has changed since the last version
 <li>
 Update the version number in src/gov/fnal/frontier/FrontierServlet.java
 <li>
@@ -108,7 +107,7 @@ installation)
 <br>
 <tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.12.war</tt>
 <br>
-<tt>scp src/gov/fnal/frontier/RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
+<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
 <li>
 ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
 version number for the server sources and binary
