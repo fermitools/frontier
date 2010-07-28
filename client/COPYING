@@ -8,7 +8,4 @@ file fn-base64.c that is covered by the python license, and several in
 the "chashtable" directories covered by the new BSD license.  See the
 details in the files themselves.
 
-Also, a copy of the 'expat' package source is included in this
-distribution.  It has its own open source license.
-
 - Dave Dykstra, 13 January 2010
