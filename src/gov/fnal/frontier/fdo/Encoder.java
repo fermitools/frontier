@@ -4,7 +4,13 @@
  *
  * @author: Sergey Kosyakov
  *
+ * Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+ * All rights reserved. 
+ *
+ * For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+ *  http://fermitools.fnal.gov/about/terms.html
  */
+
 package gov.fnal.frontier.fdo;
 
 import java.io.InputStream;

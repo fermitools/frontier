@@ -1,8 +1,3 @@
-package gov.fnal.frontier.fdo;
-
-import java.io.*;
-import javax.servlet.ServletOutputStream;
-
 /**
  * Interface to Frontier Data Object. Any DataObject implementation
  * must implement this interface
@@ -12,7 +7,19 @@ import javax.servlet.ServletOutputStream;
  * @see gov.fnal.frontier.XsdDataObject
  * @see gov.fnal.frontier.Xsd2DataObject
  * @see gov.fnal.frontier.PluginDataObject
+ *
+ * Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+ * All rights reserved. 
+ *
+ * For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+ *  http://fermitools.fnal.gov/about/terms.html
  */
+
+package gov.fnal.frontier.fdo;
+
+import java.io.*;
+import javax.servlet.ServletOutputStream;
+
 public interface FrontierDataObject
  {
   public void fdo_init(byte[] body) throws Exception;

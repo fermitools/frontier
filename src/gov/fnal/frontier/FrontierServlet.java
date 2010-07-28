@@ -1,3 +1,14 @@
+/**
+ * Frontier http servlet interface
+ * $Id$
+ *
+ * Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+ * All rights reserved. 
+ *
+ * For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+ *  http://fermitools.fnal.gov/about/terms.html
+ */
+
 package gov.fnal.frontier;
 
 import java.io.*;
@@ -5,6 +16,7 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
+import com.jcraft.jzlib.*;
 
 
 public final class FrontierServlet extends HttpServlet 

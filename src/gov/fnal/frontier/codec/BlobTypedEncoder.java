@@ -4,13 +4,19 @@
  * $Id$
  *
  * @author Sergey Kosyakov
- * 
  *
  * Changes log
  * 08/18/2004 
  *   if String, byte[] or Date is null, set the NULL bit in the type info
  *   writeEOR() added, makes demarshalling more flexible
+ *
+ * Copyright (c) 2009, FERMI NATIONAL ACCELERATOR LABORATORY
+ * All rights reserved. 
+ *
+ * For details of the Fermitools (BSD) license see Fermilab-2009.txt or
+ *  http://fermitools.fnal.gov/about/terms.html
  */
+
 package gov.fnal.frontier.codec;
 
 import java.io.*;
