@@ -4,7 +4,7 @@
 
 <web-app>
     <display-name>Frontier 3</display-name>
-    <description>Frontier 3 - XSD v2, writing, finders, etc.</description>
+    <description>Frontier 3</description>
     <session-config>
      <session-timeout>300</session-timeout>    <!-- 300 minutes -->
     </session-config>
