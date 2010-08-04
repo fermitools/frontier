@@ -10,13 +10,13 @@
     </session-config>
 
     <servlet>
-      <servlet-name>FrontierCMS</servlet-name>
+      <servlet-name>Frontier</servlet-name>
       <servlet-class>gov.fnal.frontier.FrontierServlet</servlet-class>
       <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-      <servlet-name>FrontierCMS</servlet-name>
+      <servlet-name>Frontier</servlet-name>
       <url-pattern>/Frontier/*</url-pattern>
     </servlet-mapping>
 
