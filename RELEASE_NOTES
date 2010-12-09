@@ -1,5 +1,20 @@
 $Id$
 
+3.25 2010/12/09 (dwd)
+    - Add new MaxThreads property to be the maximum number of threads
+      that the servlet will allow to wait for a database connection.
+      If a NOT_MODIFIED response can be sent quickly without
+      contacting the database, that will still happen but otherwise if
+      the database needs to be contacted and there are too many
+      threads running the response will be SERVICE_UNAVAILABLE.
+      Default 100.
+    - Ignore exceptions when writing out the transaction end xml.
+      This was causing a MUST NOT HAPPEN HERE exception in cases when
+      the connection had already been dropped by the client and
+      already been reported as an exception.
+    - No longer require the XsdTableName property to be set, as it 
+      isn't used by current deployments.
+
 3.24 2010/07/28 (dwd)
     - Clearly identify the license for the package to be the open
       source (BSD) Fermitools license.
