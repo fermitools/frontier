@@ -43,6 +43,7 @@ public final class Frontier
 					    //    and line numbers appear.
   private static boolean highVerbosity=false; // true when verbosityLevel >= 4
 
+  public static int max_threads=100;
   public static int validate_last_modified_seconds=-1;
   public static String last_modified_table_name;
   // Note that when the DB is down, at least on SLC4 it takes about
@@ -92,7 +93,6 @@ public final class Frontier
         
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
-    if(conf_xsd_table==null) throw new Exception("XsdTableName is missing in FrontierConfig");
 
     Frontier.Log("Initializing Frontier servlet version "+FrontierServlet.frontierVersion());
 
@@ -103,6 +103,11 @@ public final class Frontier
     highVerbosity=(verbosityLevel>=4);
     if (verbosityLevel>0)
       Frontier.Log("VerbosityLevel set to "+verbosityLevel);
+
+    String maxthreads=getPropertyString(prb,"MaxThreads");
+    if(maxthreads!=null)
+      max_threads=Integer.parseInt(maxthreads);
+    Frontier.Log("max threads: "+max_threads);
 
     String maxsecs=getPropertyString(prb,"MaxDbAcquireSeconds");
     if(maxsecs!=null)
