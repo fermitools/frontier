@@ -24,7 +24,7 @@ public final class Frontier
   private static boolean initialized=false;    
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
-  private static String conf_xsd_table;
+  private static String conf_xsd_table="";
   private static final int SHORTCACHE=0;
   private static final int LONGCACHE=1;
   private static final int NUMCACHELENGTHS=2;
@@ -89,12 +89,13 @@ public final class Frontier
     ResourceBundle prb=PropertyResourceBundle.getBundle("config");
     conf_server_name=prb.getString("ServerName");
     conf_ds_name=prb.getString("DataSourceName");
-    conf_xsd_table=prb.getString("XsdTableName");
         
     if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
     if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
 
     Frontier.Log("Initializing Frontier servlet version "+FrontierServlet.frontierVersion());
+
+    conf_xsd_table=getPropertyString(prb,"XsdTableName");
 
     // Verbosity level related
     String verbosity=getPropertyString(prb,"VerbosityLevel");
