@@ -162,6 +162,14 @@ public final class FrontierServlet extends HttpServlet
         return;
        }
 
+      if(count_current>=frontier.max_threads)
+       {
+        // too many threads in use by this servlet, don't acquire database
+        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+	Frontier.Log("rejecting because servlet too busy");
+	return;
+       }
+
       ResponseFormat.begin(out,frontierVersion,xmlVersion);
       ResponseFormat.transaction_start(out,frontier.payloads_num);
       
