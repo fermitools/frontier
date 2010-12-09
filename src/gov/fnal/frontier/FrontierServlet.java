@@ -300,7 +300,16 @@ public final class FrontierServlet extends HttpServlet
        }
       finally
        {
-        ResponseFormat.transaction_end(out);
+	try
+	 {
+          ResponseFormat.transaction_end(out);
+	 }
+	catch(Exception e)
+	 {
+	  // ignore error in putting out that little transaction-end message
+	  //  because it was probably after a previous error such as a broken
+	  //  pipe to the client
+	 }
        }
      }
     catch(Throwable e)
