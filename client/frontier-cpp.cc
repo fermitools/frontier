@@ -197,7 +197,7 @@ void Session::getData(const std::vector<const Request*>& v_req)
 
   std::ostringstream oss;
   oss<<"Frontier";
-  char delim='?';
+  char delim='/';
  
   for(std::vector<const Request*>::size_type i=0;i<v_req.size();i++)
    {
@@ -207,14 +207,13 @@ void Session::getData(const std::vector<const Request*>& v_req)
       case BLOB: enc="BLOB"; break;
       default: throw InvalidArgument("Unknown encoding requested");
      }    
+    oss << delim;
     if(v_req[i]->is_meta)
-     {
-      oss << delim << "meta=" << v_req[i]->obj_name; delim='&';
-     }
+      oss << "meta=";
     else
-     {
-      oss << delim << "type=" << v_req[i]->obj_name; delim='&';
-     }
+      oss << "type=";
+    oss << v_req[i]->obj_name;
+    delim='&';
     oss << delim << "encoding=" << enc;
     int ziplevel = frontier_getRetrieveZipLevel(channel);
     if (ziplevel > 0)
