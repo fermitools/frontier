@@ -656,6 +656,8 @@ int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle)
       frontierHttpClnt_nextproxy(c,0);
      }
    }
+  else if((c->total_proxy==0)||(c->cur_proxy>=c->total_proxy))
+    return(-1);
   return(c->cur_proxy);
  }
 
@@ -705,6 +707,8 @@ int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle)
       frontierHttpClnt_nextserver(c,0);
      }
    }
+  else if((c->total_server==0)||(c->cur_server>=c->total_server))
+    return(-1);
   return(c->cur_server);
  }
 
