@@ -59,6 +59,7 @@ void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 #define FRONTIER_RERESOLVE_SECS (60*5)
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 #define FRONTIER_MAX_PERSIST_SIZE (16*1024)
+#define FRONTIER_HTTP_DEBUG_BUF_SIZE 512
 
 struct s_FrontierHttpClnt
  {
@@ -90,6 +91,8 @@ struct s_FrontierHttpClnt
   int data_size;
   int data_pos;
   char buf[FRONTIER_HTTP_BUF_SIZE];
+  char proxybuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
+  char serverbuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
  }; 
 typedef struct s_FrontierHttpClnt FrontierHttpClnt;
 
