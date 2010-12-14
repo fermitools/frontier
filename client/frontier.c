@@ -677,7 +677,8 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
        error, there's either a networking problem, overloading, or a
        machine down.  So there are 3 different strategies:
        1. For FRONTIER_ESERVER, use one proxy and cycle through the
-	  servers, no reload.
+	  servers, no reload.  When all servers have been tried, reset
+	  the server list and try with the next proxy, etc.
        2. For FRONTIER_EPROTO, cycle through the proxies using the first
           server and then cycle through direct connects to servers,
 	  attempting reload after every try.
@@ -703,6 +704,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
 
     if((curproxy>=0)&&(ret!=FRONTIER_ESERVER))
      {
+selectnextproxy:
       // select another proxy
       curproxy=frontierHttpClnt_nextproxy(clnt,1);
       if(curproxy>=0)
@@ -724,6 +726,17 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
      {
       frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s",frontierHttpClnt_curservername(clnt));
       continue;      
+     }
+
+    // out of servers
+    if((curproxy>=0)&&(ret==FRONTIER_ESERVER))
+     {
+      // even though it was a server error, there's still more proxies
+      //  so it could have really been a proxy error; try again at the
+      //  beginning of the server list and advance the proxy list
+      curserver=frontierHttpClnt_resetserverlist(clnt,1);
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying again first server %s",frontierHttpClnt_curservername(clnt));
+      goto selectnextproxy;
      }
 
     frontier_setErrorMsg(__FILE__,__LINE__,"No more servers/proxies. Last error was: %s",err_last_buf);
