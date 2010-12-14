@@ -801,8 +801,26 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
    }
   if(c->cur_server>=c->total_server)
    {
-    /*this query is done, but re-set in case another query is made*/
-    c->cur_server=c->first_server;
+    /* Exhausted list.  For each server in which all addresses have had
+       errors, clear the errors for possible next try.  */
+    int i;
+    for(i=0;i<c->total_server;i++)
+     {
+      FrontierAddrInfo *fai;
+      int anygood=0;
+      for(fai=&c->server[i]->firstfai;fai!=0;fai=fai->next)
+       {
+	if(!fai->haderror)
+	  anygood=1;
+	if(c->balance_servers)
+	  break; // other round-robin addresses are ignored when balancing
+       }
+      if(!anygood)
+       {
+        for(fai=&c->server[i]->firstfai;fai!=0;fai=fai->next)
+	  fai->haderror=0;
+       }
+     }
     return(-1);
    }
   if(c->server[c->cur_server]->fai->haderror)
@@ -811,17 +829,38 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
  }
 
 
+static void gethostnameandaddr(FrontierUrlInfo *fui,char *buf,int len)
+ {
+  strncpy(buf,fui->host,len);
+  if(fui->fai->addr!=0)
+   {
+    int n=strlen(fui->host);
+    struct sockaddr_in *sin;
+    sin=(struct sockaddr_in*)(fui->fai->addr->ai_addr);
+    buf+=n;
+    len-=n;
+    snprintf(buf,len,"[%s]",inet_ntoa(sin->sin_addr));
+    buf[len-1]='\0';
+   }
+ }
+
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c)
  {
   if (c->cur_proxy<c->total_proxy)
-    return c->proxy[c->cur_proxy]->host;
+   {
+    gethostnameandaddr(c->proxy[c->cur_proxy],c->proxybuf,sizeof(c->proxybuf));
+    return(c->proxybuf);
+   }
   return "";
  }
 
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c)
  {
   if (c->cur_server<c->total_server)
-    return c->server[c->cur_server]->host;
+   {
+    gethostnameandaddr(c->server[c->cur_server],c->serverbuf,sizeof(c->serverbuf));
+    return(c->serverbuf);
+   }
   return "";
  }
 
