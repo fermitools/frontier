@@ -131,7 +131,9 @@ static void set_frontier_id()
     pwname=pwent->pw_name;
     pwgecos=pwent->pw_gecos;
    }
-  appId=getenv("CMSSW_VERSION");
+  appId=getenv("FRONTIER_ID");
+  if(appId==NULL)
+    appId=getenv("CMSSW_VERSION");
   if(appId==NULL)
     appId="client";
   x509Subject=getX509Subject();
