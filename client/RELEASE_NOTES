@@ -1,5 +1,44 @@
 $Id$
 
+v2_8_0 - 17 Dec 2010 (dwd)
+ - The second digit in this release changed because the FrontierConfig
+   structure changed.  This only affects binary compatibilty for the
+   C interface, not the C++ interface used by all current users of
+   the frontier client.
+ - Fix segmentation fault that happens when there are no proxies
+   defined and the server gets errors.  Seen in ATLAS.
+ - Fix segmentation fault that happens when all proxies have had
+   errors but then a direct connect to server succeeds followed by
+   an error on the same persistent connection.  Seen in ATLAS.
+ - Change to using a '/' as a URL delimiter instead of '?' because the
+   the latter is not officially compatible with caching according to
+   the HTTP RFCs and requires a non-default squid configuration.
+   Requires Frontier servlet version 3.24 or greater.
+ - Put contents of new environment variable $FRONTIER_ID into the
+   beginning of the X-Frontier-Id header which is logged in squid and
+   the frontier servlet.  Overrides including $CMSSW_VERSION if it was
+   set.
+ - Add new complex connection string option "backupproxyurl" which is
+   very similar to proxyurl except that the specified proxies are
+   always tried after all proxyurls and they're not included in the
+   client load balancing done when loadbalance=proxies is set.  This
+   is intended to be used to identify proxies physically located near
+   the servers whose purpose is to catch client failures without
+   interfering with server operation.  Implies failovertoserver=no.
+ - Increase maximum number of allowed proxies from 16 to 24.  The
+   maximum number of allowed servers is still 16.
+ - Change the re-try strategy so that when the last server experiences
+   a server error but not all proxies have yet had errors, continue
+   trying with the next proxy.  It used to fail even if more proxies
+   were available.
+ - Add printing of IP addresses (when known) in addition to names in
+   the warning messages that identify proxies and servers.  This helps
+   in identifying the selected addresses in round-robins when there
+   are problems.
+ - Add -lcrypto to the libs because it is needed when being built
+   by gcc45.  Previously it was pulled in as a dependency of -lssl.
+   Requested by Peter Elmer.
+
 v2_7_15 - 14 May 2010 (dwd)
  - Set clientcachemaxresultsize=0 by default, disabling the client
    cache.
