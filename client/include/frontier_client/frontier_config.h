@@ -15,7 +15,7 @@
 #define FRONTIER_CONFIG_H
 
 #define FRONTIER_MAX_SERVERN	16	// Max number of servers in FRONTIER_SERVER env. variable
-#define FRONTIER_MAX_PROXYN	16	// Max number of proxies in FRONTIER_PROXY env. variable
+#define FRONTIER_MAX_PROXYN	24	// Max number of proxies in FRONTIER_PROXY env. variable
 
 #define FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE 0
 
@@ -40,6 +40,7 @@ struct s_FrontierConfig
   int proxy_cur;
   int servers_balanced;
   int proxies_balanced;
+  int num_backupproxies;
   int connect_timeout_secs;
   int read_timeout_secs;
   int write_timeout_secs;
@@ -57,9 +58,9 @@ int frontierConfig_nextServer(FrontierConfig *cfg);
 int frontierConfig_nextProxy(FrontierConfig *cfg);
 void frontierConfig_delete(FrontierConfig *cfg);
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
-int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url);
+int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int backup);
 void frontierConfig_setBalancedProxies(FrontierConfig *cfg);
-int frontierConfig_getBalancedProxies(FrontierConfig *cfg);
+int frontierConfig_getNumBalancedProxies(FrontierConfig *cfg);
 void frontierConfig_setBalancedServers(FrontierConfig *cfg);
 int frontierConfig_getBalancedServers(FrontierConfig *cfg);
 void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int level);
