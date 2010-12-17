@@ -128,13 +128,13 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   // Add configured server and proxy.
   *errorCode=frontierConfig_addServer(cfg,server_url);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
-  *errorCode=frontierConfig_addProxy(cfg,proxy_url);
+  *errorCode=frontierConfig_addProxy(cfg,proxy_url,0);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
  
   // Add additional servers/proxies from env variables.
   *errorCode=frontierConfig_addServer(cfg,getenv(FRONTIER_ENV_SERVER));
   if(*errorCode!=FRONTIER_OK)goto cleanup;
-  *errorCode=frontierConfig_addProxy(cfg,getenv(FRONTIER_ENV_PROXY));
+  *errorCode=frontierConfig_addProxy(cfg,getenv(FRONTIER_ENV_PROXY),0);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
   for(i=0;i<FRONTIER_MAX_SERVERN;i++)
    {
@@ -147,7 +147,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   for(i=0;i<FRONTIER_MAX_PROXYN;i++)
    {
     snprintf(buf,ENV_BUF_SIZE,"%s%d",FRONTIER_ENV_PROXY,(i+1));
-    *errorCode=frontierConfig_addProxy(cfg,getenv(buf));
+    *errorCode=frontierConfig_addProxy(cfg,getenv(buf),0);
     if(*errorCode!=FRONTIER_OK)goto cleanup;
    }
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);
@@ -460,7 +460,13 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
 	if (strcmp(keyp, "serverurl") == 0)
 	  ret = frontierConfig_addServer(cfg, valp);
 	else if (strcmp(keyp, "proxyurl") == 0)
-	  ret = frontierConfig_addProxy(cfg, valp);
+	  ret = frontierConfig_addProxy(cfg, valp, 0);
+	else if (strcmp(keyp, "backupproxyurl") == 0)
+	 {
+	  /* implies failovertoserver=no */
+	  frontierConfig_setFailoverToServer(cfg, 0);
+	  ret = frontierConfig_addProxy(cfg, valp, 1);
+	 }
 	else if (strcmp(keyp, "logicalserverurl") == 0)
 	  frontierConfig_setDefaultLogicalServer(valp);
 	else if (strcmp(keyp, "retrieve-ziplevel") == 0)
@@ -553,8 +559,10 @@ int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
   return FRONTIER_OK;
  } 
 
-int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
+int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int backup)
  {
+  int n;
+
   if(!proxy_url) {
     return FRONTIER_OK;
   }
@@ -572,10 +580,25 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url)
     return FRONTIER_ECFG;
   }
 
+  if(backup)
+   {
+    /* insert backup proxy at the end of the list */
+    n=cfg->proxy_num;
+    cfg->num_backupproxies++;
+   }
+  else {
+    /* move any backup proxies up one to make room for this non-backup proxy */
+    for(n=0;n<cfg->num_backupproxies;n++)
+     {
+      cfg->proxy[cfg->proxy_num-n]=cfg->proxy[cfg->proxy_num-n-1];
+     }
+     n=cfg->proxy_num-cfg->num_backupproxies;
+   }
+
   /* Everything ok, insert new proxy. */
-  cfg->proxy[cfg->proxy_num] = frontier_str_copy(proxy_url);
+  cfg->proxy[n] = frontier_str_copy(proxy_url);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
-        "Added proxy <%s>", cfg->proxy[cfg->proxy_num]);    
+        "Inserted proxy %d <%s>", n, cfg->proxy[n]);
   cfg->proxy_num++;
   return FRONTIER_OK;
  } 
@@ -585,9 +608,11 @@ void frontierConfig_setBalancedProxies(FrontierConfig *cfg)
   cfg->proxies_balanced=1;
  }
 
-int frontierConfig_getBalancedProxies(FrontierConfig *cfg)
+int frontierConfig_getNumBalancedProxies(FrontierConfig *cfg)
  {
-  return cfg->proxies_balanced;
+  if (!cfg->proxies_balanced)
+    return 0;
+  return cfg->proxy_num - cfg->num_backupproxies;
  }
 
 void frontierConfig_setBalancedServers(FrontierConfig *cfg)
