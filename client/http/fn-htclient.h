@@ -69,7 +69,7 @@ struct s_FrontierHttpClnt
   int cur_server;
   int total_proxy;
   int total_server;
-  int balance_proxies;
+  int balance_num_proxies;
   int balance_servers;
   int first_proxy;
   int first_server;
@@ -120,7 +120,7 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror);
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c);
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c);
 char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c);
-void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c);
+void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num);
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c);
 
 
