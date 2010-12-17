@@ -28,14 +28,14 @@
 #include "frontier_client/frontier.h"
 
 /* default configuration variables */
-static int default_connect_timeout_secs = -1;
-static int default_read_timeout_secs = -1;
-static int default_write_timeout_secs = -1;
-static char *default_force_reload = 0;
-static char *default_freshkey = 0;
-static int default_retrieve_zip_level = -1;
-static char *default_logical_server = 0;
-static char *default_physical_servers = 0;
+static int default_connect_timeout_secs=-1;
+static int default_read_timeout_secs=-1;
+static int default_write_timeout_secs=-1;
+static char *default_force_reload=0;
+static char *default_freshkey=0;
+static int default_retrieve_zip_level=-1;
+static char *default_logical_server=0;
+static char *default_physical_servers=0;
 
 #define ENV_BUF_SIZE	1024
 
@@ -52,7 +52,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   cfg=(FrontierConfig*)frontier_mem_alloc(sizeof(FrontierConfig));
   if(!cfg)
    {
-    *errorCode = FRONTIER_EMEM;
+    *errorCode=FRONTIER_EMEM;
     return 0;
    }
   bzero(cfg,sizeof(FrontierConfig));
@@ -160,7 +160,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   if(*cfg->freshkey!='\0')
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Freshkey is %s",cfg->freshkey);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Failover to server is %s",cfg->failover_to_server ? "yes" : "no");
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Failover to server is %s",cfg->failover_to_server?"yes":"no");
 
   return cfg;
 
@@ -178,7 +178,7 @@ const char *frontierConfig_getServerUrl(FrontierConfig *cfg)
 
 const char *frontierConfig_getProxyUrl(FrontierConfig *cfg)
  {
-  if(cfg->proxy_cur>=cfg->proxy_num) return NULL;
+  if(cfg->proxy_cur>=cfg->proxy_num)return NULL;
   
   return cfg->proxy[cfg->proxy_cur];
  } 
@@ -186,7 +186,7 @@ const char *frontierConfig_getProxyUrl(FrontierConfig *cfg)
 
 int frontierConfig_nextServer(FrontierConfig *cfg)
  {
-  if(cfg->server_cur+1>=cfg->server_num) return -1;
+  if(cfg->server_cur+1>=cfg->server_num)return -1;
   ++cfg->server_cur;
   //printf("Next server %d\n",cfg->server_cur);
   return 0;
@@ -195,7 +195,7 @@ int frontierConfig_nextServer(FrontierConfig *cfg)
  
 int frontierConfig_nextProxy(FrontierConfig *cfg)
  {
-  if(cfg->proxy_cur>=cfg->proxy_num) return -1; // One implicit which is always ""
+  if(cfg->proxy_cur>=cfg->proxy_num)return -1; // One implicit which is always ""
   ++cfg->proxy_cur;
   return 0;
  } 
@@ -205,7 +205,7 @@ void frontierConfig_delete(FrontierConfig *cfg)
  {
   int i;
   
-  if(!cfg) return;
+  if(!cfg)return;
   
   for(i=0;i<cfg->server_num;i++)
    {
@@ -277,11 +277,11 @@ int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg)
 
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level)
  {
-  if (level < 0)
-    level = 0;
-  if (level > 9)
-    level = 9;
-  cfg->retrieve_zip_level = level;
+  if(level<0)
+    level=0;
+  if(level>9)
+    level=9;
+  cfg->retrieve_zip_level=level;
  }
 
 int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg)
@@ -291,48 +291,48 @@ int frontierConfig_getRetrieveZipLevel(FrontierConfig *cfg)
 
 void frontierConfig_setDefaultRetrieveZipLevel(int level)
  {
-  if (level < 0)
-    level = 0;
-  if (level > 9)
-    level = 9;
-  default_retrieve_zip_level = level;
+  if(level<0)
+    level=0;
+  if(level>9)
+    level=9;
+  default_retrieve_zip_level=level;
  }
 
 int frontierConfig_getDefaultRetrieveZipLevel()
  {
-  if (default_retrieve_zip_level == -1)
+  if(default_retrieve_zip_level==-1)
    {
     /* not yet been initialized */
     char *p;
-    p = getenv(FRONTIER_ENV_RETRIEVEZIPLEVEL);
-    if ((p != 0) && (*p != '\0'))
+    p=getenv(FRONTIER_ENV_RETRIEVEZIPLEVEL);
+    if((p!=0)&&(*p!='\0'))
       frontierConfig_setDefaultRetrieveZipLevel(atoi(p));
    }
-  if (default_retrieve_zip_level == -1)
-    default_retrieve_zip_level = 5;
+  if(default_retrieve_zip_level==-1)
+    default_retrieve_zip_level=5;
   return default_retrieve_zip_level;
  }
 
 void frontierConfig_setDefaultLogicalServer(const char *logical_server)
  {
-  if (logical_server != default_logical_server)
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default logical server to %s", logical_server);
-  if (default_logical_server != 0)
+  if(logical_server!=default_logical_server)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Setting default logical server to %s",logical_server);
+  if(default_logical_server!=0)
    {
-    if ((logical_server != 0) &&
-	(strcmp(logical_server, default_logical_server) == 0))
+    if((logical_server!=0)&&
+	(strcmp(logical_server,default_logical_server)==0))
       return;
     frontier_mem_free(default_logical_server);
    }
-  if (logical_server != 0)
-    default_logical_server = frontier_str_copy(logical_server);
+  if(logical_server!=0)
+    default_logical_server=frontier_str_copy(logical_server);
   else
-    default_logical_server = 0;
+    default_logical_server=0;
  }
 
 char *frontierConfig_getDefaultLogicalServer()
  {
-  if (default_logical_server == 0)
+  if(default_logical_server==0)
    {
     /* try the environment */
    frontierConfig_setDefaultLogicalServer(getenv(FRONTIER_ENV_LOGICALSERVER));
@@ -342,24 +342,24 @@ char *frontierConfig_getDefaultLogicalServer()
 
 void frontierConfig_setDefaultPhysicalServers(const char *physical_servers)
  {
-  if (physical_servers != default_physical_servers)
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Setting default physical servers to %s", physical_servers);     
-  if (default_physical_servers != 0)
+  if(physical_servers!=default_physical_servers)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Setting default physical servers to %s",physical_servers);
+  if(default_physical_servers!=0)
    {
-    if ((physical_servers != 0) &&
-	(strcmp(physical_servers, default_physical_servers) == 0))
+    if((physical_servers!=0)&&
+	(strcmp(physical_servers,default_physical_servers)==0))
       return;
     frontier_mem_free(default_physical_servers);
    }
-  if (physical_servers != 0)
-    default_physical_servers = frontier_str_copy(physical_servers);
+  if(physical_servers!=0)
+    default_physical_servers=frontier_str_copy(physical_servers);
   else
-    default_physical_servers = 0;
+    default_physical_servers=0;
  }
 
 char *frontierConfig_getDefaultPhysicalServers()
  {
-  if (default_physical_servers == 0)
+  if(default_physical_servers==0)
    {
     /* try the environment */
    frontierConfig_setDefaultPhysicalServers(getenv(FRONTIER_ENV_PHYSICALSERVERS));
@@ -369,7 +369,7 @@ char *frontierConfig_getDefaultPhysicalServers()
 
 void frontierConfig_setClientCacheMaxResultSize(FrontierConfig *cfg,int size)
  {
-  cfg->client_cache_max_result_size = size;
+  cfg->client_cache_max_result_size=size;
  }
 
 int frontierConfig_getClientCacheMaxResultSize(FrontierConfig *cfg)
@@ -387,28 +387,28 @@ int frontierConfig_getFailoverToServer(FrontierConfig *cfg)
   return cfg->failover_to_server;
  }
 
-static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char* server_spec)
+static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char* server_spec)
  {
-  char *str = frontier_str_copy(server_spec);
-  char *p = str-1;
-  char *keyp = 0, *valp = 0;
-  int nestlevel = 0;
+  char *str=frontier_str_copy(server_spec);
+  char *p=str-1;
+  char *keyp=0,*valp=0;
+  int nestlevel=0;
   int ret;
 
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Parsing complex server spec %s",server_spec);    
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Parsing complex server spec %s",server_spec);
 
-  if (str == NULL)
+  if(str==NULL)
     return FRONTIER_EMEM;
 
-  if ((keyp = strstr(server_spec, "(logicalserverurl=")) != NULL)
+  if((keyp=strstr(server_spec,"(logicalserverurl="))!=NULL)
    {
     // save all but this keyword as the default physical servers for
     //  later connections
-    char *nextp = strchr(keyp,')');
-    if (nextp != NULL)
+    char *nextp=strchr(keyp,')');
+    if(nextp!=NULL)
      {
-      char *cp = (char *)frontier_mem_alloc(strlen(server_spec));
-      if (cp != NULL)
+      char *cp=(char *)frontier_mem_alloc(strlen(server_spec));
+      if(cp!=NULL)
        {
         strncpy(cp,server_spec,keyp-server_spec);
         strcpy(cp+(keyp-server_spec),nextp+1);
@@ -418,167 +418,171 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg, const char
      }
    }
 
-  while (*++p)
+  while(*++p)
    {
     switch(*p)
      {
       case '(':
-	if (nestlevel == 0)
+	if(nestlevel==0)
 	 {
-	  keyp = p+1;
-	  valp = 0;
+	  keyp=p+1;
+	  valp=0;
 	 }
         nestlevel++;
         break;
       case '=':
-        if (nestlevel != 1)
+        if(nestlevel!=1)
 	  continue;
-	*p = '\0';
-	valp = p+1;
+	*p='\0';
+	valp=p+1;
 	break;
       case ')':
         --nestlevel;
-        if (nestlevel < 0)
+        if(nestlevel<0)
 	 {
-	  frontier_setErrorMsg(__FILE__, __LINE__, "Too many close-parens in server spec");
-	  ret = FRONTIER_ECFG;
+	  frontier_setErrorMsg(__FILE__,__LINE__,"Too many close-parens in server spec");
+	  ret=FRONTIER_ECFG;
 	  goto cleanup;
 	 }
-	if (nestlevel > 0)
+	if(nestlevel>0)
 	  continue;
-	*p = '\0';
-	if (valp == 0)
+	*p='\0';
+	if(valp==0)
 	 {
-	  if (keyp == p)
+	  if(keyp==p)
 	    /* empty parens */
 	    continue;
-	  frontier_setErrorMsg(__FILE__, __LINE__, "No '=' after keyword %s",keyp);
-	  ret = FRONTIER_ECFG;
+	  frontier_setErrorMsg(__FILE__,__LINE__,"No '=' after keyword %s",keyp);
+	  ret=FRONTIER_ECFG;
 	  goto cleanup;
 	 }
-	ret = FRONTIER_OK;
-	if (strcmp(keyp, "serverurl") == 0)
-	  ret = frontierConfig_addServer(cfg, valp);
-	else if (strcmp(keyp, "proxyurl") == 0)
-	  ret = frontierConfig_addProxy(cfg, valp, 0);
-	else if (strcmp(keyp, "backupproxyurl") == 0)
+	ret=FRONTIER_OK;
+	if(strcmp(keyp,"serverurl")==0)
+	  ret=frontierConfig_addServer(cfg,valp);
+	else if(strcmp(keyp,"proxyurl")==0)
+	  ret=frontierConfig_addProxy(cfg,valp,0);
+	else if(strcmp(keyp,"backupproxyurl")==0)
 	 {
 	  /* implies failovertoserver=no */
-	  frontierConfig_setFailoverToServer(cfg, 0);
-	  ret = frontierConfig_addProxy(cfg, valp, 1);
+	  frontierConfig_setFailoverToServer(cfg,0);
+	  ret=frontierConfig_addProxy(cfg,valp,1);
 	 }
-	else if (strcmp(keyp, "logicalserverurl") == 0)
+	else if(strcmp(keyp,"logicalserverurl")==0)
 	  frontierConfig_setDefaultLogicalServer(valp);
-	else if (strcmp(keyp, "retrieve-ziplevel") == 0)
-	  frontierConfig_setRetrieveZipLevel(cfg, atoi(valp));
-	else if (strcmp(keyp, "connecttimeoutsecs") == 0)
-	  frontierConfig_setConnectTimeoutSecs(cfg, atoi(valp));
-	else if (strcmp(keyp, "readtimeoutsecs") == 0)
-	  frontierConfig_setReadTimeoutSecs(cfg, atoi(valp));
-	else if (strcmp(keyp, "writetimeoutsecs") == 0)
-	  frontierConfig_setWriteTimeoutSecs(cfg, atoi(valp));
-	else if (strcmp(keyp, "forcereload") == 0)
-	  frontierConfig_setForceReload(cfg, valp);
-	else if (strcmp(keyp, "freshkey") == 0)
-	  frontierConfig_setFreshkey(cfg, valp);
-	else if (strcmp(keyp, "failovertoserver") == 0)
-	  frontierConfig_setFailoverToServer(cfg, (strcmp(valp,"no")!=0));
-	else if (strcmp(keyp, "loadbalance") == 0)
+	else if(strcmp(keyp,"retrieve-ziplevel")==0)
+	  frontierConfig_setRetrieveZipLevel(cfg,atoi(valp));
+	else if(strcmp(keyp,"connecttimeoutsecs")==0)
+	  frontierConfig_setConnectTimeoutSecs(cfg,atoi(valp));
+	else if(strcmp(keyp,"readtimeoutsecs")==0)
+	  frontierConfig_setReadTimeoutSecs(cfg,atoi(valp));
+	else if(strcmp(keyp,"writetimeoutsecs")==0)
+	  frontierConfig_setWriteTimeoutSecs(cfg,atoi(valp));
+	else if(strcmp(keyp,"forcereload")==0)
+	  frontierConfig_setForceReload(cfg,valp);
+	else if(strcmp(keyp,"freshkey")==0)
+	  frontierConfig_setFreshkey(cfg,valp);
+	else if(strcmp(keyp,"failovertoserver")==0)
+	  frontierConfig_setFailoverToServer(cfg,(strcmp(valp,"no")!=0));
+	else if(strcmp(keyp,"loadbalance")==0)
 	 {
-	  if (strcmp(valp, "proxies") == 0)
+	  if(strcmp(valp,"proxies")==0)
 	    frontierConfig_setBalancedProxies(cfg);
-	  else if (strcmp(valp, "servers") == 0)
+	  else if(strcmp(valp,"servers")==0)
 	    frontierConfig_setBalancedServers(cfg);
 	 }
-	else if (strcmp(keyp, "clientcachemaxresultsize") == 0)
-	  frontierConfig_setClientCacheMaxResultSize(cfg, atoi(valp));
+	else if(strcmp(keyp,"clientcachemaxresultsize")==0)
+	  frontierConfig_setClientCacheMaxResultSize(cfg,atoi(valp));
 	else
 	 {
 	 /* else ignore unrecognized keys */
-	  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Unrecognized keyword %s",keyp);
+	  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Unrecognized keyword %s",keyp);
 	 }
 
-	if (ret != FRONTIER_OK)
+	if(ret!=FRONTIER_OK)
 	  goto cleanup;
 	break;
      }
    }
 
-  if (nestlevel > 0)
+  if(nestlevel>0)
    {
-    frontier_setErrorMsg(__FILE__, __LINE__, "Unmatched parentheses");
-    ret = FRONTIER_ECFG;
+    frontier_setErrorMsg(__FILE__,__LINE__,"Unmatched parentheses");
+    ret=FRONTIER_ECFG;
     goto cleanup;
    }
 
-  ret = FRONTIER_OK;
+  ret=FRONTIER_OK;
 
 cleanup:
   frontier_mem_free(str);
   return ret;
  }
 
-int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url)
+int frontierConfig_addServer(FrontierConfig *cfg,const char* server_url)
  {
   const char *logical_server;
 
-  if ((server_url != 0) && (strchr(server_url, '(') != NULL))
-    return frontierConfig_parseComplexServerSpec(cfg, server_url);
+  if((server_url!=0)&&(strchr(server_url,'(')!=NULL))
+    return frontierConfig_parseComplexServerSpec(cfg,server_url);
 
-  if(!server_url) {
+  if(!server_url)
     return FRONTIER_OK;
-  }
-  else {
-    if(!*server_url) {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty server url.");    
-      return FRONTIER_OK;
-    }
-  }
-  
-  logical_server = frontierConfig_getDefaultLogicalServer();
-  if ((logical_server != 0) && (strcmp(server_url,logical_server) == 0))
+  else
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Matched logical server %s", server_url);
+    if(!*server_url)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty server url.");
+      return FRONTIER_OK;
+     }
+   }
+  
+  logical_server=frontierConfig_getDefaultLogicalServer();
+  if((logical_server!=0)&&(strcmp(server_url,logical_server)==0))
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Matched logical server %s",server_url);
     /* replace it with the physical servers */
-    frontierConfig_addServer(cfg, frontierConfig_getDefaultPhysicalServers());
+    frontierConfig_addServer(cfg,frontierConfig_getDefaultPhysicalServers());
     return FRONTIER_OK;
    }
 
   /* Ready to insert new server, make sure there's room */
-  if(cfg->server_num >= FRONTIER_MAX_SERVERN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
-      "Reached limit of %d frontier servers", FRONTIER_MAX_SERVERN);    
+  if(cfg->server_num>=FRONTIER_MAX_SERVERN)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+      "Reached limit of %d frontier servers",FRONTIER_MAX_SERVERN);
     return FRONTIER_ECFG;
-  }
+   }
 
   /* Everything ok, insert new server. */
-  cfg->server[cfg->server_num] = frontier_str_copy(server_url);
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
-        "Added server <%s>", cfg->server[cfg->server_num]);    
+  cfg->server[cfg->server_num]=frontier_str_copy(server_url);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+        "Added server <%s>",cfg->server[cfg->server_num]);
   cfg->server_num++;
   return FRONTIER_OK;
  } 
 
-int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int backup)
+int frontierConfig_addProxy(FrontierConfig *cfg,const char* proxy_url,int backup)
  {
   int n;
 
-  if(!proxy_url) {
+  if(!proxy_url)
     return FRONTIER_OK;
-  }
-  else {
-    if(!*proxy_url) {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, "Empty proxy url.");    
+  else
+   {
+    if(!*proxy_url)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty proxy url.");    
       return FRONTIER_OK;
-    }
-  }
+     }
+   }
 
   /* Ready to insert new proxy, make sure there's room */
-  if(cfg->proxy_num >= FRONTIER_MAX_PROXYN) {
-    frontier_setErrorMsg(__FILE__, __LINE__, 
-      "Reached limit of %d frontier proxies", FRONTIER_MAX_PROXYN);    
+  if(cfg->proxy_num>=FRONTIER_MAX_PROXYN)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+      "Reached limit of %d frontier proxies",FRONTIER_MAX_PROXYN);
     return FRONTIER_ECFG;
-  }
+   }
 
   if(backup)
    {
@@ -586,7 +590,8 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int back
     n=cfg->proxy_num;
     cfg->num_backupproxies++;
    }
-  else {
+  else
+   {
     /* move any backup proxies up one to make room for this non-backup proxy */
     for(n=0;n<cfg->num_backupproxies;n++)
      {
@@ -596,9 +601,9 @@ int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int back
    }
 
   /* Everything ok, insert new proxy. */
-  cfg->proxy[n] = frontier_str_copy(proxy_url);
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG, __FILE__, __LINE__, 
-        "Inserted proxy %d <%s>", n, cfg->proxy[n]);
+  cfg->proxy[n]=frontier_str_copy(proxy_url);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+        "Inserted proxy %d <%s>",n,cfg->proxy[n]);
   cfg->proxy_num++;
   return FRONTIER_OK;
  } 
@@ -610,9 +615,9 @@ void frontierConfig_setBalancedProxies(FrontierConfig *cfg)
 
 int frontierConfig_getNumBalancedProxies(FrontierConfig *cfg)
  {
-  if (!cfg->proxies_balanced)
+  if(!cfg->proxies_balanced)
     return 0;
-  return cfg->proxy_num - cfg->num_backupproxies;
+  return cfg->proxy_num-cfg->num_backupproxies;
  }
 
 void frontierConfig_setBalancedServers(FrontierConfig *cfg)
