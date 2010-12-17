@@ -57,20 +57,22 @@ to precede the string with http:// to pretend the whole string is a
 server url).  If any of the configuration items are missing from the
 server connection string, they can also be read from environment
 variables.  These are the connection string keywords and corresponding
-environment variables:
+environment variables when applicable:
 <ul>
 <li>
 serverurl - server of the form http://host:port/servlet (:port is
 optional and defaults to 80).  Multiple serverurl keywords may be
 supplied and they will be tried in the order listed.  Environment
 variables FRONTIER_SERVER and FRONTIER_SERVER[123456] can add
-additional servers, up to a maximum of 6.  Each server string is also
-recursively parsed for parenthesized keywords.
+additional servers.  Each server string also may contain any
+parenthesized keywords.  The maximum number of servers is 16.
 <li>
 proxyurl - proxy of the form http://host:port.  Multiple proxyurl
 keywords may be supplied and they will be tried in the order listed.
 Environment variables FRONTIER_PROXY and FRONTIER_PROXY[1234] can add
-additional proxies, up to a maximum of 4.
+additional proxies (or parenthesized keywords in FRONTIER_SERVER like
+all the other keywords), up to a maximum of 24 total proxies.  See also 
+backupproxyurl below.
 <li>
 logicalserverurl - logical server of the form http://logical_name
 which, when encountered in a later connection as a server name, will
@@ -121,11 +123,18 @@ go to a proxy or server to retrieve the answer.
 <li>
 failovertoserver - when set to a value of 'no', prevents failing over
 to direct connections to servers if proxy connections fail.  Default 'yes'.
+<li>
+backupproxyurl - Just like proxyurl, except that they are always tried
+after all proxyurls and they are not included in the load balancing
+done when loadbalance=proxies.  Implies failovertoserver=no.
 </ul>
 
 <p>
-These may only come from environment variables:
+The following may only come from environment variables:
 <ul>
+<li>
+FRONTIER_ID - an identifying string that will be put into the squid
+and frontier server logs
 <li>
 FRONTIER_LOG_LEVEL - set logging level
 <ul>
@@ -140,6 +149,7 @@ connection problems and retries)
 debug - log errors, warnings, and verbose debug messages
 <li>
 </ul>
+<li>
 FRONTIER_LOG_FILE - filename to write log messages to instead of stdout
 </ul>
 
