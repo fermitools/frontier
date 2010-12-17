@@ -142,7 +142,7 @@ Connection::Connection(const std::list<std::string>& serverUrlList,
     }
   }
   for(LI i = proxyUrlList.begin(); i != proxyUrlList.end(); ++i) {
-    errorCode = frontierConfig_addProxy(config, i->c_str());
+    errorCode = frontierConfig_addProxy(config, i->c_str(), 0);
     if(errorCode != FRONTIER_OK) {
       std::ostringstream oss;
       oss << "Error adding frontier proxy " << i->c_str();
