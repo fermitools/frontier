@@ -120,7 +120,7 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
     
   c->proxy[c->total_proxy]=fui;
   c->total_proxy++;
-  if(c->balance_proxies)frontierHttpClnt_setBalancedProxies(c);
+  if(c->balance_num_proxies>0)frontierHttpClnt_setNumBalancedProxies(c,c->balance_num_proxies);
 
   return FRONTIER_OK;
  }
@@ -618,12 +618,13 @@ int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle)
     if(shuffle)
      {
       int i;
-      if(c->balance_proxies)
+      if(c->balance_num_proxies>0)
        {
 	// randomize start if balancing was selected
-	// ignore the possibility that these addresses may include round-robin
+	// ignore the possibility that the addresses may include round-robin
+	//   when balancing
 	int numgood=0;
-	for(i=0;i<c->total_proxy;i++)
+	for(i=0;i<c->balance_num_proxies;i++)
 	  if(!c->proxy[i]->fai->haderror)
 	    numgood++;
 	if(numgood>0)
@@ -634,9 +635,11 @@ int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle)
 	    if(c->proxy[i]->fai->haderror)
 	      c->first_proxy++;
 	 }
+	else c->first_proxy=c->balance_num_proxies;
        }
       else
        {
+	// balancing was not selected
 	for(i=0;(i<=c->cur_proxy)&&(i<c->total_proxy);i++)
 	 {
 	  // select next round-robin address if any for each that has been used
@@ -734,12 +737,15 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
    {
     /*cycle through proxy list*/
     c->cur_proxy++;
-    if(c->cur_proxy==c->total_proxy)
-      /*wrap around in case doing load balancing*/
-      c->cur_proxy=0;
-    if(c->cur_proxy==c->first_proxy)
-      /*set to total when done*/
-      c->cur_proxy=c->total_proxy;
+    if(c->balance_num_proxies>0)
+     {
+      if(c->cur_proxy==c->balance_num_proxies)
+        /*wrap around when reach the last balanced proxy*/
+        c->cur_proxy=0;
+      if(c->cur_proxy==c->first_proxy)
+        /*done with balancing, set to the non-balanced ones, if any*/
+        c->cur_proxy=c->balance_num_proxies;
+     }
    }
   if(c->cur_proxy>=c->total_proxy)
    {
@@ -754,7 +760,7 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
        {
 	if(!fai->haderror)
 	  anygood=1;
-	if(c->balance_proxies)
+	if(i<c->balance_num_proxies)
 	  break; // other round-robin addresses are ignored when balancing
        }
       if(!anygood)
@@ -871,9 +877,9 @@ char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
   return "";
  }
 
-void frontierHttpClnt_setBalancedProxies(FrontierHttpClnt *c)
+void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
  {
-  c->balance_proxies=1;
+  c->balance_num_proxies=num;
   frontierHttpClnt_resetproxylist(c,1);
  }
 
