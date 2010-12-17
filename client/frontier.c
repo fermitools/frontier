@@ -288,8 +288,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
      }
    }while(frontierConfig_nextProxy(chn->cfg)==0);
 
-  if(frontierConfig_getBalancedProxies(chn->cfg))
-    frontierHttpClnt_setBalancedProxies(chn->ht_clnt);
+  if((n=frontierConfig_getNumBalancedProxies(chn->cfg))>0)
+    frontierHttpClnt_setNumBalancedProxies(chn->ht_clnt,n);
 
   chn->client_cache_maxsize=frontierConfig_getClientCacheMaxResultSize(chn->cfg);
   if(chn->client_cache_maxsize>0)
