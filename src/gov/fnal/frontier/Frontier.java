@@ -44,6 +44,7 @@ public final class Frontier
   private static boolean highVerbosity=false; // true when verbosityLevel >= 4
 
   public static int max_threads=100;
+  public static boolean send_stale_if_error=true;
   public static int validate_last_modified_seconds=-1;
   public static String last_modified_table_name;
   // Note that when the DB is down, at least on SLC4 it takes about
@@ -109,6 +110,11 @@ public final class Frontier
     if(maxthreads!=null)
       max_threads=Integer.parseInt(maxthreads);
     Frontier.Log("max threads: "+max_threads);
+
+    String sendstale=getPropertyString(prb,"SendStaleIfError");
+    if(sendstale!=null)
+      send_stale_if_error=Boolean.parseBoolean(sendstale);
+    Frontier.Log("send stale if error: "+send_stale_if_error);
 
     String maxsecs=getPropertyString(prb,"MaxDbAcquireSeconds");
     if(maxsecs!=null)
