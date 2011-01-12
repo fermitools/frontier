@@ -61,25 +61,26 @@ public final class FrontierServlet extends HttpServlet
     //  stale-if-error.  With squid2.7, this causes an error to
     //  be returned when the origin server can't be contacted and
     //  an old copy exists in the cache.  Before squid2.7 or without
-    //  this option it returns stale data.
-// Commented out because squid2.7-STABLE5 doesn't cache the negative result
-//  of this when a server is down.  See squid bugzilla bug #2481.
-//    String cch=request.getHeader("cache-control");
-//    int idx=-1;
-//    if (cch!=null)idx=cch.indexOf("max-stale");
-//    if (idx>=0)
-//     {
-//      idx=cch.indexOf('=',idx);
-//      if(idx>=0)
-//       {
-//	idx+=1;
-//	int endidx=cch.indexOf(',',idx);
-//	if(endidx==-1)endidx=cch.length();
-//        response.setHeader("Cache-Control","max-age="+age+", stale-if-error="+cch.substring(idx,endidx));
-//        return;
-//       }
-//     }
-    response.setHeader("Cache-Control","max-age="+age);
+    //  this option it returns stale data.  squid2.7 caches this
+    //  negative error for a configured period of time so the server
+    //  won't be hit too hard for requests.
+    String cch=request.getHeader("cache-control");
+    int idx=-1;
+    if(cch!=null)idx=cch.indexOf("max-stale");
+    if(Frontier.send_stale_if_error&&(idx>=0))
+     {
+      idx=cch.indexOf('=',idx);
+      if(idx>=0)
+       {
+        idx+=1;
+        int endidx=cch.indexOf(',',idx);
+        if(endidx==-1)endidx=cch.length();
+        response.setHeader("Cache-Control","max-age="+age+", stale-if-error="+cch.substring(idx,endidx));
+        return;
+       }
+     }
+    else
+     response.setHeader("Cache-Control","max-age="+age);
    }
 
   private String dateHeader(long datestamp)
@@ -162,7 +163,7 @@ public final class FrontierServlet extends HttpServlet
         return;
        }
 
-      if(count_current>=frontier.max_threads)
+      if(count_current>frontier.max_threads)
        {
         // too many threads in use by this servlet, don't acquire database
         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
