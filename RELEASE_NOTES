@@ -1,5 +1,17 @@
 $Id$
 
+3.26 2011/01/12 (dwd)
+    - Add new StaleIfError property, default true, which will send the
+      Cache-control header "stale-if-error" if the client sends in
+      Cache-control: max-stale.  This prevents squid from re-using
+      expired data when there's a server error (by default it will
+      reuse data that's up to a week old).  Setting max-stale on the
+      client side doesn't affect squid but it indicates that the
+      client is ready to deal with the server errors (frontier_client
+      has been doing that since October 2008 but I never enabled the
+      server side because I thought there was a problem -- details in
+      squid bug #2481).
+
 3.25 2010/12/09 (dwd)
     - Add new MaxThreads property to be the maximum number of threads
       that the servlet will allow to wait for a database connection.
