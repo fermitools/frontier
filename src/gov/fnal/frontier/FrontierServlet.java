@@ -21,7 +21,7 @@ import com.jcraft.jzlib.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.26";
+  private static final String frontierVersion="3.27";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
@@ -167,6 +167,7 @@ public final class FrontierServlet extends HttpServlet
        {
         // too many threads in use by this servlet, don't acquire database
         response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        setAgeExpires(request,response,frontier.error_max_age);
 	Frontier.Log("rejecting because servlet too busy");
 	return;
        }
