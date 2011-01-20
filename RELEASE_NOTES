@@ -1,5 +1,11 @@
 $Id$
 
+3.27 2011/01/20 (dwd)
+    - Change the expiration time on the 503 SERVICE_UNAVAILABLE error
+      to be the time used for errors (the lesser of 5 minutes and the
+      short cache expiration time) instead of the long cache expiration
+      time.
+
 3.26 2011/01/12 (dwd)
     - Add new StaleIfError property, default true, which will send the
       Cache-control header "stale-if-error" if the client sends in
