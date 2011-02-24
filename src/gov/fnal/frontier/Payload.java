@@ -67,7 +67,8 @@ public class Payload
      }
      
     // BUILTINS
-    if(cmd.obj_name.equals("frontier_request") && cmd.obj_version.equals("1"))
+    if((cmd.obj_name.equals("frontier_request")&&cmd.obj_version.equals("1"))||
+      (cmd.obj_name.equals("frontier_file")&&cmd.obj_version.equals("1")))
      {
       fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds,true);
       //fdo_init() MUST NOT BE CALLED FOR BUILTINS!
