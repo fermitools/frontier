@@ -1,5 +1,14 @@
 $Id$
 
+v2_8_1 - 24 Feb 2011 (dwd)
+ - Add small fn-fileget command line tool that can retrieve files from
+   frontier servlets (release 3.28 or later) that are configured to 
+   serve files instead of database queries.
+    Usage: fn-fileget [-c connect_string] filepath ...
+   Honors all regular frontier environment variables, although it
+   doesn't support retrieve-ziplevel because it's assumed that files
+   can be pre-compressed.
+
 v2_8_0 - 17 Dec 2010 (dwd)
  - The second digit in this release changed because the FrontierConfig
    structure changed.  This only affects binary compatibilty for the
