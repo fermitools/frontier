@@ -24,6 +24,7 @@ public final class Frontier
   private static boolean initialized=false;    
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
+  private static String conf_file_base_dir;
   private static String conf_xsd_table="";
   private static final int SHORTCACHE=0;
   private static final int LONGCACHE=1;
@@ -87,15 +88,17 @@ public final class Frontier
   protected static synchronized void init() throws Exception
    {
     if(initialized) return;
-    ResourceBundle prb=PropertyResourceBundle.getBundle("config");
-    conf_server_name=prb.getString("ServerName");
-    conf_ds_name=prb.getString("DataSourceName");
-        
-    if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
-    if(conf_ds_name==null) throw new Exception("DataSourceName is missing in FrontierConfig");
 
     Frontier.Log("Initializing Frontier servlet version "+FrontierServlet.frontierVersion());
 
+    ResourceBundle prb=PropertyResourceBundle.getBundle("config");
+    conf_server_name=prb.getString("ServerName");
+    if(conf_server_name==null) throw new Exception("ServerName is missing in FrontierConfig");
+
+    conf_ds_name=getPropertyString(prb,"DataSourceName");
+    conf_file_base_dir=getPropertyString(prb,"FileBaseDirectory");
+    if((conf_ds_name==null)&&(conf_file_base_dir==null))
+      throw new Exception("Both DataSourceName and FileBaseDirectory are missing in FrontierConfig");
     conf_xsd_table=getPropertyString(prb,"XsdTableName");
 
     // Verbosity level related
@@ -190,7 +193,8 @@ public final class Frontier
     if(monitor!=null) monitor.increment();
 
     logClientDesc(req);          
-    connMgr=DbConnectionMgr.getDbConnectionMgr();
+    if(getDsName()!=null)
+      connMgr=DbConnectionMgr.getDbConnectionMgr();
     commandList=Command.parse(req);
     payloads_num=commandList.size();
     aPayloads=new ArrayList<Payload>();
@@ -383,6 +387,11 @@ public final class Frontier
   public static String getDsName()
    {
     return conf_ds_name;
+   }
+  
+  public static String getFileBaseDir()
+   {
+    return conf_file_base_dir;
    }
   
   public static String getServerName()
