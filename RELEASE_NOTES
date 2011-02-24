@@ -1,5 +1,14 @@
 $Id$
 
+3.28 2011/01/20 (dwd)
+    - Add support for loading locally-accessible files in addition
+      to database queries.  Add new FileBaseDirectory property to
+      indicate the base directory of the files that the servlet will
+      load.  Make the DataSourceName property no longer required; now
+      at least one of DataSourceName and FileBaseDirectory are
+      required.  Corresponding support in the client will be in
+      frontier_client 2.8.1.
+
 3.27 2011/01/20 (dwd)
     - Change the expiration time on the 503 SERVICE_UNAVAILABLE error
       to be the time used for errors (the lesser of 5 minutes and the
