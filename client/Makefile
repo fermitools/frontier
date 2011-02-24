@@ -13,7 +13,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	8.0
+FN_VER_MINOR	=	8.1
 COMPILER_TAG    =       gcc_3.2.3
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src
@@ -65,7 +65,7 @@ OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o 
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
-BINAPP		=	fn-req
+BINAPP		=	fn-req fn-fileget
 BINSCRIPTS	= 	fnget.py frontierqueries
 
 ifeq ($(DYLIBTYPE),dylib)
@@ -280,6 +280,12 @@ fn-req: test-req.o $(HDRXX)
 # staticly linked app works better in gdb
 fn-req.static: libfrontier_client.so fn-req
 	$(CXX) $(CXXOPT_APP) -L. -o fn-req.static test-req.o .libs/*.o $(LIBS)
+
+fn-fileget.o: fn-fileget.c $(HDR)
+	$(CC) $(COPT) $(INC) -c fn-fileget.c
+
+fn-fileget: fn-fileget.o
+	$(CC) $(COPT) $(INC) -o fn-fileget fn-fileget.o -L. -lfrontier_client
 
 
 clean:
