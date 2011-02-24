@@ -95,6 +95,9 @@ public class SQLPlugin implements FrontierPlugin
   public int fp_get(java.sql.Connection con,DbConnectionMgr mgr,Encoder enc,String method) throws Exception
    {
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
+
+    if(con==null)
+      throw new Exception("No database connection available");
     
     if(queryLower.indexOf("drop ")>=0 ||
        queryLower.indexOf("delete ")>=0 ||
