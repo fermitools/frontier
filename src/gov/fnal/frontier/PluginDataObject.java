@@ -21,7 +21,7 @@ import javax.servlet.ServletOutputStream;
 
 public class PluginDataObject implements FrontierDataObject
  {
-  private DbConnectionMgr dbm;
+  private DbConnectionMgr dbm=null;
   private Connection acquiredConnection=null;
   
   // Public stuff
@@ -40,6 +40,14 @@ public class PluginDataObject implements FrontierDataObject
       obj_name=builtin_name;
       obj_version=builtin_version;
       plugin=new SQLPlugin(fds);
+      return;
+     }
+    if(builtin_name.equals("frontier_file"))
+     {
+      //System.out.println("PluginDataObject(builtin:frontier_file)");
+      obj_name=builtin_name;
+      obj_version=builtin_version;
+      plugin=new FilePlugin(fds);
       return;
      }
     throw new Exception("Unknown builtin plugin "+builtin_name+":"+builtin_version);
@@ -71,9 +79,15 @@ public class PluginDataObject implements FrontierDataObject
     return md;
    }
      
+  private void acquireConnectionIfNeeded(ServletOutputStream sos) throws Exception
+   {
+    if((acquiredConnection==null)&&(dbm!=null))
+      acquiredConnection=dbm.acquire(sos);
+   }
+
   public void fdo_start(ServletOutputStream sos) throws Exception
    {
-    if(acquiredConnection==null)acquiredConnection=dbm.acquire(sos);
+    acquireConnectionIfNeeded(sos);
    }
    
   public int fdo_get(Encoder enc,String method,ServletOutputStream sos) throws Exception
@@ -81,7 +95,7 @@ public class PluginDataObject implements FrontierDataObject
     //System.out.println("PluginDataObject.fdo_get()");
     int rec_num=0;
     
-    if(acquiredConnection==null)acquiredConnection=dbm.acquire(sos);
+    acquireConnectionIfNeeded(sos);
     rec_num=plugin.fp_get(acquiredConnection,dbm,enc,method);
     return rec_num;
    }
@@ -102,7 +116,7 @@ public class PluginDataObject implements FrontierDataObject
     //System.out.println("PluginDataObject.fdo_write()");
     int rec_num=0;
     
-    if(acquiredConnection==null)acquiredConnection=dbm.acquire(sos);
+    acquireConnectionIfNeeded(sos);
     rec_num=plugin.fp_write(acquiredConnection,enc,method);
     return rec_num;
    }
@@ -114,7 +128,7 @@ public class PluginDataObject implements FrontierDataObject
 
   public long fdo_getLastModified(ServletOutputStream sos) throws Exception
    {
-    if(acquiredConnection==null)acquiredConnection=dbm.acquire(sos);
+    acquireConnectionIfNeeded(sos);
     return plugin.fp_getLastModified(acquiredConnection);
    }
 
