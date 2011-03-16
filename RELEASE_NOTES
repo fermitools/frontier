@@ -1,6 +1,6 @@
 $Id$
 
-3.28 2011/01/20 (dwd)
+3.28 2011/03/24 (dwd)
     - Add support for loading locally-accessible files in addition
       to database queries.  Add new FileBaseDirectory property to
       indicate the base directory of the files that the servlet will
