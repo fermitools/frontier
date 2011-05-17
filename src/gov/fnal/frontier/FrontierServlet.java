@@ -242,7 +242,11 @@ public final class FrontierServlet extends HttpServlet
 		   {
 		    if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
 		    last_modified=frontier.getLastModified(out);
-		    if((if_modified_since>0)&&(if_modified_since==last_modified))
+		    if(response.isCommitted())
+		     {
+		      Frontier.Log("response committed while querying last-modified time, too late to use");
+		     }
+		    else if((if_modified_since>0)&&(if_modified_since==last_modified))
 		     {
 		      response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
 		      Frontier.Log("not modified");
