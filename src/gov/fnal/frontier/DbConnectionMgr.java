@@ -102,6 +102,8 @@ public class DbConnectionMgr
   private static Boolean mutex=new Boolean(true);
   private DataSource dataSource=null;
   private ReentrantLock acquireLock=new ReentrantLock(true);
+  private Boolean counterMutex=new Boolean(true);
+  private int numAcquiredConnections=0;
   // Could use a list instead of a HashMap because there will be only
   //  a small number of entries, but a hashed interface is convenient.
   // Using HashMap instead of Hashtable because it is more modern and
@@ -194,7 +196,12 @@ public class DbConnectionMgr
       task.shutdown();
       throw e;
      }
-    Frontier.Log("DB connection acquired");
+    int active;
+    synchronized(counterMutex)
+     {
+      active=++numAcquiredConnections;
+     }
+    Frontier.Log("DB connection acquired active="+active);
     int seconds=Frontier.getMaxDbExecuteSeconds();
     if(seconds==0)
       task.shutdown();
@@ -213,7 +220,12 @@ public class DbConnectionMgr
     if(dbConnection!=null)
      {
       dbConnection.close();
-      Frontier.Log("DB connection released");
+      int remaining;
+      synchronized(counterMutex)
+       {
+        remaining=--numAcquiredConnections;
+       }
+      Frontier.Log("DB connection released remaining="+remaining);
      }
    }
    
