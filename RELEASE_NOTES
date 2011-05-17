@@ -1,5 +1,17 @@
 $Id$
 
+3.29 2011/05/17 (dwd)
+    - Fixed a bug that corrupts the response when a query for a
+      last-modified time timestamp takes more than 5 seconds, causing
+      a keepalive to be sent.  The bug results in the client seeing an
+      error message:
+	  XML parse error 7:mismatched tag at line 7
+      Now if the query takes too long the result is discarded, because
+      it is too late to insert the Last-Modified header after a
+      keepalive is sent.
+    - Add the number of active and remaining connections to the DB
+      connection acquired and released log messages, respectively.
+
 3.28 2011/03/24 (dwd)
     - Add support for loading locally-accessible files in addition
       to database queries.  Add new FileBaseDirectory property to
