@@ -74,7 +74,7 @@ struct s_FrontierHttpClnt
   int first_proxy;
   int first_server;
   unsigned rand_seed;
-  int is_refresh;
+  int refresh_flag;
   int using_proxy;
   int content_length;
   int total_length;
@@ -100,7 +100,7 @@ typedef struct s_FrontierHttpClnt FrontierHttpClnt;
 FrontierHttpClnt *frontierHttpClnt_create(int *ec);
 int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url);
 int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url);
-void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh);
+void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int refresh_flag);
 void frontierHttpClnt_setUrlSuffix(FrontierHttpClnt *c,char *suffix);
 void frontierHttpClnt_setFrontierId(FrontierHttpClnt *c,const char *frontier_id);
 void frontierHttpClnt_setConnectTimeoutSecs(FrontierHttpClnt *c,int timeoutsecs);
