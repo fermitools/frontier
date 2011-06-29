@@ -25,6 +25,7 @@
 #define MSG_BUF_SIZE	1024
 
 static char _frontier_error_msg[MSG_BUF_SIZE];
+static int errors_into_debugs=0;
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
@@ -70,7 +71,8 @@ void frontier_setErrorMsg(const char *file,int line,const char *fmt,...)
   ret+=vsnprintf(_frontier_error_msg+pos,MSG_BUF_SIZE-ret,fmt,ap);
   va_end(ap);
   
-  frontier_log(FRONTIER_LOGLEVEL_ERROR,file,line,"%s",_frontier_error_msg+pos);
+  frontier_log(errors_into_debugs?FRONTIER_LOGLEVEL_DEBUG:FRONTIER_LOGLEVEL_ERROR,
+  		file,line,"%s",_frontier_error_msg+pos);
  }
  
  
@@ -79,3 +81,7 @@ const char *frontier_getErrorMsg()
   return _frontier_error_msg;
  }
 
+void frontier_turnErrorsIntoDebugs(int value)
+ {
+  errors_into_debugs=value;
+ }
