@@ -127,9 +127,9 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
  
  
  
-void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int is_refresh)
+void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int refresh_flag)
  {
-  c->is_refresh=is_refresh;
+  c->refresh_flag=refresh_flag;
  }
 
  
@@ -339,11 +339,11 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   //  can't be reached when a cached item is stale.  frontier_client
   //  couldn't handle that before this header was added, so this allows
   //  a compatible upgrade
-#ifdef PERSISTCONNECTION
-  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nCache-Control: max-stale=1\r\nConnection: keep-alive\r\n",c->frontier_id);
-#else
-  ret=snprintf(buf+len,FN_REQ_BUF-len,"X-Frontier-Id: %s\r\nCache-Control: max-stale=1\r\n",c->frontier_id);
-#endif
+  // Cache-control: max-age=0 allows If-Modified-Since to re-validate cache,
+  //  which can be much less stress on servers than Pragma: no-cache.
+  ret=snprintf(buf+len,FN_REQ_BUF-len,
+  	"X-Frontier-Id: %s\r\nCache-Control: max-stale=1%s\r\n",
+  	c->frontier_id,(c->refresh_flag==1)?",max-age=0":"");
   if(ret>=FN_REQ_BUF-len)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
@@ -352,14 +352,22 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   len+=ret;
    
   // POST is always no-cache
-  if(is_post || c->is_refresh)
+  if(is_post||(c->refresh_flag==2))
    {
-    ret=snprintf(buf+len,FN_REQ_BUF-len,"Pragma: no-cache\r\n\r\n");
+    ret=snprintf(buf+len,FN_REQ_BUF-len,"Pragma: no-cache\r\n");
+    if(ret>=FN_REQ_BUF-len)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
+      return FRONTIER_EIARG;
+     }
+    len+=ret;
    }
-  else
-   {
-    ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
-   }
+
+#ifdef PERSISTCONNECTION
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"Connection: keep-alive\r\n\r\n");
+#else
+  ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
+#endif
   if(ret>=FN_REQ_BUF-len)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
