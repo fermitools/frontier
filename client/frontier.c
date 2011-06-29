@@ -494,10 +494,15 @@ static int get_data(Channel *chn,const char *uri,const char *body)
   {
     // Reload not requested, see if need to force a reload
     force_reload=frontierConfig_getForceReload(chn->cfg);
-    if(strcmp(force_reload,"short")==0)
+    if(strstr(force_reload,"short")!=0)
       reload=chn->user_reload;
-    else if(strcmp(force_reload,"long")==0)
+    else if(strstr(force_reload,"long")!=0)
       reload=1;
+    if(reload&&(strncmp(force_reload,"soft",4)!=0))
+     {
+      // hard reload if force_reload doesn't start with "soft"
+      reload=2;
+     }
   }
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,reload);
   /* User-requested reloads are translated into a "short" time-to-live
