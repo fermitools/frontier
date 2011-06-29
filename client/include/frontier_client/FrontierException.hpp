@@ -36,6 +36,7 @@ namespace frontier {
   static const int FrontierErrorCode_UnknownError = FRONTIER_EUNKNOWN;
   static const int FrontierErrorCode_NetworkProblem = FRONTIER_ENETWORK;
   static const int FrontierErrorCode_ProtocolError = FRONTIER_EPROTO;
+  static const int FrontierErrorCode_ServerError = FRONTIER_ESERVER;
 
   // Generic exception.
   class FrontierException : public std::exception {
@@ -109,6 +110,12 @@ namespace frontier {
   class ProtocolError : public FrontierException {
   public:
     ProtocolError(const std::string& err = "") : FrontierException(err, FrontierErrorCode_ProtocolError) { }
+  };
+
+  // Server error.
+  class ServerError : public FrontierException {
+  public:
+    ServerError(const std::string& err = "") : FrontierException(err, FrontierErrorCode_ServerError) { }
   };
 
 } // namespace frontier
