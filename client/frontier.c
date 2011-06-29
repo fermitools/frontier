@@ -662,13 +662,19 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now());
 
+    // because this is a retry loop, transfer errors aren't necessarily errors
+    frontier_turnErrorsIntoDebugs(1);
+
     ret=get_data(chn,uri,body);    
     if(ret==FRONTIER_OK) 
      {
       ret=frontierResponse_finalize(chn->resp);
+      frontier_turnErrorsIntoDebugs(0);
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now());
       if(ret==FRONTIER_OK) break;
      }
+    frontier_turnErrorsIntoDebugs(0);
+
     snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
