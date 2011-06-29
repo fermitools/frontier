@@ -37,6 +37,8 @@ void FrontierExceptionMapper::throwException(
       throw NetworkProblem(errorMessage);
     case FrontierErrorCode_ProtocolError:
       throw ProtocolError(errorMessage);
+    case FrontierErrorCode_ServerError:
+      throw ServerError(errorMessage);
     case FrontierErrorCode_UnknownError:
     default:
       throw FrontierException(errorMessage, errorCode);
