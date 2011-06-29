@@ -29,6 +29,7 @@
 void frontier_setErrorMsg(const char *file, int line,const char *fmt,...);
 const char *frontier_get_err_desc(int err_num);
 const char *frontier_getErrorMsg();
+void frontier_turnErrorsIntoDebugs(int value);
 void frontier_log(int level,const char *file,int line,const char *fmt,...);
 
 #define FRONTIER_MSG(e) do{frontier_setErrorMsg(__FILE__,__LINE__,"error %d: %s",(e),frontier_get_err_desc(e));}while(0)
