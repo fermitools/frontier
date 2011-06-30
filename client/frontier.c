@@ -694,22 +694,23 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
 	  the server list and try with the next proxy, etc.
        2. For FRONTIER_EPROTO, cycle through the proxies using the first
           server and then cycle through direct connects to servers,
-	  attempting reload after every try.
+	  attempting soft and hard reload after every try.
        3. Otherwise, same as FRONTIER_EPROTO but with no reloads.
     */
 
     if(ret==FRONTIER_EPROTO)
      {
-      if(!chn->reload)
+      if(chn->reload<2)
        {
 	// try to clear protocol error from same proxy or server it was found on
-	chn->reload=1;
+	// try first with a soft reload and then with a hard reload
+	chn->reload++;
 	if(curproxy>=0)
 	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying reload cache on proxy %s",frontierHttpClnt_curproxyname(clnt));
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying %s reload cache on proxy %s and server %s",chn->reload==1?"soft":"hard",frontierHttpClnt_curproxyname(clnt),frontierHttpClnt_curservername(clnt));
 	  continue;
 	 }
-	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying reload cache on direct connect to server %s",frontierHttpClnt_curservername(clnt));
+	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying %s reload cache on direct connect to server %s",chn->reload==1?"soft":"hard",frontierHttpClnt_curservername(clnt));
 	continue;
        }
       chn->reload=0;
