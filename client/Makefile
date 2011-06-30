@@ -63,7 +63,7 @@ LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto ${ZLIB_LD_
 
 OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
-HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
+HDR		=	include/frontier_client/frontier.h fn-internal.h fn-md5.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
 BINAPP		=	fn-req fn-fileget
 BINSCRIPTS	= 	fnget.py frontierqueries
@@ -202,7 +202,7 @@ payload.o: payload.c $(HDR)
 rs-bin.o: rs-bin.c $(HDR)
 	$(CC) $(COPT) $(INC) -c rs-bin.c
 
-memdata.o: memdata.c $(HDR)
+memdata.o: memdata.c $(HDR) fn-zlib.h
 	$(CC) $(COPT) $(INC) -c memdata.c
 
 frontier_error.o: frontier_error.c include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
