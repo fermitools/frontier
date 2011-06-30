@@ -75,17 +75,18 @@ xml_startElement(void *userData,const char *name,const char **atts)
 
   if(strcmp(name,"payload")==0)
    {
+    const char *encoding=NULL;
     fr->payload_num++;
-    fr->payload[fr->payload_num-1]=frontierPayload_create();
-    fr->p_state=FNTR_WITHIN_PAYLOAD;
     for(i=0;atts[i];i+=2)
      {
       if(strcmp(atts[i],"encoding")==0)
        {
-        fr->payload[fr->payload_num-1]->encoding=frontier_str_copy(atts[i+1]);
+        encoding=atts[i+1];
 	continue;
        }      
      }
+    fr->payload[fr->payload_num-1]=frontierPayload_create(encoding);
+    fr->p_state=FNTR_WITHIN_PAYLOAD;
     return;
    }
 
