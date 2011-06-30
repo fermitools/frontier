@@ -2,10 +2,11 @@ All source files in this package called "frontier_client" that are
 Copyright Fermilab are covered by the 2009 Fermitools license (a
 BSD license), details in the file Fermilab-2009.txt
 
-There is one source file fn-md5.c that is copyrighted by others and
-covered by the GNU General Public License.  There is another source
-file fn-base64.c that is covered by the python license, and several in
-the "chashtable" directories covered by the new BSD license.  See the
-details in the files themselves.
+There is one source file fn-md5.c and it's associated header fn-md5.h
+that is copyrighted by others and covered by the GNU General Public
+License.  There is another source file fn-base64.c that is covered by
+the python license, and several in the "chashtable" directories
+covered by the new BSD license.  See the details in the files
+themselves.
 
-- Dave Dykstra, 13 January 2010
+- Dave Dykstra, 30 June 2011
