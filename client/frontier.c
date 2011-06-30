@@ -621,6 +621,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   FrontierHttpClnt *clnt;
   char err_last_buf[ERR_LAST_BUF_SIZE];
   int curproxy,curserver;
+  int have_reset_serverlist=0;
   pid_t pid;
 
   if((pid=getpid())!=frontier_pid)
@@ -692,10 +693,22 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
        1. For FRONTIER_ESERVER, use one proxy and cycle through the
 	  servers, no reload.  When all servers have been tried, reset
 	  the server list and try with the next proxy, etc.
-       2. For FRONTIER_EPROTO, cycle through the proxies using the first
-          server and then cycle through direct connects to servers,
-	  attempting soft and hard reload after every try.
+       2. For FRONTIER_EPROTO, cycle through the proxies using one
+	  server.  Attempt soft and then hard reload after every try.
+	  When all proxies have been tried, reset the proxy list and
+	  try each proxy with the next server.  After all servers have
+	  been tried with all proxies, cycle through direct connects
+	  to servers.  
        3. Otherwise, same as FRONTIER_EPROTO but with no reloads.
+
+       Since the first strategy resets the server list and the other
+       two reset the proxy list, and since each try can independently
+       return its own error, theoretically it is possible to alternate
+       between the strategies and never terminate.  To avoid that
+       possibility, if the server list has ever been reset by a
+       FRONTIER_ESERVER error, never try to reset the proxy list even
+       if the strategy calls for it.
+
     */
 
     if(ret==FRONTIER_EPROTO)
@@ -726,6 +739,29 @@ selectnextproxy:
 	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s",frontierHttpClnt_curproxyname(clnt));
 	continue;
        }
+      else if(!have_reset_serverlist)
+       {
+	// ran out of proxies, but have not reset the server list so
+	// try all proxies again with the next server (if there is one)
+	curserver=frontierHttpClnt_nextserver(clnt,1);
+	if(curserver>=0)
+	 {
+	  curproxy=frontierHttpClnt_resetproxylist(clnt,1);
+	  if(curproxy>=0)
+	   {
+	    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next server %s with first proxy %s",frontierHttpClnt_curservername(clnt),frontierHttpClnt_curproxyname(clnt));
+	    continue;
+	   }
+	  // there were no proxies configured, let fall through to try direct
+	  // (shouldn't really happen since can't get here with no proxies)
+         }
+	else
+	 {
+	  // no more servers or proxies, try direct with all servers
+          curserver=frontierHttpClnt_resetserverlist(clnt,1);
+	  have_reset_serverlist=1; // shouldn't make a difference, just in case
+	 }
+       }
       if(!frontierConfig_getFailoverToServer(chn->cfg))
        {
 	frontier_setErrorMsg(__FILE__,__LINE__,"No more proxies. Last error was: %s",err_last_buf);
@@ -749,6 +785,7 @@ selectnextproxy:
       //  so it could have really been a proxy error; try again at the
       //  beginning of the server list and advance the proxy list
       curserver=frontierHttpClnt_resetserverlist(clnt,1);
+      have_reset_serverlist=1;
       frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying again first server %s",frontierHttpClnt_curservername(clnt));
       goto selectnextproxy;
      }
