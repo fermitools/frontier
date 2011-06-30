@@ -15,9 +15,6 @@
 
 #include <frontier_client/frontier.h>
 #include "fn-internal.h"
-#include "fn-base64.h"
-#include "fn-zlib.h"
-#include "zlib.h"
 #include <stdio.h>
 #include <strings.h>
 #include <string.h>
@@ -28,7 +25,7 @@ extern void (*frontier_mem_free)(void *ptr);
 extern int frontier_log_level;
 
 
-FrontierPayload *frontierPayload_create()
+FrontierPayload *frontierPayload_create(const char *encoding)
  {
   FrontierPayload *fpl;
 
@@ -40,8 +37,11 @@ FrontierPayload *frontierPayload_create()
    }
 
   fpl->id=-1;
-  fpl->encoding=(void*)0;
-  fpl->md=frontierMemData_create();
+  if(encoding==NULL)
+    fpl->encoding=(void*)0;
+  else
+    fpl->encoding=frontier_str_copy(encoding);
+  fpl->md=frontierMemData_create(strstr(encoding,"zip")!=NULL);
   if(!fpl->md)
    {
     frontierPayload_delete(fpl);
@@ -52,7 +52,6 @@ FrontierPayload *frontierPayload_create()
   fpl->blob=(void*)0;
   fpl->blob_size=0;
   
-  bzero(fpl->md5,16);
   bzero(fpl->md5_str,sizeof(fpl->md5_str));
   bzero(fpl->srv_md5_str,sizeof(fpl->srv_md5_str));
   
@@ -89,14 +88,12 @@ void frontierPayload_append(FrontierPayload *fpl,const char *s,int len)
 
 int frontierPayload_finalize(FrontierPayload *fpl)
  {
-  char *md5_ctx=0;
   int i;
   int zipped=0;
-  long bin_size;
-  long blob_size;
-  unsigned char *bin_data=0;
+  int zipped_size=0;
   unsigned char *p;
   FrontierMemBuf *mb;
+  unsigned char *md5;
   
   fpl->blob = 0;
   fpl->error = FRONTIER_OK;
@@ -133,91 +130,44 @@ int frontierPayload_finalize(FrontierPayload *fpl)
      zipped=1;
    }
 
+  // finalize the MemData. 
+  fpl->error=frontierMemData_finalize(fpl->md);
+  if(fpl->error!=FRONTIER_OK)
+    goto errcleanup;
+
+  md5=frontierMemData_getmd5(fpl->md);
+  bzero(fpl->md5_str,sizeof(fpl->md5_str));
+  // convert the binary md5 characters into printable
+  for(i=0;i<16;i++)
+   {
+    snprintf(((char*)(fpl->md5_str))+(i*2),3,"%02x",md5[i]);
+   }
+
   // put all the buffered pieces together into one
-  bin_size=fpl->md->total;
-  bin_data=(unsigned char*)frontier_mem_alloc(bin_size);
+  fpl->blob_size=fpl->md->total;
+  fpl->blob=(unsigned char*)frontier_mem_alloc(fpl->blob_size);
   mb=fpl->md->firstbuf;
-  p=bin_data;
+  p=fpl->blob;
   while(mb!=0)
    {
     bcopy(((unsigned char *)mb)+sizeof(*mb),p,mb->len);
     p+=mb->len;
     mb=mb->nextbuf;
    }
+
+  zipped_size=fpl->md->zipped_total;
   frontierMemData_delete(fpl->md);
   fpl->md=0;
 
-  md5_ctx=frontier_mem_alloc(frontier_md5_get_ctx_size());
-  if(!md5_ctx) 
-   {
-    FRONTIER_MSG(FRONTIER_EMEM);       
-    fpl->error=FRONTIER_EMEM;
-    goto errcleanup;
-   }
-  frontier_md5_init(md5_ctx);
-  frontier_md5_update(md5_ctx,bin_data,bin_size);
-  frontier_md5_final(md5_ctx,fpl->md5);
-  frontier_mem_free(md5_ctx);
-  md5_ctx=0;
-  bzero(fpl->md5_str,sizeof(fpl->md5_str));
-  for(i=0;i<16;i++)
-   {
-    snprintf(((char*)(fpl->md5_str))+(i*2),3,"%02x",fpl->md5[i]);
-   }
-
   if (zipped)
    {
-#if 0
-    char hexdata[60*3+1];
-
-    for (i=0;(i<bin_size)&&(i<(sizeof(hexdata)/3));i++)
-	sprintf(&hexdata[i*3],"%02x\n",bin_data[i]);
-    hexdata[i*3]='\0';
-
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"pre-uncompressed %d byte (full size %d) payload: %s",bin_size,fpl->full_size,hexdata);
-#else
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"uncompressing %d byte (full size %d) payload",bin_size,fpl->full_size);
-#endif
-
-    fpl->blob=(unsigned char*)frontier_mem_alloc(fpl->full_size);
-    if(!fpl->blob)
-     {
-      FRONTIER_MSG(FRONTIER_EMEM);   
-      fpl->error=FRONTIER_EMEM;
-      goto errcleanup;
-     }
-    blob_size=fpl->full_size;
-    switch(fn_gunzip(fpl->blob,&blob_size,bin_data,bin_size))
-     {
-      case Z_OK:
-	break;
-      case Z_BUF_ERROR:
-	frontier_setErrorMsg(__FILE__,__LINE__,"uncompress buf error");
-	fpl->error=FRONTIER_EPROTO;
-	goto errcleanup;
-      case Z_MEM_ERROR:
-	frontier_setErrorMsg(__FILE__,__LINE__,"uncompress memory error");
-	fpl->error=FRONTIER_EMEM;
-	goto errcleanup;
-      case Z_DATA_ERROR:
-	frontier_setErrorMsg(__FILE__,__LINE__,"uncompress data error");
-	fpl->error=FRONTIER_EPROTO;
-	goto errcleanup;
-      default:
-	frontier_setErrorMsg(__FILE__,__LINE__,"uncompress unknown error");
-	fpl->error=FRONTIER_EUNKNOWN;
-	goto errcleanup;
-     }
-    frontier_mem_free(bin_data);
-    bin_data=0;
-    fpl->blob_size=(int) blob_size;
+    // "uncompressed" is more accurate now but leave "uncompressing"
+    //   because frontierqueries tool looks for that keyword
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"uncompressing %d byte (full size %d) payload",zipped_size,fpl->full_size);
    }
   else
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"finalizing payload (full size %d)",bin_size);
-    fpl->blob_size=bin_size;
-    fpl->blob=bin_data;
-    bin_data=0;
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"finalizing payload (full size %d)",fpl->blob_size);
    }
 
   if(frontier_log_level>=FRONTIER_LOGLEVEL_DEBUG)
@@ -262,10 +212,6 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   return FRONTIER_OK;
 
 errcleanup:
-  if (bin_data)
-    frontier_mem_free(bin_data);
-  if (md5_ctx)
-    frontier_mem_free(md5_ctx);
   if (fpl->blob)
    {
     frontier_mem_free(fpl->blob);
