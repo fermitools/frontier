@@ -24,6 +24,7 @@
 # define FRONTIER_FAILURE 1
 
 #include "fn-base64.h"
+#include "fn-md5.h"
 
 struct s_FrontierMemBuf
  {
@@ -37,12 +38,21 @@ struct s_FrontierMemData
   FrontierMemBuf *firstbuf;
   FrontierMemBuf *lastbuf;
   size_t total;
+  size_t zipped_total;
+  int error;
   fn_b64a2b_context b64context;
+  unsigned char md5[16];
+  struct md5_ctx md5_ctx;
+  int binzipped;
+  unsigned char zipbuf[4096];
+  int zipbuflen;
  };
 typedef struct s_FrontierMemData FrontierMemData;
-FrontierMemData *frontierMemData_create();
+FrontierMemData *frontierMemData_create(int zipped);
+int frontierMemData_finalize(FrontierMemData *md);
+unsigned char *frontierMemData_getmd5(FrontierMemData *md);
 void frontierMemData_delete(FrontierMemData *md);
-int frontierMemData_b64append(FrontierMemData *md,const char *buf,size_t size);
+int frontierMemData_b64append(FrontierMemData *md,const char *buf,int size);
 
 
 struct s_FrontierPayload
@@ -56,13 +66,12 @@ struct s_FrontierPayload
   int blob_size;
   unsigned int nrec;
   long full_size;
-  unsigned char md5[16];
   char md5_str[36];
   char srv_md5_str[36];
   FrontierMemData *md;
  };
 typedef struct s_FrontierPayload FrontierPayload;
-FrontierPayload *frontierPayload_create();
+FrontierPayload *frontierPayload_create(const char *encoding);
 void frontierPayload_delete(FrontierPayload *pl);
 void frontierPayload_append(FrontierPayload *pl,const char *s,int len);
 int frontierPayload_finalize(FrontierPayload *pl);
