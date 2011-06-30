@@ -101,7 +101,9 @@ FRONTIER_WRITETIMEOUTSECS.  Default 5.
 forcereload - value of "short" forces an immediate cache refresh
 on all short time-to-live queries (those indicated by setReload API),
 and a value of "long"  forces an immediate refresh on all queries.
-If not present, may come from environment variable 
+If value begins with "soft", do a softer refresh request which just
+asks that the caches be re-validated and so is a bit gentler on
+the server.  If not present, may come from environment variable
 FRONTIER_FORCERELOAD.  Default "none".
 <li>
 freshkey - anything in the value is added to the URLs used for queries,
