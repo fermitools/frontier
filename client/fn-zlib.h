@@ -23,8 +23,9 @@
 #define FN_ZLIB_E_TOOBIG	-4
 
 long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size);
-int fn_gunzip(unsigned char *dest,long *dest_sizep,const unsigned char *src,long src_size);
 void fn_gzip_cleanup();
+int fn_gunzip_init();
+int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,int *dest_size,int final);
 
 
 #endif //__H__FN_ZLIB_H
