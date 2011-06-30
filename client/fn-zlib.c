@@ -111,60 +111,6 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
   return FN_ZLIB_E_OTHER;
  }
 
-// fn_gunzip is intended to be exactly like zlib's uncompress except it keeps
-//  the z_stream initialized between invocations to reduce memory alloc/free.
-// Unlike fn_gzip_str above, it returns Z_* errors instead of FN_ZLIB errors
-//  because it doesn't try to return the length in the return value: it
-//  returns the length in *dest_sizep instead.
-int fn_gunzip(unsigned char *dest,long *dest_sizep,const unsigned char *src,long src_size)
- {
-  int ret;
-
-  if(inzstream==0)
-   {
-    // open a stream and leave it open just like with deflate above
-    inzstream=frontier_mem_alloc(sizeof(*inzstream));
-    if(inzstream==0)
-      return Z_MEM_ERROR;
-    inzstream->zalloc=fn_zalloc;
-    inzstream->zfree=fn_zfree;
-    inzstream->opaque=0;
-    inzstream->next_in=Z_NULL;
-    inzstream->avail_in=0;
-    ret=inflateInit(inzstream);
-    if(ret!=Z_OK)
-     {
-      fn_incleanup();
-      return ret;
-     }
-   }
-  else
-   {
-    // reuse existing stream
-    ret=inflateReset(inzstream);
-    if(ret!=Z_OK)
-     {
-      fn_incleanup();
-      return ret;
-     }
-   }
-
-  inzstream->next_in=(Bytef *)src;
-  inzstream->avail_in=(uLongf)src_size;
-  inzstream->next_out=(Bytef *)dest;
-  inzstream->avail_out=(uLongf)*dest_sizep;
-  ret=inflate(inzstream,Z_FINISH);
-  if(ret==Z_STREAM_END)
-   {
-    *dest_sizep-=(long)inzstream->avail_out;
-    // leave stream available
-    return Z_OK;
-   }
-
-  fn_incleanup();
-  return ret;
- }
-
 int fn_gzip_str2urlenc(const char *str,int size,char **out)
  {
   int zsize;
@@ -200,5 +146,72 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
 end:
   if(abuf) frontier_mem_free(abuf);
   if(zbuf) frontier_mem_free(zbuf);
+  return ret;
+ }
+
+int fn_gunzip_init()
+ {
+  int ret=Z_OK;
+
+  if(inzstream==0)
+   {
+    // open a stream and leave it open just like with deflate above
+    inzstream=frontier_mem_alloc(sizeof(*inzstream));
+    if(inzstream==0)
+      return Z_MEM_ERROR;
+    inzstream->zalloc=fn_zalloc;
+    inzstream->zfree=fn_zfree;
+    inzstream->opaque=0;
+    inzstream->next_in=Z_NULL;
+    inzstream->avail_in=0;
+    ret=inflateInit(inzstream);
+    if(ret!=Z_OK)
+     {
+      fn_incleanup();
+      return ret;
+     }
+   }
+  else
+   {
+    // reuse existing stream
+    ret=inflateReset(inzstream);
+    if(ret!=Z_OK)
+     {
+      fn_incleanup();
+      return ret;
+     }
+   }
+
+  return ret;
+}
+
+int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,int *dest_size,int final)
+ {
+  int ret;
+  inzstream->next_in=(Bytef *)src;
+  inzstream->avail_in=(uLongf)*src_size;
+  inzstream->next_out=(Bytef *)dest;
+  inzstream->avail_out=(uLongf)*dest_size;
+  ret=inflate(inzstream,final?Z_FINISH:Z_SYNC_FLUSH);
+  *dest_size=inzstream->avail_out;
+  *src_size=inzstream->avail_in;
+  if(final)
+   {
+    if(ret==Z_STREAM_END)
+     {
+      // successful finish. leave stream available for later re-use.
+      return Z_OK;
+     }
+    if((ret==Z_BUF_ERROR)||(ret==Z_OK))
+     {
+      // not quite finished, but let caller call again
+      return Z_BUF_ERROR;
+     }
+    // unsuccessful finish, clean up stream
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"final inflate error message: %s",inzstream->msg);
+    fn_incleanup();
+   }
+  else if((ret!=Z_OK)&&(ret!=Z_BUF_ERROR)&&(inzstream->msg!=0))
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"inflate error message: %s",inzstream->msg);
   return ret;
  }
