@@ -1,5 +1,32 @@
 $Id$
 
+v2_8_2 - 30 Jun 2011 (dwd)
+ - Update the retry strategy so that when an error is not clearly a
+   server error (server errors imply that the proxy was good), try every
+   proxy with every server in turn.  Previously, non-server errors
+   would cause the strategy to do direct connections to all servers
+   after every proxy failed with just the first server.  The old
+   strategy was fine for CMS Offline where the first server is a
+   round-robin between all servers, but not good for CMS Online or
+   ATLAS where that is not the case.
+ - Make protocol error-induced reloads try "Cache-control: max-age=0"
+   before "Pragma: no-cache", because that's gentler on the servers
+   since it only asks for the modification times to be immedately
+   checked (that is, it revalidates the cache).  $FRONTIER_FORCERELOAD
+   variable still by default uses "Pragma: no-cache", but now if the
+   value begins with "soft" (that is, "softlong" or "softshort") it
+   uses the more gentle refresh.
+ - Do md5 calculations and unzipping (when needed) as the data is
+   received rather than waiting until all data is received .  This
+   gives a slight reduction in elapsed time because those calculations
+   can be interleaved with I/O.
+ - Turn low-level error messages into just debug messages when they are 
+   caught at a higher level and retried.  At the retrying level they
+   were already being printed as warning messages but the output was
+   confusing because it showed both 'error' and 'warn'.
+ - Include ServerError in the types of C++ exceptions that may be thrown.
+   Previously it would have been mapped to an UnknownError exception.
+
 v2_8_1 - 24 Feb 2011 (dwd)
  - Add small fn-fileget command line tool that can retrieve files from
    frontier servlets (release 3.28 or later) that are configured to 
