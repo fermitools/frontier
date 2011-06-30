@@ -19,6 +19,10 @@ Update the RELEASE_NOTES with everything that has changed since the last version
 <li>
 Update the version number in Makefile
 <li>
+Update client version and date in ../README and then do
+<br>
+<tt>scp ../README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
+<li>
 Commit all your changes to CVS
 <li>
 Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
@@ -56,6 +60,9 @@ new frontier_client release and give them a copy of or link to the
 <a href=http://frontier.cern.ch/dist/clientreleasenotes.txt>release notes</a>
 for the new version.
 <li>
+Send a message to Andrea.Valassi@cern.ch and Benedikt.Hegner@cern.ch about
+the new version to say why it is should be used by ATLAS.
+<li>
 Request that the new client be used as an update external package in the
 <a href=https://cmstags.cern.ch/cgi-bin/CmsTC/CmsTCLogin>CMS Tag Collector</a>.
 
@@ -71,6 +78,10 @@ These are the steps to release the frontier servlet:
 Update RELEASE_NOTES with everything that has changed since the last version
 <li>
 Update the version number in src/gov/fnal/frontier/FrontierServlet.java
+<li>
+Update servlet version and date in README and then do
+<br>
+<tt>scp README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
 <li>
 Commit all your changes to CVS
 <li>
