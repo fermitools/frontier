@@ -1,0 +1,100 @@
+                                 R E A D M E
+
+
+Product Name:           Frontier
+Product Version:        servlet: 3.29 		client: 2.8.2
+Date (yyyy/mm/dd):      servlet: 2011/05/17	client: 2011/06/30
+
+------------------------------------------------------------------------
+
+                                   ORIGIN
+                                   ======
+Authors
+
+    Dave Dykstra
+    Fermi National Accelerator Laboratory - Mail Station #120
+    P.O Box 500
+    Batavia, IL 60510
+    Internet: frontier-support@fnal.gov
+
+Fermilab Standard Government Sponsorship Notice
+
+    This work was performed at Fermi National Accelerator Laboratory,
+    which is operated by Universities Research Association, Inc., under
+    contract DE-AC02-76CHO3000 with the U.S. Department of Energy.
+
+Acknowledgements
+
+    There were others at Fermilab who were authors before Dave took 
+    ownership in June 2006.
+
+------------------------------------------------------------------------
+
+			     TERMS AND CONDITIONS
+			     ====================
+
+This software has been made freely available with a request for
+collaborative input subject to standard Fermitools Terms and Conditions.
+Small parts of it come from others outside of Fermilab and are covered
+by other open source licenses (GNU GPL, python, and BSD).  Details are
+in the COPYING file.
+
+------------------------------------------------------------------------
+
+                             PRODUCT DESCRIPTION
+                             ===================
+
+The Frontier system distributes data from central databases that are
+read by many client systems around the world. The name comes from "N
+Tier" where N is any number and tiers are layers of locations of
+distribution. The central database is located at Tier 0, which
+distributes data to to all the Tier 1, Tier 2, and Tier 3 sites around
+the world. Within each site the Frontier system also distributes the
+data to all the worker nodes (typically hundreds or thousands) that
+need to use the data. The protocol is http-based and uses a RESTful
+architecture which is excellent for caching and scales well. The
+Frontier system uses the standard web caching tool squid to cache the
+http objects at every site. 
+
+Documentation
+-------------
+
+See the home page http://frontier.cern.ch
+
+Required Software
+-----------------
+java, tomcat, and squid
+
+
+------------------------------------------------------------------------
+
+				   SUPPORT
+				   =======
+
+Help with the installation or use of Frontier is available by sending 
+mail to
+
+			frontier-support@fnal.gov
+
+which is auto-forwarded to the group in charge of Frontier support at 
+Fermilab.
+
+This software is furnished by Fermilab on an "as is" basis as a service 
+to the wider community with the goal of stimulating collaborative use 
+and further development.
+
+Provision of the software implies no commitment of support by Fermilab.
+
+The Fermilab Computing Division is open to discussing other levels of 
+support for use of the software with responsible and committed users and 
+collaborators.
+
+Use of the software in experiments at Fermilab will be assured of a 
+level of support as agreed to through the standard Memorandum Of 
+Understanding process.
+
+Users may send mail to the mail address given above, with the 
+expectation that it will be read and noted.
+
+
+------------------------------------------------------------------------
