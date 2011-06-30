@@ -19,13 +19,10 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include "fn-md5.h"
 #include "fn-endian.h"
  
 union u_Buf32 { int v; char b[4]; };
-
-typedef unsigned char u8;
-typedef unsigned int u32;
-typedef unsigned long long u64;
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #warning Big endian order
@@ -66,11 +63,6 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 #endif /*__BYTE_ORDER*/
 
  
-#define MD5_DIGEST_SIZE		16
-#define MD5_HMAC_BLOCK_SIZE	64
-#define MD5_BLOCK_WORDS		16
-#define MD5_HASH_WORDS		4
-
 #define F1(x, y, z)	(z ^ (x & (y ^ z)))
 #define F2(x, y, z)	F1(z, x, y)
 #define F3(x, y, z)	(x ^ y ^ z)
@@ -78,12 +70,6 @@ static inline void cpu_to_le32_array(u32 *buf, unsigned int words)
 
 #define MD5STEP(f, w, x, y, z, in, s) \
 	(w += f(x, y, z) + in, w = (w<<s | w>>(32-s)) + x)
-
-struct md5_ctx {
-	u32 hash[MD5_HASH_WORDS];
-	u32 block[MD5_BLOCK_WORDS];
-	u64 byte_count;
-};
 
 static void md5_transform(u32 *hash, u32 const *in)
 {
@@ -174,9 +160,6 @@ static inline void md5_transform_helper(struct md5_ctx *ctx)
 	le32_to_cpu_array(ctx->block, sizeof(ctx->block) / sizeof(u32));
 	md5_transform(ctx->hash, ctx->block);
 }
-
-
-size_t frontier_md5_get_ctx_size(){return sizeof(struct md5_ctx);}
 
 
 void frontier_md5_init(void *ctx)
