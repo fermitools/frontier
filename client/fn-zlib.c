@@ -211,6 +211,11 @@ int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"final inflate error message: %s",inzstream->msg);
     fn_incleanup();
    }
+  else if(ret==Z_STREAM_END)
+   {
+    // input stream is finished but caller hasn't asked to finish, that's fine
+    return Z_OK;
+   }
   else if((ret!=Z_OK)&&(ret!=Z_BUF_ERROR)&&(inzstream->msg!=0))
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"inflate error message: %s",inzstream->msg);
   return ret;
