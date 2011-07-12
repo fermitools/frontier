@@ -1,5 +1,10 @@
 $Id$
 
+v2_8_3 - 12 Jul 2011 (dwd)
+ - Fix bug that caused 'unzip unknown error' under relatively rare 
+   conditions.  The error code was actually reporting a normal
+   condition, it just wasn't being recognized as such.
+
 v2_8_2 - 30 Jun 2011 (dwd)
  - Update the retry strategy so that when an error is not clearly a
    server error (server errors imply that the proxy was good), try every
