@@ -607,6 +607,8 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   int i;
   
   if(!c) return;
+
+  frontierHttpClnt_drop(c);
   
   for(i=0;i<(sizeof(c->server)/sizeof(c->server[0])); i++)
     frontier_DeleteUrlInfo(c->server[i]);
