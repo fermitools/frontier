@@ -1,5 +1,14 @@
 $Id$
 
+v2_8_4 - 21 Jul 2011 (dwd)
+ - Fix bug that caused outgoing http connections to remain open after
+   the frontier client object was deleted, unless the last query
+   happened to have been a large one (>16kbyte).  This bug has existed
+   for 4-1/2 years, ever since persistent connections were implemented.
+   Most production code only uses one frontier client object so that's
+   probably why it wasn't noticed.  The problem was noticed in a CMS
+   tool that created and deleted the frontier object many times.
+
 v2_8_3 - 12 Jul 2011 (dwd)
  - Fix bug that caused 'unzip unknown error' under relatively rare 
    conditions.  The error code was actually reporting a normal
