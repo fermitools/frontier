@@ -146,6 +146,12 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   // put all the buffered pieces together into one
   fpl->blob_size=fpl->md->total;
   fpl->blob=(unsigned char*)frontier_mem_alloc(fpl->blob_size);
+  if(!fpl->blob)
+   {
+    FRONTIER_MSG(FRONTIER_EMEM);
+    fpl->error=FRONTIER_EMEM;
+    goto errcleanup;
+   }
   mb=fpl->md->firstbuf;
   p=fpl->blob;
   while(mb!=0)
@@ -212,7 +218,12 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   return FRONTIER_OK;
 
 errcleanup:
-  if (fpl->blob)
+  if(fpl->md)
+   {
+    frontierMemData_delete(fpl->md);
+    fpl->md=0;
+   }
+  if(fpl->blob)
    {
     frontier_mem_free(fpl->blob);
     fpl->blob=0;
