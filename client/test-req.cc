@@ -223,6 +223,8 @@ int do_main(int argc, char **argv)
 	      }
 	      else if (ad.getRawStrS() == 0)
 		std::cout<<"''"; 
+	      else if (ad.getRawStrS() > 1000)
+		std::cout<<'('<<ad.getRawStrS()<<" byte blob)"; 
 	      else {
 		vs=ad.getString(); 
 		str_escape_quota(vs);
