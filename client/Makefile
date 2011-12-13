@@ -13,7 +13,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	8.4
+FN_VER_MINOR	=	8.5
 COMPILER_TAG    =       gcc_4.1.2
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src
@@ -47,14 +47,16 @@ DYLIBTYPE := $(shell if [ -f /usr/lib/libc.dylib ]; then echo dylib; else echo s
 
 # GCC settings
 DEBUG_OPTIM     =       -g -O2
+CFLAGS		=	$(DEBUG_OPTIM)
+CXXFLAGS	=	$(DEBUG_OPTIM)
 FNAPI_VERSION	=	$(FN_VER_MAJOR).$(FN_VER_MINOR)
 CC		=	gcc
 CXX		=	c++
-CXXOPT_LIB	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
-CXXOPT_APP	=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
-COPT		=	-Wall $(DEBUG_OPTIM) -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO         =       c++ -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
-LINK_DYLIB	=	c++ -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
+CXXOPT_LIB	=	-Wall $(CXXFLAGS) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
+CXXOPT_APP	=	-Wall $(CXXFLAGS) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
+COPT		=	-Wall $(CFLAGS) -DFRONTIER_DEBUG -fPIC -DPIC
+LINK_SO         =       c++ $(CXXFLAGS) -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
+LINK_DYLIB	=	c++ $(CXXFLAGS) -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
 INC		=	${EXPAT_INC} ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
