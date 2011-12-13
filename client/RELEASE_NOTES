@@ -1,5 +1,13 @@
 $Id$
 
+v2_8_5 - 13 Dec 2011 (dwd)
+ - Fix bug that caused a segmentation fault when allocating the large
+   piece of memory for the query response failed.
+ - Fix bug where only the first channel accessed after a process forked
+   would close the socket connection, causing responses to get mixed up
+   between different processes.  Now it will close & reopen all channels
+   accessed. 
+
 v2_8_4 - 21 Jul 2011 (dwd)
  - Fix bug that caused outgoing http connections to remain open after
    the frontier client object was deleted, unless the last query
