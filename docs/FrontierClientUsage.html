@@ -152,7 +152,11 @@ debug - log errors, warnings, and verbose debug messages
 <li>
 </ul>
 <li>
-FRONTIER_LOG_FILE - filename to write log messages to instead of stdout
+FRONTIER_LOG_FILE - filename to write log messages to instead of stdout.
+If the filename begins with "+", and $FRONTIER_LOG_LEVEL is set to warning
+or debug, the "+" is removed from the log file name and warning messages
+get sent to stdout in addition to the log file.  If there's a '%P' in
+the filename, it is replaced with the current process id.
 </ul>
 
 <p>
