@@ -22,6 +22,9 @@ Update the version number in Makefile
 Update client version and date in ../README and then do
 <br>
 <tt>scp ../README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
+<br>
+(It will be easiest if you first ssh from the same host in another window
+to dbfrontier@frontier.cern.ch, because of ssh ControlPath sharing)
 <li>
 Commit all your changes to CVS
 <li>
@@ -43,7 +46,7 @@ cvsuser@cdcvs.fnal.gov:/cvs/cd do
 <tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
 version numbers for the client sources and binary
 <li>
-<tt>scp -o PubkeyAuthentication=no tmp/*src* frontier.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
+<tt>scp tmp/*src* lxvoadm.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
 <!--
 <li>
 Fill out 
