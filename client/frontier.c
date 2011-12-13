@@ -228,6 +228,7 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   bzero(chn,sizeof(Channel));
 
   chn->seqnum=++chan_seqnum;
+  chn->pid=frontier_pid;
   chn->cfg=config;
   if(!chn->cfg)
    {
@@ -636,6 +637,11 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"process id changed from %d",(int)oldpid);
      // re-set id to use new pid
      set_frontier_id();
+   }
+  if(pid!=chn->pid)
+   {
+     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"dropping any chan %d persisted connection because process id changed",chn->seqnum);
+     chn->pid=pid;
      // drop the socket because it is shared between parent and child
      frontierHttpClnt_drop(chn->ht_clnt);
    }
