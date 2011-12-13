@@ -114,6 +114,7 @@ struct s_Channel
   FrontierConfig *cfg;
   FrontierResponse *resp;
   FrontierHttpClnt *ht_clnt;
+  pid_t pid;
   int http_resp_code;
   int reload; // Current reload flag
   int user_reload; // reload flag desired by user
