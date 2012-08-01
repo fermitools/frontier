@@ -688,6 +688,12 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     frontier_turnErrorsIntoDebugs(0);
 
     snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
+    if(ret==FRONTIER_EMEM)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,err_last_buf);
+      break;
+     }
+
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
     
     /* If error code is FRONTIER_ESERVER, the problem was definitely
