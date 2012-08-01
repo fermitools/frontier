@@ -1,5 +1,10 @@
 $Id$
 
+ - If a memory allocation failure happens while retrieving data,
+   return immediately instead of trying all proxies and servers.
+ - Inserted "mem_alloc: failed" messages in several places that
+   handled malloc failures but didn't set an error message.
+
 v2_8_5 - 13 Dec 2011 (dwd)
  - Fix bug that caused a segmentation fault when allocating the large
    piece of memory for the query response failed.
