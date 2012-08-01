@@ -53,6 +53,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   if(!cfg)
    {
     *errorCode=FRONTIER_EMEM;
+    FRONTIER_MSG(*errorCode);
     return 0;
    }
   bzero(cfg,sizeof(FrontierConfig));
@@ -398,7 +399,10 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Parsing complex server spec %s",server_spec);
 
   if(str==NULL)
+   {
+    FRONTIER_MSG(FRONTIER_EMEM);
     return FRONTIER_EMEM;
+   }
 
   if((keyp=strstr(server_spec,"(logicalserverurl="))!=NULL)
    {

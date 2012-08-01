@@ -143,6 +143,7 @@ FrontierRSBlob *frontierRSBlob_open(FrontierChannel u_channel,FrontierRSBlob *ol
   if(!frs)
    {
     *ec=FRONTIER_EMEM;
+    FRONTIER_MSG(*ec);
     if(resp)frontierResponse_delete(resp);
     return frs;
    }

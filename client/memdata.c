@@ -200,7 +200,11 @@ static int frontierMemData_append(FrontierMemData *md,
 	 }
 	// else spaceleft2 must be zero, allocate another membuf
         mb=frontierMemData_allocbuffer(md);
-        if(!mb) return FRONTIER_EMEM;
+        if(!mb)
+	 {
+	  FRONTIER_MSG(FRONTIER_EMEM);
+	  return FRONTIER_EMEM;
+	 }
         p2=((unsigned char *)mb)+sizeof(*mb);
         spaceleft2=MEMBUF_SIZE;
        }
@@ -220,6 +224,7 @@ static int frontierMemData_append(FrontierMemData *md,
 	if(!mb)
 	 {
 	 md->error=FRONTIER_EMEM;
+	 FRONTIER_MSG(md->error);
 	 return md->error;
 	 }
 	p=((unsigned char *)mb)+sizeof(*mb);
