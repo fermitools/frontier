@@ -120,6 +120,7 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror);
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c);
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c);
 char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c);
+char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c);
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num);
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c);
 
