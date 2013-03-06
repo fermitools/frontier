@@ -22,6 +22,8 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "pacparser.h"
+#include <http/fn-htclient.h>
 #include "frontier_client/frontier_config.h"
 #include "frontier_client/frontier_log.h"
 #include "frontier_client/frontier_error.h"
@@ -41,6 +43,8 @@ static char *default_physical_servers=0;
 
 void *(*frontier_mem_alloc)(size_t size);
 void (*frontier_mem_free)(void *ptr);
+
+int frontier_pacparser_init(void);
 
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode)
  {
@@ -215,6 +219,10 @@ void frontierConfig_delete(FrontierConfig *cfg)
   for(i=0;i<cfg->proxy_num;i++)
    {
     frontier_mem_free(cfg->proxy[i]);
+   }
+  for(i=0;i<cfg->proxyconfig_num;i++)
+   {
+    frontier_mem_free(cfg->proxyconfig[i]);
    }
   
   if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
@@ -465,6 +473,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
 	  ret=frontierConfig_addServer(cfg,valp);
 	else if(strcmp(keyp,"proxyurl")==0)
 	  ret=frontierConfig_addProxy(cfg,valp,0);
+	else if(strcmp(keyp,"proxyconfigurl")==0)
+	  ret=frontierConfig_addProxyConfig(cfg,valp);
 	else if(strcmp(keyp,"backupproxyurl")==0)
 	 {
 	  /* implies failovertoserver=no */
@@ -515,6 +525,10 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
     goto cleanup;
    }
 
+  ret=frontierConfig_doProxyConfig(cfg);
+  if(ret!=FRONTIER_OK)
+    goto cleanup;
+
   ret=FRONTIER_OK;
 
 cleanup:
@@ -531,13 +545,10 @@ int frontierConfig_addServer(FrontierConfig *cfg,const char* server_url)
 
   if(!server_url)
     return FRONTIER_OK;
-  else
+  if(!*server_url)
    {
-    if(!*server_url)
-     {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty server url.");
-      return FRONTIER_OK;
-     }
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty server url.");
+    return FRONTIER_OK;
    }
   
   logical_server=frontierConfig_getDefaultLogicalServer();
@@ -571,13 +582,10 @@ int frontierConfig_addProxy(FrontierConfig *cfg,const char* proxy_url,int backup
 
   if(!proxy_url)
     return FRONTIER_OK;
-  else
+  if(!*proxy_url)
    {
-    if(!*proxy_url)
-     {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty proxy url.");    
-      return FRONTIER_OK;
-     }
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty proxy url.");    
+    return FRONTIER_OK;
    }
 
   /* Ready to insert new proxy, make sure there's room */
@@ -611,6 +619,374 @@ int frontierConfig_addProxy(FrontierConfig *cfg,const char* proxy_url,int backup
   cfg->proxy_num++;
   return FRONTIER_OK;
  } 
+
+int frontierConfig_addProxyConfig(FrontierConfig *cfg,const char* proxyconfig_url)
+ {
+  if(!proxyconfig_url)
+    return FRONTIER_OK;
+  if(!*proxyconfig_url)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Empty proxy config url.");    
+    return FRONTIER_OK;
+   }
+
+  /* Ready to insert new proxy config, make sure there's room */
+  if(cfg->proxyconfig_num>=FRONTIER_MAX_PROXYCONFIGN)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+      "Reached limit of %d frontier proxyconfig urls",FRONTIER_MAX_PROXYCONFIGN);
+    return FRONTIER_ECFG;
+   }
+
+  /* Everything ok, insert new proxyconfig url. */
+  if(strcmp(proxyconfig_url,"auto")==0)
+    proxyconfig_url="http://wpad/wpad.dat";
+  cfg->proxyconfig[cfg->proxyconfig_num]=frontier_str_copy(proxyconfig_url);
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+        "Inserted proxy config %d <%s>",cfg->proxyconfig_num,
+		cfg->proxyconfig[cfg->proxyconfig_num]);
+  cfg->proxyconfig_num++;
+  return FRONTIER_OK;
+ } 
+
+#define MAXPACSTRINGSIZE (16*4096)
+#define MAXPPERRORBUFSIZE 1024
+#define PPERRORMSGPREFIX " (pacparser message: "
+
+struct pp_errcontext {
+    char buf[MAXPPERRORBUFSIZE];
+    int len;
+};
+
+static int fn_pp_errorvprint(void *context,const char *fmt,va_list ap)
+ {
+  struct pp_errcontext *cx=context;
+  int start=sizeof(PPERRORMSGPREFIX)-1+cx->len;
+  int left=MAXPPERRORBUFSIZE-start-2;
+  int ret;
+  char *p;
+  
+  ret=vsnprintf(&cx->buf[start],left,fmt,ap);
+
+  // replace newlines with blank
+  for(p=&cx->buf[start];*p;p++)
+    if(*p=='\n')
+      *p=' ';
+
+  if(strncmp(fmt,"WARNING: ",9)==0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+    		&cx->buf[start+9]);
+    return ret;
+   }
+
+  if(strncmp(fmt,"DEBUG: ",7)==0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+    		&cx->buf[start+7]);
+    return ret;
+   }
+
+  if(ret>=left)
+    cx->len+=left-1;
+  else
+    cx->len+=ret;
+
+  return(ret);
+ }
+
+static char *fn_pp_getErrorMsg(struct pp_errcontext *cx)
+ {
+  if(cx->len==0)
+    return "";
+  memcpy(&cx->buf[0],PPERRORMSGPREFIX,sizeof(PPERRORMSGPREFIX)-1);
+  cx->buf[cx->len+sizeof(PPERRORMSGPREFIX)-1]=')';
+  cx->buf[cx->len+sizeof(PPERRORMSGPREFIX)]='\0';
+  return(&cx->buf[0]);
+ }
+
+int frontierConfig_doProxyConfig(FrontierConfig *cfg)
+ {
+  FrontierHttpClnt *clnt;
+  FrontierUrlInfo *fui=0;
+  int curproxyconfig;
+  char *proxyconfig_url;
+  int n,nbytes,ret=FRONTIER_OK;
+  char err_last_buf[MAXPPERRORBUFSIZE];
+  struct pp_errcontext err_context;
+  char *pacstring=0;
+  char *ipaddr,*proxylist;
+  char *p,*endp,endc;
+  int gotdirect=0;
+
+  if(cfg->proxyconfig_num<=0)
+    return FRONTIER_OK;
+
+  clnt=frontierHttpClnt_create(&ret);
+  if(ret!=FRONTIER_OK)
+    return ret;
+  if(!clnt)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+      "error creating http client object",0);
+    return FRONTIER_ECFG;
+   }
+  frontierHttpClnt_setConnectTimeoutSecs(clnt,
+  		frontierConfig_getConnectTimeoutSecs(cfg));
+  frontierHttpClnt_setReadTimeoutSecs(clnt,
+  		frontierConfig_getReadTimeoutSecs(cfg));
+  frontierHttpClnt_setWriteTimeoutSecs(clnt,
+  		frontierConfig_getWriteTimeoutSecs(cfg));
+  frontierHttpClnt_setFrontierId(clnt,FNAPI_VERSION);
+
+  for(curproxyconfig=0;curproxyconfig<cfg->proxyconfig_num;curproxyconfig++)
+   {
+    proxyconfig_url=cfg->proxyconfig[curproxyconfig];
+
+    if(strncmp(proxyconfig_url,"http://",7)!=0)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,
+	"proxyconfigurl %s does not begin with 'http://' or 'auto'",proxyconfig_url);
+      ret=FRONTIER_ECFG;
+      goto cleanup;
+     }
+
+    // check for something beyond a server name because otherwise 
+    //  frontierHttpClnt_addServer will give wrong message about missing servlet
+    if(strchr(proxyconfig_url+7,'/')==0)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,
+	"config error: proxyconfigurl %s missing path on server",proxyconfig_url);
+      ret=FRONTIER_ECFG;
+      goto cleanup;
+     }
+
+    ret=frontierHttpClnt_addServer(clnt,proxyconfig_url);
+    if(ret!=FRONTIER_OK) goto cleanup;
+   }
+
+  pacstring=frontier_mem_alloc(MAXPACSTRINGSIZE+1);
+  if(!pacstring)
+   {
+    ret=FRONTIER_EMEM;
+    goto cleanup;
+   }
+
+  // Messages below have either the http client servername or the current
+  //  proxyconfig_url.  In general, warning messages should have the
+  //  servername because that includes an IP address, and warning messages
+  //  here are about server errors.  Error messages should show the
+  //  proxyconfig_url because that's more relevant to the user.
+
+  curproxyconfig=0;
+  while(1)
+   {
+    proxyconfig_url=cfg->proxyconfig[curproxyconfig];
+
+    frontier_turnErrorsIntoDebugs(1);
+
+    ret=frontierHttpClnt_open(clnt);
+    if(ret!=FRONTIER_OK)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+	 "unable to connect to proxyconfig server %s: %s",
+		frontierHttpClnt_curservername(clnt), frontier_getErrorMsg());
+      goto trynext;
+     }
+
+    ret=frontierHttpClnt_get(clnt,"");
+    if(ret!=FRONTIER_OK)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+	 "unable to get proxyconfig from %s: %s",
+	 	frontierHttpClnt_curservername(clnt), frontier_getErrorMsg());
+      goto trynext;
+     }
+
+    nbytes=0;
+    while((n=frontierHttpClnt_read(clnt,pacstring+nbytes,MAXPACSTRINGSIZE-nbytes))>0)
+     {
+      nbytes+=n;
+      if(nbytes==MAXPACSTRINGSIZE)
+       {
+	frontier_turnErrorsIntoDebugs(0);
+	frontier_setErrorMsg(__FILE__,__LINE__,
+	   "config error: downloaded proxyconfig file from %s larger than limit of %d bytes",
+	   	proxyconfig_url,MAXPACSTRINGSIZE);
+	ret=FRONTIER_ECFG;
+	goto cleanup;
+       }
+    }
+    if(n<0)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+	 "problem reading proxyconfig from %s: %s",
+	    frontierHttpClnt_curservername(clnt), frontier_getErrorMsg());
+      goto trynext;
+     }
+    pacstring[nbytes]='\0';
+
+    frontier_turnErrorsIntoDebugs(0);
+
+    // successfully read the proxy autoconfig file
+    break;
+
+trynext:
+    strncpy(err_last_buf,frontier_getErrorMsg(),sizeof(err_last_buf)-1);
+    err_last_buf[sizeof(err_last_buf)-1]='\0';
+    
+    frontierHttpClnt_close(clnt);
+    frontier_turnErrorsIntoDebugs(0);
+   
+    if(frontierHttpClnt_nextserver(clnt,1)<0)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,
+	"config error: failed to read a proxyconfig url.  Last url was %s and last error was: %s",
+		proxyconfig_url,err_last_buf);
+      goto cleanup;
+     }
+
+    curproxyconfig++;
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+      "Trying next proxyconfig server %s",
+	 	frontierHttpClnt_curservername(clnt));
+   }
+
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+    "proxyconfig file from %s is %d bytes long",
+	 	frontierHttpClnt_curservername(clnt),nbytes);
+
+  ret=frontier_pacparser_init();
+  if(ret!=FRONTIER_OK)
+    goto cleanup;
+
+  err_context.len=0;
+  err_context.buf[0]='\0';
+  pacparser_seterrorvprinter(&err_context,&fn_pp_errorvprint);
+
+  if(!pacparser_init())
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+       "config error: cannot initialize pacparser%s",fn_pp_getErrorMsg(&err_context));
+    ret=FRONTIER_ECFG;
+    goto cleanup;
+   }
+
+  if((ipaddr=frontierHttpClnt_myipaddr(clnt))==NULL)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+       "config error: error determining my IP address for proxyconfig server%s",
+	 	frontierHttpClnt_curservername(clnt),fn_pp_getErrorMsg(&err_context));
+    ret=FRONTIER_ECFG;
+    goto cleanup;
+   }
+
+  pacparser_setmyip(ipaddr);
+
+  if(!pacparser_parse_pac_string(pacstring))
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+       "config error: failure parsing %d byte proxyconfig from %s%s",
+       		nbytes,proxyconfig_url,fn_pp_getErrorMsg(&err_context));
+    ret=FRONTIER_ECFG;
+    goto cleanup;
+   }
+
+  if(cfg->server_num<1)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+       "config error: cannot process proxyconfigurl without a serverurl%s");
+    ret=FRONTIER_ECFG;
+    goto cleanup;
+   }
+
+  // need to parse the host out of the server URL, and in addition to
+  //   other things, frontier_CreateUrlInfo happens to do that
+  fui=frontier_CreateUrlInfo(cfg->server[0],&ret);
+  if(!fui)goto cleanup;
+  proxylist=pacparser_find_proxy(cfg->server[0],fui->host);
+
+  if(proxylist==NULL)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,
+       "config error: proxyconfigurl %s FindProxyForURL(\"%s\",\"%s\") returned no match%s",
+	    proxyconfig_url,cfg->server[0],fui->host,fn_pp_getErrorMsg(&err_context));
+    ret=FRONTIER_ECFG;
+    goto cleanup;
+   }
+
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+    "FindProxyForURL(\"%s\",\"%s\") returned \"%s\"",cfg->server[0],fui->host,proxylist);
+
+  // Now parse the returned proxy list
+  p=proxylist;
+  endc=*p;
+  while(endc!='\0')
+   {
+    while(*p==' ')
+      p++;
+    for(endp=p;*endp&&(*endp!=';')&&(*endp!=' ');endp++)
+      ;
+    endc=*endp;
+    *endp='\0';
+    if(strcmp(p,"PROXY")==0)
+     {
+      if((endc=='\0')||(endc==';'))
+        p=endp;
+      else
+       {
+	p=endp+1;
+	while(*p==' ')
+	  p++;
+	for(endp=p;*endp&&(*endp!=';')&&(*endp!=' ');endp++)
+	  ;
+	endc=*endp;
+	*endp='\0';
+       }
+      if(*p)
+        frontierConfig_addProxy(cfg,p,0);
+      else
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,
+          "config error: proxyconfigurl %s FindProxyForURL(\"%s\",\"%s\") returned \"PROXY\" without a proxy",
+	  	proxyconfig_url,cfg->server[0],fui->host);
+	ret=FRONTIER_ECFG;
+	goto cleanup;
+       }
+     }
+    else if(strcmp(p,"DIRECT")==0)
+     {
+      gotdirect=1;
+      break;
+     }
+    else if(*p)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,
+        "config error: proxyconfigurl %s FindProxyForURL(\"%s\",\"%s\") returned unrecognized type %s, expect PROXY or DIRECT",
+		proxyconfig_url,cfg->server[0],fui->host,p);
+      ret=FRONTIER_ECFG;
+      goto cleanup;
+     }
+    p=endp+1;
+   }
+
+  if(!gotdirect)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+      "no DIRECT found in proxyconfig list, setting failovertoserver=no");
+    frontierConfig_setFailoverToServer(cfg,0);
+   }
+
+  ret=FRONTIER_OK;
+
+cleanup:
+  if(pacstring) frontier_mem_free(pacstring);
+  pacparser_cleanup();
+  frontierHttpClnt_close(clnt);
+  frontierHttpClnt_delete(clnt);
+  if(fui) frontier_DeleteUrlInfo(fui);
+  return ret;
+ }
 
 void frontierConfig_setBalancedProxies(FrontierConfig *cfg)
  {

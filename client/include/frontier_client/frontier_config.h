@@ -16,6 +16,7 @@
 
 #define FRONTIER_MAX_SERVERN	16	// Max number of servers in FRONTIER_SERVER env. variable
 #define FRONTIER_MAX_PROXYN	24	// Max number of proxies in FRONTIER_PROXY env. variable
+#define FRONTIER_MAX_PROXYCONFIGN 8	// Max number of proxyconfigurl
 
 #define FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE 0
 
@@ -34,10 +35,13 @@ struct s_FrontierConfig
  {
   char *server[FRONTIER_MAX_SERVERN];
   char *proxy[FRONTIER_MAX_PROXYN];
+  char *proxyconfig[FRONTIER_MAX_PROXYCONFIGN];
   int server_num;
   int proxy_num;
+  int proxyconfig_num;
   int server_cur;
   int proxy_cur;
+  int proxyconfig_cur;
   int servers_balanced;
   int proxies_balanced;
   int num_backupproxies;
@@ -59,6 +63,8 @@ int frontierConfig_nextProxy(FrontierConfig *cfg);
 void frontierConfig_delete(FrontierConfig *cfg);
 int frontierConfig_addServer(FrontierConfig *cfg, const char* server_url);
 int frontierConfig_addProxy(FrontierConfig *cfg, const char* proxy_url, int backup);
+int frontierConfig_addProxyConfig(FrontierConfig *cfg, const char* proxyconfig_url);
+int frontierConfig_doProxyConfig(FrontierConfig *cfg);
 void frontierConfig_setBalancedProxies(FrontierConfig *cfg);
 int frontierConfig_getNumBalancedProxies(FrontierConfig *cfg);
 void frontierConfig_setBalancedServers(FrontierConfig *cfg);
