@@ -14,7 +14,6 @@
  */
 #include "frontier_client/frontier_log.h"
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -64,10 +63,9 @@ int frontier_log_init()
   return 0;
  }
 
-void frontier_log(int level,const char *file,int line,const char *fmt,...)
+void frontier_vlog(int level,const char *file,int line,const char *fmt,va_list ap)
  {
   int ret;
-  va_list ap;
   char log_msg[LOG_BUF_SIZE];
 
   if(level<frontier_log_level) return;
@@ -77,9 +75,7 @@ void frontier_log(int level,const char *file,int line,const char *fmt,...)
   
   ret=snprintf(log_msg,LOG_BUF_SIZE-1,"%s [%s:%d]: ",log_desc[level],file,line);
   
-  va_start(ap,fmt);
   ret+=vsnprintf(log_msg+ret,LOG_BUF_SIZE-ret-1,fmt,ap);
-  va_end(ap);
 
   if(ret>LOG_BUF_SIZE-2)
     ret=LOG_BUF_SIZE-2;
@@ -99,6 +95,14 @@ void frontier_log(int level,const char *file,int line,const char *fmt,...)
     if(log_fd<0) return;
    }
   write(log_fd,log_msg,ret+1);
+ }
+
+void frontier_log(int level,const char *file,int line,const char *fmt,...)
+ {
+  va_list ap;
+  va_start(ap,fmt);
+  frontier_vlog(level,file,line,fmt,ap);
+  va_end(ap);
  }
 
 void frontier_log_close()
