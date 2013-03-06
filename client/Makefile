@@ -42,6 +42,13 @@ else
   OPENSSL_INC     =   -I${OPENSSL_DIR}/include
 endif
 
+# Don't need PACPARSER_LD_FLAGS because the library is loaded with dlopen
+ifndef PACPARSER_DIR
+  PACPARSER_INC     =
+else
+  PACPARSER_INC     =   -I${PACPARSER_DIR}/include
+endif
+
 # Mac OSX uses "dylib" instead of "so" for shared dynamic libraries
 DYLIBTYPE := $(shell if [ -f /usr/lib/libc.dylib ]; then echo dylib; else echo so; fi)
 
@@ -59,12 +66,12 @@ LINK_SO         =       c++ $(CXXFLAGS) -shared -o libfrontier_client.so.$(FN_VE
 LINK_DYLIB	=	c++ $(CXXFLAGS) -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
-INC		=	${EXPAT_INC} ${OPENSSL_INC} ${ZLIB_INC} -I./include -I.
+INC		=	${EXPAT_INC} ${OPENSSL_INC} ${PACPARSER_INC} ${ZLIB_INC} -I./include -I.
 LIBDIR		=
-LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto ${ZLIB_LD_FLAGS} -lz 
+LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto -L. ${ZLIB_LD_FLAGS} -lz 
 
 OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
-                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
+                        frontier_log.o frontier_error.o frontier_config.o fn-mem.o pacparser-dlopen.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h fn-md5.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
 BINAPP		=	fn-req fn-fileget
@@ -195,11 +202,14 @@ fn-mem.o: fn-mem.c $(HDR)
 frontier.o: frontier.c $(HDR) fn-zlib.h
 	$(CC) -DFNAPI_VERSION="\"$(FNAPI_VERSION)\"" $(COPT) $(INC) -c frontier.c
 
-response.o: response.c $(HDR)
-	$(CC) $(COPT) $(INC) -c response.c
+pacparser-dlopen.o: pacparser-dlopen.c $(HDR)
+	$(CC) $(COPT) $(INC) -c pacparser-dlopen.c
 
 payload.o: payload.c $(HDR)
 	$(CC) $(COPT) $(INC) -c payload.c
+
+response.o: response.c $(HDR)
+	$(CC) $(COPT) $(INC) -c response.c
 
 rs-bin.o: rs-bin.c $(HDR)
 	$(CC) $(COPT) $(INC) -c rs-bin.c
@@ -214,7 +224,7 @@ frontier_log.o: frontier_log.c include/frontier_client/frontier_log.h
 	$(CC) $(COPT) $(INC) -c frontier_log.c
 
 frontier_config.o: frontier_config.c $(HDR)
-	$(CC) $(COPT) $(INC) -c frontier_config.c
+	$(CC) -DFNAPI_VERSION="\"$(FNAPI_VERSION)\"" $(COPT) $(INC) -c frontier_config.c
 
 main.o: main.c $(HDR)
 	$(CC) $(COPT) $(INC) -c main.c
