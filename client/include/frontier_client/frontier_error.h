@@ -16,6 +16,8 @@
 #ifndef FRONTIER_ERROR_H
 #define FRONTIER_ERROR_H
 
+#include "frontier_log.h"
+
 #define FRONTIER_OK		0
 #define FRONTIER_EIARG		-1	/*Invalid argument passed*/
 #define FRONTIER_EMEM		-2	/*mem_alloc failed*/
@@ -26,11 +28,11 @@
 #define FRONTIER_EPROTO		-7	/*protocol level error (e.g. wrong response)*/
 #define FRONTIER_ESERVER	-8	/*server error (may be cached for short time)*/
 
+void frontier_vsetErrorMsg(const char *file, int line,const char *fmt,va_list ap);
 void frontier_setErrorMsg(const char *file, int line,const char *fmt,...);
 const char *frontier_get_err_desc(int err_num);
 const char *frontier_getErrorMsg();
 void frontier_turnErrorsIntoDebugs(int value);
-void frontier_log(int level,const char *file,int line,const char *fmt,...);
 
 #define FRONTIER_MSG(e) do{frontier_setErrorMsg(__FILE__,__LINE__,"error %d: %s",(e),frontier_get_err_desc(e));}while(0)
 
