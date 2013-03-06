@@ -315,11 +315,11 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   
   if(c->using_proxy)
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s %s/%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,url,c->url_suffix,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s %s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,*url?"/":"",url,c->url_suffix,fui_server->host);
    }
   else
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s /%s/%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,url,c->url_suffix,fui_server->host);
+    len=snprintf(buf,FN_REQ_BUF,"%s /%s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,*url?"/":"",url,c->url_suffix,fui_server->host);
    }
   if(len>=FN_REQ_BUF)
    {
@@ -730,7 +730,7 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
   FrontierUrlInfo *fui=c->proxy[c->cur_proxy];
   if(c->socket!=-1)
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after proxy error\n");
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after proxy error");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
@@ -791,7 +791,7 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
   FrontierUrlInfo *fui=c->server[c->cur_server];
   if(c->socket!=-1)
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after server error\n");
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after server error");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
@@ -885,6 +885,20 @@ char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
   if (c->cur_server<c->total_server)
     return c->server[c->cur_server]->path;
   return "";
+ }
+
+char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
+ {
+  struct sockaddr_in sinbuf;
+  socklen_t namelen=sizeof(sinbuf);
+  if(getsockname(c->socket, (struct sockaddr *)&sinbuf, &namelen)<0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"cannot get sockname for socket %d: %s",c->socket,strerror(errno));
+    return NULL;
+   }
+  strncpy(c->serverbuf,inet_ntoa(sinbuf.sin_addr),sizeof(c->serverbuf));
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",c->serverbuf);
+  return(c->serverbuf);
  }
 
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
