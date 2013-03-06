@@ -57,24 +57,28 @@ const char *frontier_get_err_desc(int err_num)
   return "unknown_2";
  }
  
-void frontier_setErrorMsg(const char *file,int line,const char *fmt,...)
+void frontier_vsetErrorMsg(const char *file,int line,const char *fmt,va_list ap)
  {
   int ret,pos;
-  va_list ap;
   
   bzero(_frontier_error_msg,MSG_BUF_SIZE);
   
   ret=snprintf(_frontier_error_msg,MSG_BUF_SIZE,"[%s:%d]: ",file,line);
   pos=ret;
   
-  va_start(ap,fmt);
   ret+=vsnprintf(_frontier_error_msg+pos,MSG_BUF_SIZE-ret,fmt,ap);
-  va_end(ap);
   
   frontier_log(errors_into_debugs?FRONTIER_LOGLEVEL_DEBUG:FRONTIER_LOGLEVEL_ERROR,
   		file,line,"%s",_frontier_error_msg+pos);
  }
  
+void frontier_setErrorMsg(const char *file,int line,const char *fmt,...)
+ {
+  va_list ap;
+  va_start(ap,fmt);
+  frontier_vsetErrorMsg(file,line,fmt,ap);
+  va_end(ap);
+ }
  
 const char *frontier_getErrorMsg()
  {
