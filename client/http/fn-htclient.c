@@ -97,7 +97,8 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   
   c->server[c->total_server]=fui;
   c->total_server++;
-  if(c->balance_servers)frontierHttpClnt_setBalancedServers(c);
+
+  if(c->balance_servers)frontierHttpClnt_resetserverlist(c,1);
   
   return FRONTIER_OK;
  }
@@ -736,16 +737,12 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
    }
   if(curhaderror)
     fui->fai->haderror=1;
-  else
+  // advance the round-robin if there is any
+  if ((fui->fai=fui->fai->next)==0)
+    fui->fai=&fui->firstfai;
+  if(fui->lastfai==fui->fai)
    {
-    // didn't have an error just now, instead looking for next available proxy;
-    // advance the round-robin if there is any
-    if ((fui->fai=fui->fai->next)==0)
-      fui->fai=&fui->firstfai;
-   }
-  if(curhaderror||(fui->lastfai==fui->fai))
-   {
-    /*cycle through proxy list*/
+    /*end of round-robin, cycle through proxy list*/
     c->cur_proxy++;
     if(c->balance_num_proxies>0)
      {
@@ -797,16 +794,12 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
    }
   if(curhaderror)
     fui->fai->haderror=1;
-  else
+  // advance the round-robin if there is any
+  if ((fui->fai=fui->fai->next)==0)
+    fui->fai=&fui->firstfai;
+  if(fui->lastfai==fui->fai)
    {
-    // didn't have an error just now, instead looking for next available server;
-    // advance the round-robin if there is any
-    if ((fui->fai=fui->fai->next)==0)
-      fui->fai=&fui->firstfai;
-   }
-  if(curhaderror||(fui->lastfai==fui->fai))
-   {
-    /*cycle through server list*/
+    /*end of round-robin, cycle through server list*/
     c->cur_server++;
     if(c->cur_server==c->total_server)
       /*wrap around in case doing load balancing*/
