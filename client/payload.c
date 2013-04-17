@@ -148,7 +148,10 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   fpl->blob=(unsigned char*)frontier_mem_alloc(fpl->blob_size);
   if(!fpl->blob)
    {
-    FRONTIER_MSG(FRONTIER_EMEM);
+    // This is the most likely place in all of the frontier client
+    //   to get an error allocating memory, so report the size
+    frontier_setErrorMsg(__FILE__,__LINE__,"cannot allocate memory of size %d",
+    						fpl->blob_size);
     fpl->error=FRONTIER_EMEM;
     goto errcleanup;
    }
