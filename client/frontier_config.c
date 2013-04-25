@@ -657,10 +657,11 @@ struct pp_errcontext {
     char buf[MAXPPERRORBUFSIZE];
     int len;
 };
+static struct pp_errcontext *pp_errorcontext;
 
-static int fn_pp_errorvprint(void *context,const char *fmt,va_list ap)
+static int fn_pp_errorvprint(const char *fmt,va_list ap)
  {
-  struct pp_errcontext *cx=context;
+  struct pp_errcontext *cx=pp_errorcontext;
   int start=sizeof(PPERRORMSGPREFIX)-1+cx->len;
   int left=MAXPPERRORBUFSIZE-start-2;
   int ret;
@@ -695,8 +696,9 @@ static int fn_pp_errorvprint(void *context,const char *fmt,va_list ap)
   return(ret);
  }
 
-static char *fn_pp_getErrorMsg(struct pp_errcontext *cx)
+static char *fn_pp_getErrorMsg()
  {
+  struct pp_errcontext *cx=pp_errorcontext;
   if(cx->len==0)
     return "";
   memcpy(&cx->buf[0],PPERRORMSGPREFIX,sizeof(PPERRORMSGPREFIX)-1);
@@ -838,7 +840,7 @@ trynext:
     frontierHttpClnt_close(clnt);
     frontier_turnErrorsIntoDebugs(0);
    
-    if(frontierHttpClnt_nextserver(clnt,1)<0)
+    if((curproxyconfig=frontierHttpClnt_nextserver(clnt,1))<0)
      {
       frontier_setErrorMsg(__FILE__,__LINE__,
 	"config error: failed to read a proxyconfig url.  Last url was %s and last error was: %s",
@@ -846,7 +848,6 @@ trynext:
       goto cleanup;
      }
 
-    curproxyconfig++;
     frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
       "Trying next proxyconfig server %s",
 	 	frontierHttpClnt_curservername(clnt));
@@ -862,12 +863,13 @@ trynext:
 
   err_context.len=0;
   err_context.buf[0]='\0';
-  pacparser_seterrorvprinter(&err_context,&fn_pp_errorvprint);
+  pp_errorcontext=&err_context;
+  pacparser_set_error_printer(&fn_pp_errorvprint);
 
   if(!pacparser_init())
    {
     frontier_setErrorMsg(__FILE__,__LINE__,
-       "config error: cannot initialize pacparser%s",fn_pp_getErrorMsg(&err_context));
+       "config error: cannot initialize pacparser%s",fn_pp_getErrorMsg());
     ret=FRONTIER_ECFG;
     goto cleanup;
    }
@@ -876,7 +878,7 @@ trynext:
    {
     frontier_setErrorMsg(__FILE__,__LINE__,
        "config error: error determining my IP address for proxyconfig server%s",
-	 	frontierHttpClnt_curservername(clnt),fn_pp_getErrorMsg(&err_context));
+	 	frontierHttpClnt_curservername(clnt),fn_pp_getErrorMsg());
     ret=FRONTIER_ECFG;
     goto cleanup;
    }
@@ -887,7 +889,7 @@ trynext:
    {
     frontier_setErrorMsg(__FILE__,__LINE__,
        "config error: failure parsing %d byte proxyconfig from %s%s",
-       		nbytes,proxyconfig_url,fn_pp_getErrorMsg(&err_context));
+       		nbytes,proxyconfig_url,fn_pp_getErrorMsg());
     ret=FRONTIER_ECFG;
     goto cleanup;
    }
@@ -910,7 +912,7 @@ trynext:
    {
     frontier_setErrorMsg(__FILE__,__LINE__,
        "config error: proxyconfigurl %s FindProxyForURL(\"%s\",\"%s\") returned no match%s",
-	    proxyconfig_url,cfg->server[0],fui->host,fn_pp_getErrorMsg(&err_context));
+	    proxyconfig_url,cfg->server[0],fui->host,fn_pp_getErrorMsg());
     ret=FRONTIER_ECFG;
     goto cleanup;
    }
