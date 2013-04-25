@@ -19,6 +19,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -31,6 +33,8 @@
 
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
+
+extern char *frontier_str_now();
 
 #define PERSISTCONNECTION 
 
@@ -98,8 +102,6 @@ int frontierHttpClnt_addServer(FrontierHttpClnt *c,const char *url)
   c->server[c->total_server]=fui;
   c->total_server++;
 
-  if(c->balance_servers)frontierHttpClnt_resetserverlist(c,1);
-  
   return FRONTIER_OK;
  }
 
@@ -121,7 +123,6 @@ int frontierHttpClnt_addProxy(FrontierHttpClnt *c,const char *url)
     
   c->proxy[c->total_proxy]=fui;
   c->total_proxy++;
-  if(c->balance_num_proxies>0)frontierHttpClnt_setNumBalancedProxies(c,c->balance_num_proxies);
 
   return FRONTIER_OK;
  }
@@ -405,7 +406,7 @@ static int read_connection(FrontierHttpClnt *c)
 
   if((strncmp(buf,"HTTP/1.0 200 ",13)!=0)&&(strncmp(buf,"HTTP/1.1 200 ",13)!=0))
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"bad server response (%s) proxy=%s server=%s",
+    frontier_setErrorMsg(__FILE__,__LINE__,"bad response (%s) proxy=%s server=%s",
 	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
     return FRONTIER_EPROTO;
    }
@@ -621,109 +622,223 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   frontier_mem_free(c);
  }
 
-int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle)
+void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
  {
-  /*don't reset anything if connection is persisting*/
-  if(c->socket==-1)
+  int i;
+  time_t now;
+
+  now=time(0);
+  if(c->whenresetproxy==0)
    {
-    if(shuffle)
+    /*first time*/
+    c->whenresetproxy=now;
+    c->whenresetserver=now;
+    return;
+   }
+
+  if((now-c->whenresetproxy)<FRONTIER_RESETPROXY_SECS)
+   {
+    /*not yet old*/
+    return;
+   }
+  c->whenresetproxy=now;
+
+  if(c->socket!=-1)
+   {
+    /*close persisting connection*/
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
+
+  if(((c->balance_num_proxies>0)&&(c->cur_proxy>=c->balance_num_proxies))||
+		(c->cur_proxy>0))
+  {
+   //print warning if not in the first proxy group anymore
+   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the proxy list at %s",frontier_str_now());
+  }
+
+  c->cur_proxy=c->first_proxy=0;
+  for(i=0;i<c->total_proxy;i++)
+    frontier_FreeAddrInfo(c->proxy[i]);
+
+  if((now-c->whenresetserver)<FRONTIER_RESETSERVER_SECS)
+   {
+    /*servers not yet old*/
+    return;
+   }
+  c->whenresetserver=now;
+
+  if(!c->balance_servers&&(c->cur_server>0))
+  {
+   //print warning if not in the first server group anymore
+   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the server list at %s",frontier_str_now());
+  }
+
+  c->cur_server=c->first_server=0;
+  for(i=0;i<c->total_server;i++)
+    frontier_FreeAddrInfo(c->server[i]);
+
+  return;
+ }
+
+
+int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
+ {
+  if((c->socket!=-1)||(c->cur_proxy>=c->total_proxy))
+   {
+    /*don't shuffle if connection is persisting or not using a proxy*/
+    if(c->cur_proxy>=c->total_proxy)
+      return(-1);
+    return c->cur_proxy;
+   }
+  if((c->balance_num_proxies>0)&&(c->cur_proxy<c->balance_num_proxies))
+   {
+    // randomize start if balancing was selected
+    // ignore the possibility that the addresses may include round-robin
+    //   when balancing
+    int i,numgood=0;
+    for(i=0;i<c->balance_num_proxies;i++)
+      if(!c->proxy[i]->fai->haderror)
+	numgood++;
+    if(numgood>0)
      {
-      int i;
-      if(c->balance_num_proxies>0)
-       {
-	// randomize start if balancing was selected
-	// ignore the possibility that the addresses may include round-robin
-	//   when balancing
-	int numgood=0;
-	for(i=0;i<c->balance_num_proxies;i++)
-	  if(!c->proxy[i]->fai->haderror)
-	    numgood++;
-	if(numgood>0)
-	 {
-	  c->first_proxy=rand_r(&c->rand_seed)%numgood;
-	  // skip the ones that had an error
-	  for(i=0;i<=c->first_proxy;i++)
-	    if(c->proxy[i]->fai->haderror)
-	      c->first_proxy++;
-	 }
-	else c->first_proxy=c->balance_num_proxies;
-       }
-      else
-       {
-	// balancing was not selected
-	for(i=0;(i<=c->cur_proxy)&&(i<c->total_proxy);i++)
-	 {
-	  // select next round-robin address if any for each that has been used
-	  FrontierUrlInfo *fui=c->proxy[i];
-	  if ((fui->fai=fui->fai->next)==0)
-	    fui->fai=&fui->firstfai;
-	  fui->lastfai=fui->fai;
-	 }
-       }
+      c->first_proxy=rand_r(&c->rand_seed)%numgood;
+      // skip the ones that had an error
+      for(i=0;i<=c->first_proxy;i++)
+	if(c->proxy[i]->fai->haderror)
+	  c->first_proxy++;
      }
+    else c->first_proxy=c->balance_num_proxies;
+    c->cur_proxy=c->first_proxy;
+   }
+  else
+   {
+    // not in client-balancing group
+    // select next good round-robin address if any
+    FrontierUrlInfo *fui=c->proxy[c->cur_proxy];
+    FrontierAddrInfo *startfai=fui->fai;
+    do
+     {
+      if ((fui->fai=fui->fai->next)==0)
+	fui->fai=&fui->firstfai;
+     } while(fui->fai->haderror&&(fui->fai!=startfai));
+   }
+  return c->cur_proxy;
+ }
+
+int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c)
+ {
+  if(c->socket!=-1)
+   {
+    /*don't shuffle anything if connection is persisting*/
+    return c->cur_server;
+   }
+  if(c->balance_servers)
+   {
+    // randomize start if balancing was selected
+    // ignore the possibility that these addresses may include round-robin
+    int i,numgood=0;
+    for(i=0;i<c->total_server;i++)
+      if(!c->server[i]->fai->haderror)
+	numgood++;
+    if(numgood>0)
+     {
+      c->first_server=rand_r(&c->rand_seed)%numgood;
+      // skip the ones that had an error
+      for(i=0;i<=c->first_server;i++)
+	if(c->server[i]->fai->haderror)
+	  c->first_server++;
+     }
+    c->cur_server=c->first_server;
+   }
+  else
+   {
+    // not doing client-balancing
+    // select next good round-robin address if any
+    FrontierUrlInfo *fui=c->server[c->cur_server];
+    FrontierAddrInfo *startfai=fui->fai;
+    do
+     {
+      if ((fui->fai=fui->fai->next)==0)
+	fui->fai=&fui->firstfai;
+     } while(fui->fai->haderror&&(fui->fai!=startfai));
+    fui->lastfai=fui->fai;
+   }
+  return c->cur_server;
+ }
+
+int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c)
+ {
+  FrontierUrlInfo *fui;
+  if(c->total_proxy==0)
+   {
+    /*not using any proxies*/
+    return(-1);
+   }
+  if(c->socket!=-1)
+   {
+    /*close persisting connection*/
+    frontier_socket_close(c->socket);
+    c->socket=-1;
+   }
+  if((c->balance_num_proxies>0)&&(c->cur_proxy<c->balance_num_proxies))
+   {
     c->cur_proxy=c->first_proxy;
     if(c->cur_proxy>=c->total_proxy)
       return(-1);
-    if(c->proxy[c->cur_proxy]->fai->haderror)
-     {
-      /*find one without an error*/
-      frontierHttpClnt_nextproxy(c,0);
-     }
+    fui=c->proxy[c->cur_proxy];
    }
-  else if((c->total_proxy==0)||(c->cur_proxy>=c->total_proxy))
-    return(-1);
+  else
+   {
+    fui=c->proxy[c->cur_proxy];
+    fui->fai=fui->lastfai=&fui->firstfai;
+   }
+  if(fui->fai->haderror)
+   {
+    /*find one without an error*/
+    return(frontierHttpClnt_nextproxy(c,0));
+   }
   return(c->cur_proxy);
  }
 
-int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle)
+int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c)
  {
-  /*don't reset anything if connection is persisting*/
-  if(c->socket==-1)
+  if(c->socket!=-1)
    {
-    if(shuffle)
-     {
-      int i;
-      if(c->balance_servers)
-       {
-	// randomize start if balancing was selected
-	// ignore the possibility that these addresses may include round-robin
-	int numgood=0;
-	for(i=0;i<c->total_server;i++)
-	  if(!c->server[i]->fai->haderror)
-	    numgood++;
-	if(numgood>0)
-	 {
-	  c->first_server=rand_r(&c->rand_seed)%numgood;
-	  // skip the ones that had an error
-	  for(i=0;i<=c->first_server;i++)
-	    if(c->server[i]->fai->haderror)
-	      c->first_server++;
-	 }
-       }
-      else
-       {
-	for(i=0;(i<=c->cur_server)&&(i<c->total_server);i++)
-	 {
-	  // select next round-robin address if any for each that has been used
-	  FrontierUrlInfo *fui=c->server[i];
-	  if ((fui->fai=fui->fai->next)==0)
-	    fui->fai=&fui->firstfai;
-	  fui->lastfai=fui->fai;
-	 }
-       }
-     }
-    c->cur_server=c->first_server;
-    if(c->cur_server>=c->total_server)
-      return(-1);
-    if(c->server[c->cur_server]->fai->haderror)
-     {
-      /*find one without an error*/
-      frontierHttpClnt_nextserver(c,0);
-     }
+    /*close persisting connection*/
+    frontier_socket_close(c->socket);
+    c->socket=-1;
    }
-  else if((c->total_server==0)||(c->cur_server>=c->total_server))
+  c->cur_server=c->first_server;
+  if(c->cur_server>=c->total_server)
     return(-1);
+  if(c->server[c->cur_server]->fai->haderror)
+   {
+    /*find one without an error*/
+    return(frontierHttpClnt_nextserver(c,0));
+   }
   return(c->cur_server);
+ }
+
+int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
+ {
+  FrontierUrlInfo *fui=c->proxy[c->cur_proxy];
+  FrontierAddrInfo *nextfai;
+  int nextproxy;
+  if((c->balance_num_proxies>0)&&(c->cur_proxy<c->balance_num_proxies))
+   {
+    nextproxy=c->cur_proxy+1;
+    if(nextproxy==c->balance_num_proxies)
+      nextproxy=0;
+    if(nextproxy!=c->first_proxy)
+      return 0;
+    return 1;
+   }
+  if ((nextfai=fui->fai->next)==0)
+    nextfai=&fui->firstfai;
+  if(fui->lastfai!=nextfai)
+    return 0;
+  return 1;
  }
 
 int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
@@ -731,7 +846,7 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
   FrontierUrlInfo *fui=c->proxy[c->cur_proxy];
   if(c->socket!=-1)
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after proxy error");
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection while choosing next proxy");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
@@ -779,19 +894,22 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
     return(-1);
    }
   if(c->proxy[c->cur_proxy]->fai->haderror)
-    return(frontierHttpClnt_nextproxy(c,curhaderror));
+    return(frontierHttpClnt_nextproxy(c,0));
   return(c->cur_proxy);
  }
 
 int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
  {
   FrontierUrlInfo *fui=c->server[c->cur_server];
-  if(c->socket!=-1)
+  if(!c->using_proxy&&(c->socket!=-1))
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection after server error");
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection while choosing next server");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
+  // Note that if the host name has not been resolved because we're going
+  // through a proxy, fui->fai will still be a valid FrontierAddrInfo, it
+  // will just have addr=0 and next=0.
   if(curhaderror)
     fui->fai->haderror=1;
   // advance the round-robin if there is any
@@ -799,7 +917,7 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
     fui->fai=&fui->firstfai;
   if(fui->lastfai==fui->fai)
    {
-    /*end of round-robin, cycle through server list*/
+    /*end of server round-robin, cycle through server list*/
     c->cur_server++;
     if(c->cur_server==c->total_server)
       /*wrap around in case doing load balancing*/
@@ -832,8 +950,8 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
      }
     return(-1);
    }
-  if(c->server[c->cur_server]->fai->haderror)
-    return(frontierHttpClnt_nextserver(c,curhaderror));
+  if(((fui=c->server[c->cur_server])->fai!=0)&&fui->fai->haderror)
+    return(frontierHttpClnt_nextserver(c,0));
   return(c->cur_server);
  }
 
@@ -897,12 +1015,10 @@ char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
  {
   c->balance_num_proxies=num;
-  frontierHttpClnt_resetproxylist(c,1);
  }
 
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c)
  {
   c->balance_servers=1;
-  frontierHttpClnt_resetserverlist(c,1);
  }
 
