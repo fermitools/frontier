@@ -19,7 +19,7 @@
 
 static void *pp_dlhandle;
 static int (*pp_init)(void);
-static void (*pp_seterrorvprinter)(void *,pacparser_errorvprinter);
+static void (*pp_set_error_printer)(pacparser_error_printer);
 static void (*pp_setmyip)(const char *);
 static int (*pp_parse_pac_string)(const char *);
 static char *(*pp_find_proxy)(const char *,const char *);
@@ -28,7 +28,7 @@ static void (*pp_cleanup)(void);
 static void *pp_funcps[] =
  {
   &pp_init,
-  &pp_seterrorvprinter,
+  &pp_set_error_printer,
   &pp_setmyip,
   &pp_parse_pac_string,
   &pp_find_proxy,
@@ -37,7 +37,7 @@ static void *pp_funcps[] =
 static const char *pp_names[]=
  {
   "pacparser_init",
-  "pacparser_seterrorvprinter",
+  "pacparser_set_error_printer",
   "pacparser_setmyip",
   "pacparser_parse_pac_string",
   "pacparser_find_proxy",
@@ -83,11 +83,11 @@ int pacparser_init(void)
   return (*pp_init)();
  }
 
-void pacparser_seterrorvprinter(void *context,pacparser_errorvprinter func)
+void pacparser_set_error_printer(pacparser_error_printer func)
  {
   if(!pp_dlhandle)
     return;
-  (*pp_seterrorvprinter)(context,func);
+  (*pp_set_error_printer)(func);
   return;
  }
 
