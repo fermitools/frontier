@@ -48,15 +48,16 @@ struct s_FrontierUrlInfo
   FrontierAddrInfo firstfai;
   FrontierAddrInfo *fai;
   FrontierAddrInfo *lastfai;
-  time_t whenresolved;
  };
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
 FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec);
 int frontier_resolv_host(FrontierUrlInfo *fui);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
+void frontier_FreeAddrInfo(FrontierUrlInfo *fui);
 
-#define FRONTIER_RERESOLVE_SECS (60*5)
+#define FRONTIER_RESETPROXY_SECS (60*5)
+#define FRONTIER_RESETSERVER_SECS (60*30)
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 #define FRONTIER_MAX_PERSIST_SIZE (16*1024)
 #define FRONTIER_HTTP_DEBUG_BUF_SIZE 512
@@ -80,6 +81,8 @@ struct s_FrontierHttpClnt
   int total_length;
   char *url_suffix;
   char *frontier_id;
+  time_t whenresetproxy;
+  time_t whenresetserver;
   
   int socket;
   int connect_timeout_secs;
@@ -113,10 +116,14 @@ int frontierHttpClnt_read(FrontierHttpClnt *c,char *buf,int buf_len);
 void frontierHttpClnt_close(FrontierHttpClnt *c);
 void frontierHttpClnt_drop(FrontierHttpClnt *c);
 void frontierHttpClnt_delete(FrontierHttpClnt *c);
-int frontierHttpClnt_resetproxylist(FrontierHttpClnt *c,int shuffle);
-int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c,int shuffle);
+void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c);
+int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c);
+int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c);
+int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c);
+int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c);
 int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror);
 int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror);
+int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c);
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c);
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c);
 char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c);
