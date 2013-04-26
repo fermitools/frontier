@@ -27,6 +27,7 @@
 #define FRONTIER_ENETWORK	-6	/*error while communicating over network*/
 #define FRONTIER_EPROTO		-7	/*protocol level error (e.g. wrong response)*/
 #define FRONTIER_ESERVER	-8	/*server error (may be cached for short time)*/
+#define FRONTIER_ECONNECTTIMEOUT -9	/*socket connect timeout*/
 
 void frontier_vsetErrorMsg(const char *file, int line,const char *fmt,va_list ap);
 void frontier_setErrorMsg(const char *file, int line,const char *fmt,...);
