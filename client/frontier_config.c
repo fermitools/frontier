@@ -21,6 +21,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include "pacparser.h"
 #include <http/fn-htclient.h>
@@ -711,7 +713,7 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
  {
   FrontierHttpClnt *clnt;
   FrontierUrlInfo *fui=0;
-  int curproxyconfig;
+  int curproxyconfig,nextproxyconfig;
   char *proxyconfig_url;
   int n,nbytes,ret=FRONTIER_OK;
   char err_last_buf[MAXPPERRORBUFSIZE];
@@ -745,10 +747,16 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
    {
     proxyconfig_url=cfg->proxyconfig[curproxyconfig];
 
+    if(strncmp(proxyconfig_url,"file://",7)==0)
+     {
+      // don't consider any proxyconfig URLs after this one
+      break;
+     }
+
     if(strncmp(proxyconfig_url,"http://",7)!=0)
      {
       frontier_setErrorMsg(__FILE__,__LINE__,
-	"proxyconfigurl %s does not begin with 'http://' or 'auto'",proxyconfig_url);
+	"proxyconfigurl %s does not begin with 'http://', 'file://', or 'auto'",proxyconfig_url);
       ret=FRONTIER_ECFG;
       goto cleanup;
      }
@@ -784,6 +792,49 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
   while(1)
    {
     proxyconfig_url=cfg->proxyconfig[curproxyconfig];
+
+    if(strncmp(proxyconfig_url,"file://",7)==0)
+     {
+      char *fname;
+      int fd;
+      fname=strchr(proxyconfig_url+7,'/');
+      if(fname==NULL)
+       {
+        frontier_setErrorMsg(__FILE__,__LINE__,
+	     "bad format for file url %s, no path", proxyconfig_url);
+	ret=FRONTIER_ECFG;
+	goto cleanup;
+       }
+      fd=open(fname,O_RDONLY);
+      if(fd<0)
+       {
+        frontier_setErrorMsg(__FILE__,__LINE__,
+	     "error opening %s: %s",fname,strerror(errno));
+	ret=FRONTIER_ECFG;
+	goto cleanup;
+       }
+      nbytes=read(fd,pacstring,MAXPACSTRINGSIZE);
+      if(nbytes<0)
+       {
+        frontier_setErrorMsg(__FILE__,__LINE__,
+	     "error reading %s: %s",fname,strerror(errno));
+	ret=FRONTIER_ECFG;
+	close(fd);
+	goto cleanup;
+       }
+      close(fd);
+      if(nbytes==MAXPACSTRINGSIZE)
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,
+	   "config error: proxyconfig file %s larger than limit of %d bytes",
+	   	fname,MAXPACSTRINGSIZE);
+	ret=FRONTIER_ECFG;
+	goto cleanup;
+       }
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+	"proxyconfig file from %s is %d bytes long",fname,nbytes);
+      break;
+     }
 
     frontier_turnErrorsIntoDebugs(1);
 
@@ -831,6 +882,9 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
     frontier_turnErrorsIntoDebugs(0);
 
     // successfully read the proxy autoconfig file
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+      "proxyconfig file from %s is %d bytes long",
+	 	frontierHttpClnt_curservername(clnt),nbytes);
     break;
 
 trynext:
@@ -840,22 +894,32 @@ trynext:
     frontierHttpClnt_close(clnt);
     frontier_turnErrorsIntoDebugs(0);
    
-    if((curproxyconfig=frontierHttpClnt_nextserver(clnt,1))<0)
+    if((nextproxyconfig=frontierHttpClnt_nextserver(clnt,1))<0)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,
-	"config error: failed to read a proxyconfig url.  Last url was %s and last error was: %s",
-		proxyconfig_url,err_last_buf);
-      goto cleanup;
+      curproxyconfig++;
+      if ((curproxyconfig<cfg->proxyconfig_num)&&
+	    (strncmp(cfg->proxyconfig[curproxyconfig],"file://",7)==0))
+       {
+        // there is a file:// URL still to try
+        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+          "Trying next proxyconfig url %s", cfg->proxyconfig[curproxyconfig]);
+       }
+      else
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,
+	  "config error: failed to read a proxyconfig url.  Last url was %s and last error was: %s",
+		  proxyconfig_url,err_last_buf);
+	goto cleanup;
+       }
      }
-
-    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
-      "Trying next proxyconfig server %s",
+    else
+     {
+      curproxyconfig=nextproxyconfig;
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+        "Trying next proxyconfig server %s",
 	 	frontierHttpClnt_curservername(clnt));
+     }
    }
-
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
-    "proxyconfig file from %s is %d bytes long",
-	 	frontierHttpClnt_curservername(clnt),nbytes);
 
   ret=frontier_pacparser_init();
   if(ret!=FRONTIER_OK)
@@ -874,16 +938,19 @@ trynext:
     goto cleanup;
    }
 
-  if((ipaddr=frontierHttpClnt_myipaddr(clnt))==NULL)
+  if(strncmp(proxyconfig_url,"file://",7)!=0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,
-       "config error: error determining my IP address for proxyconfig server%s",
-	 	frontierHttpClnt_curservername(clnt),fn_pp_getErrorMsg());
-    ret=FRONTIER_ECFG;
-    goto cleanup;
-   }
+    if((ipaddr=frontierHttpClnt_myipaddr(clnt))==NULL)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,
+	 "config error: error determining my IP address for proxyconfig server%s",
+		  frontierHttpClnt_curservername(clnt),fn_pp_getErrorMsg());
+      ret=FRONTIER_ECFG;
+      goto cleanup;
+     }
 
-  pacparser_setmyip(ipaddr);
+    pacparser_setmyip(ipaddr);
+   }
 
   if(!pacparser_parse_pac_string(pacstring))
    {
