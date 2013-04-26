@@ -1,9 +1,49 @@
 $Id$
 
- - If a memory allocation failure happens while retrieving data,
-   return immediately instead of trying all proxies and servers.
- - Inserted "mem_alloc: failed" messages in several places that
-   handled malloc failures but didn't set an error message.
+ - Change retry strategy so that if a proxy or directly-connected server
+   translates to a round-robin DNS name and there are errors, all of the
+   IP addresses will be tried before giving up.  NOTE: this does not
+   extend to the case of servers being contacted through proxies, so
+   it is best to list all of the individual servers in a round-robin
+   service separately (after the round-robin name) in order to ensure
+   that all are tried through proxies.
+ - Proxy connect timeouts are now given special treatment, immediately
+   identifying them as proxy errors.
+ - Change retry strategy so that non-server errors will first try
+   every server with every proxy in a proxy group (those that have not
+   had connect timeouts), then every server with every proxy in the
+   next group, etc.  A proxy group is defined as either all proxyurls
+   if loadbalance=proxies or all IP addresses in a round-robin name in
+   a proxyurl or backupproxyurl.  Previously every proxy was tried
+   with the first server regardless of proxy group, then the next
+   server, etc, which was not optimal for far-away backup proxies.
+ - Whenever a request is made more than 5 minutes since the first one,
+   any current connection is now dropped, the proxy list is reset to
+   the beginning, all cached DNS names of proxies are cleared, all
+   proxy error flags are cleared, and the start time is reset so the
+   process can be done again 5 minutes later.  Servers are treated
+   similarly every 30 minutes.  Formerly, only the DNS name caches and
+   the corresponding error flags were cleared whenever 5 minutes had
+   elapsed.  
+ - The full current retry strategy is now documented in detail at
+     https://twiki.cern.ch/twiki/bin/view/Frontier/ClientRetryStrategy
+ - Add new connection string parameter "proxyconfigurl" which is
+   a URL to an internet-standard Proxy Auto Config file for locating a
+   list of proxies.  Parameter may appear more than once, so that if a
+   config server can't be reached the next one is tried.  Each URL may
+   indicate a round-robin name, and if so all of the servers are tried.
+   The special value "auto" translates to "http://wpad/wpad.dat" which
+   is commonly used for the Web Proxy Auto Discovery standard.  Requires
+   pacparser library with a version greater than 1.3.0.  Since the
+   library is over a megabyte of code, it is loaded with dlopen.
+ - If a memory allocation failure happens while retrieving data, return
+   immediately instead of trying all proxies and servers.
+ - Insert "mem_alloc: failed" messages in several places that handled
+   malloc failures but didn't set an error message.
+ - In the place most likely to get a memory allocation failure
+   (allocating for an entire uncompressed response), change the
+   message to also report the number of bytes that were attempted to
+   be allocated.
 
 v2_8_5 - 13 Dec 2011 (dwd)
  - Fix bug that caused a segmentation fault when allocating the large
