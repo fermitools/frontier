@@ -110,7 +110,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
   if(ret==0)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",inet_ntoa(sin->sin_addr),timeoutsecs);
-    return FRONTIER_ENETWORK;
+    return FRONTIER_ECONNECTTIMEOUT;
    }
   
   if(!FD_ISSET(s,&wfds))
