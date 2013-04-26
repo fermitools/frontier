@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <time.h>
 #include <netdb.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -48,7 +46,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
   bzero(fui,sizeof(FrontierUrlInfo));
-  fui->fai=&fui->firstfai;
+  fui->fai=fui->lastfai=&fui->firstfai;
   
   fui->url=frontier_str_copy(url);
   if(!fui->url)
@@ -131,7 +129,7 @@ ok:
   return fui;
  }
  
-static void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
+void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
  {
   if(fui->firstfai.addr)
    {
@@ -145,6 +143,7 @@ static void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
     fui->firstfai.next=fui->fai;
    }
   bzero(&fui->firstfai,sizeof(FrontierAddrInfo));
+  fui->fai=fui->lastfai=&fui->firstfai;
  }
  
 int frontier_resolv_host(FrontierUrlInfo *fui)
@@ -153,15 +152,9 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
   int ret;
   struct addrinfo *addr;
   FrontierAddrInfo *fai;
-  time_t now=time(0);
   
   if(fui->fai->addr)
-   {
-    if((now-fui->whenresolved)<FRONTIER_RERESOLVE_SECS)
-      return FRONTIER_OK;
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-resolving host %s",fui->host);
-   }
-  fui->whenresolved=now;
+    return FRONTIER_OK;
 
   bzero(&hints,sizeof(struct addrinfo));
   
@@ -207,7 +200,6 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
      }
    }while(addr);   
    
-  fui->fai=fui->lastfai=&fui->firstfai;
   return FRONTIER_OK; 
  }
  
