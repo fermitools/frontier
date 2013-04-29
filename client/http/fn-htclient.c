@@ -57,6 +57,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->content_length=-1;
   c->url_suffix="";
   c->rand_seed=getpid();
+  c->max_age=-1;
   
   *ec=FRONTIER_OK;
   return c;
@@ -134,6 +135,10 @@ void frontierHttpClnt_setCacheRefreshFlag(FrontierHttpClnt *c,int refresh_flag)
   c->refresh_flag=refresh_flag;
  }
 
+void frontierHttpClnt_setCacheMaxAgeSecs(FrontierHttpClnt *c,int secs)
+ {
+  c->max_age=secs;
+ }
  
 void frontierHttpClnt_setUrlSuffix(FrontierHttpClnt *c,char *suffix)
  {
@@ -341,11 +346,24 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   //  can't be reached when a cached item is stale.  frontier_client
   //  couldn't handle that before this header was added, so this allows
   //  a compatible upgrade
+  // Leave \r\n off because we'll be adding it below
+  ret=snprintf(buf+len,FN_REQ_BUF-len,
+  	"X-Frontier-Id: %s\r\nCache-Control: max-stale=1",c->frontier_id);
+  if(ret>=FN_REQ_BUF-len)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
+    return FRONTIER_EIARG;
+   }
+  len+=ret;
+
   // Cache-control: max-age=0 allows If-Modified-Since to re-validate cache,
   //  which can be much less stress on servers than Pragma: no-cache.
-  ret=snprintf(buf+len,FN_REQ_BUF-len,
-  	"X-Frontier-Id: %s\r\nCache-Control: max-stale=1%s\r\n",
-  	c->frontier_id,(c->refresh_flag==1)?",max-age=0":"");
+  if(c->refresh_flag==1)
+    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=0\r\n");
+  else if((c->refresh_flag==0)&&(c->max_age>=0))
+    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=%d\r\n",c->max_age);
+  else
+    ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
   if(ret>=FN_REQ_BUF-len)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);

@@ -35,6 +35,7 @@
 static int default_connect_timeout_secs=-1;
 static int default_read_timeout_secs=-1;
 static int default_write_timeout_secs=-1;
+static int default_max_age_secs=-1;
 static char *default_force_reload=0;
 static char *default_freshkey=0;
 static int default_retrieve_zip_level=-1;
@@ -107,6 +108,9 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
       default_write_timeout_secs=atoi(env);
    }
   frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
+
+  // No env variable for max_age_secs
+  frontierConfig_setMaxAgeSecs(cfg,default_max_age_secs);
 
   if(default_force_reload==0)
    {
@@ -183,7 +187,10 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Connect timeoutsecs is %d",cfg->connect_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Read timeoutsecs is %d",cfg->read_timeout_secs);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Write timeoutsecs is %d",cfg->write_timeout_secs);
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
+  if(strcmp(cfg->force_reload,"none")!=0)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Force reload is %s",cfg->force_reload);
+  if(cfg->max_age_secs>=0)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Max age secs is %d",cfg->max_age_secs);
   if(*cfg->freshkey!='\0')
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Freshkey is %s",cfg->freshkey);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Client cache max result size is %d",cfg->client_cache_max_result_size);
@@ -254,9 +261,9 @@ void frontierConfig_delete(FrontierConfig *cfg)
   frontier_mem_free(cfg);
  }
 
-void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
+void frontierConfig_setConnectTimeoutSecs(FrontierConfig *cfg,int secs)
  {
-  cfg->connect_timeout_secs=timeoutsecs;
+  cfg->connect_timeout_secs=secs;
  }
 
 int frontierConfig_getConnectTimeoutSecs(FrontierConfig *cfg)
@@ -264,14 +271,34 @@ int frontierConfig_getConnectTimeoutSecs(FrontierConfig *cfg)
   return cfg->connect_timeout_secs;
  }
 
-void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
+void frontierConfig_setReadTimeoutSecs(FrontierConfig *cfg,int secs)
  {
-  cfg->read_timeout_secs=timeoutsecs;
+  cfg->read_timeout_secs=secs;
  }
 
 int frontierConfig_getReadTimeoutSecs(FrontierConfig *cfg)
  {
   return cfg->read_timeout_secs;
+ }
+
+void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int secs)
+ {
+  cfg->write_timeout_secs=secs;
+ }
+
+int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg)
+ {
+  return cfg->write_timeout_secs;
+ }
+
+void frontierConfig_setMaxAgeSecs(FrontierConfig *cfg,int secs)
+ {
+  cfg->max_age_secs=secs;
+ }
+
+int frontierConfig_getMaxAgeSecs(FrontierConfig *cfg)
+ {
+  return cfg->max_age_secs;
  }
 
 void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload)
@@ -294,16 +321,6 @@ void frontierConfig_setFreshkey(FrontierConfig *cfg,char *freshkey)
 const char *frontierConfig_getFreshkey(FrontierConfig *cfg)
  {
   return cfg->freshkey;
- }
-
-void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int timeoutsecs)
- {
-  cfg->write_timeout_secs=timeoutsecs;
- }
-
-int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg)
- {
-  return cfg->write_timeout_secs;
  }
 
 void frontierConfig_setRetrieveZipLevel(FrontierConfig *cfg,int level)
@@ -515,6 +532,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
 	  frontierConfig_setWriteTimeoutSecs(cfg,atoi(valp));
 	else if(strcmp(keyp,"forcereload")==0)
 	  frontierConfig_setForceReload(cfg,valp);
+	else if(strcmp(keyp,"maxagesecs")==0)
+	  frontierConfig_setMaxAgeSecs(cfg,atoi(valp));
 	else if(strcmp(keyp,"freshkey")==0)
 	  frontierConfig_setFreshkey(cfg,valp);
 	else if(strcmp(keyp,"failovertoserver")==0)

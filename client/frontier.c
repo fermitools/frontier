@@ -393,6 +393,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   		frontierConfig_getReadTimeoutSecs(chn->cfg));
   frontierHttpClnt_setWriteTimeoutSecs(chn->ht_clnt,
   		frontierConfig_getWriteTimeoutSecs(chn->cfg));
+  frontierHttpClnt_setCacheMaxAgeSecs(chn->ht_clnt,
+  		frontierConfig_getMaxAgeSecs(chn->cfg));
 
   chn->reload=0;
   *ec=FRONTIER_OK; 

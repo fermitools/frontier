@@ -49,6 +49,8 @@ $Id$
    (allocating for an entire uncompressed response), change the
    message to also report the number of bytes that were attempted to
    be allocated.
+ - Free a small malloced space that was leftover when reading the
+   subject name from $X509_USER_PROXY.
 
 v2_8_5 - 13 Dec 2011 (dwd)
  - Fix bug that caused a segmentation fault when allocating the large
