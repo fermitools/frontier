@@ -1,6 +1,6 @@
 $Id$
 
-v2_8_5 - 29 Apr 2013 (dwd)
+v2_8_6 - 29 Apr 2013 (dwd)
  - Change retry strategy so that if a proxy or directly-connected server
    translates to a round-robin DNS name and there are errors, all of the
    IP addresses will be tried before giving up.  NOTE: this does not
