@@ -140,6 +140,8 @@ static void set_frontier_id()
 
   snprintf(frontier_id,FRONTIER_ID_SIZE,"%s %s %d %s(%d) %s",appId,frontier_api_version,frontier_pid,pwname,uid,(x509Subject!=NULL)?x509Subject:pwgecos);
 
+  if(x509Subject!=NULL)OPENSSL_free(x509Subject);
+
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"client id: %s",frontier_id);
  }
   
