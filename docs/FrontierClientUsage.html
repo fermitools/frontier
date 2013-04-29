@@ -31,6 +31,9 @@ libraries for support packages:
   ZLIB_DIR - zlib (overrides system library)
   <li>
   OPENSSL_DIR - openssl (overrides system library)
+  <li>
+  PACPARSER_DIR - pacparser (default is to look in system but it is not a
+		    standard Linux package in Redhat).
   </ul>
 
 <li>To prepare source code distribution file: make src-dist (will create tar
@@ -74,6 +77,18 @@ additional proxies (or parenthesized keywords in FRONTIER_SERVER like
 all the other keywords), up to a maximum of 24 total proxies.  See also 
 backupproxyurl below.
 <li>
+proxyconfigurl - URL pointing to a
+<a href="http://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto-Config</a>
+file that can return a list of proxies.  May begin with "http://" or
+"file://", or "auto" which is replaced with "http://wpad/wpad.dat".
+The first serverurl listed is given as the url/host parameter to the
+FindProxyForURL function in the file.  Multiple proxyconfigurl
+keywords may be used so if http requests fail the next one will be
+tried, but if a file request fails it is a fatal error.  If any
+proxyconfigurl is present and all of them fail, it is also a fatal
+error.  May also be semicolon-separated in a FRONTIER_PROXYCONFIGS
+environment variable.
+<li>
 logicalserverurl - logical server of the form http://logical_name
 which, when encountered in a later connection as a server name, will
 be replaced by the entire rest of the complex connection string that
@@ -105,6 +120,10 @@ If value begins with "soft", do a softer refresh request which just
 asks that the caches be re-validated and so is a bit gentler on
 the servers.  If not present, may come from environment variable
 FRONTIER_FORCERELOAD.  Default "none".
+<li>
+maxagesecs - maximum number of seconds that the client allows for
+caching.  The default is to use the number of seconds specified by the
+host.  Note that "maxagesecs=0" is equivalent to "forcereload=softlong".
 <li>
 freshkey - anything in the value is added to the URLs used for queries,
 so that if a new value is used the queries will be guaranteed to not

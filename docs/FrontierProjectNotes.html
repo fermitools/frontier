@@ -37,7 +37,7 @@ cvsuser@cdcvs.fnal.gov:/cvs/cd do
 <br>
 <tt>cd frontier/client</tt>
 <li>
-<tt>make all-dist</tt>
+<tt>make PACPARSER_DIR=$HOME/devFRONTIER/FRONTIER all-dist # or wherever pacparser is installed </tt>
 <li>
 <tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
 <li>
@@ -67,10 +67,10 @@ Send a message to Andrea.Valassi@cern.ch and Benedikt.Hegner@cern.ch about
 the new version to say why it is should be used by ATLAS.  Perhaps Cc it on
 the above message.
 <li>
-Request that the new client be used as an update external package in the
+Request that the new client be used as an updated external package in the
 <a href=https://cmstags.cern.ch/tc/>CMS Tag Collector</a>.
 <li>
-Announce to cms-frontier-support@cern.ch and racf-frontier-l@lists.bnl.gov.
+Announce to frontier-talk@cern.ch
 
 </ol>
 
