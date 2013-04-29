@@ -41,6 +41,10 @@ $Id$
    PAC file is determined in a less reliable manner with file:// URLs.
  - Add new environment variable FRONTIER_PROXYCONFIGS which is a
    semicolon-separated list of proxyconfigurl values.
+ - Add new connection string parameter "maxagesecs=N" which sets the
+   header "Cache-control: max-age=N" so the client can control the
+   maximum cache age seconds when there's no reloading happening.
+   Setting "maxagesecs=0" is equivalent to "forcereload=softlong".
  - If a memory allocation failure happens while retrieving data, return
    immediately instead of trying all proxies and servers.
  - Insert "mem_alloc: failed" messages in several places that handled
