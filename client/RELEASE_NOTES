@@ -39,6 +39,8 @@ $Id$
    url for this may be a "file://" type but if that fails it is a
    fatal error.  Also the client IP address for matching inside the
    PAC file is determined in a less reliable manner with file:// URLs.
+ - Add new environment variable FRONTIER_PROXYCONFIGS which is a
+   semicolon-separated list of proxyconfigurl values.
  - If a memory allocation failure happens while retrieving data, return
    immediately instead of trying all proxies and servers.
  - Insert "mem_alloc: failed" messages in several places that handled
