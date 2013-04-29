@@ -153,7 +153,6 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
     *errorCode=frontierConfig_addServer(cfg,getenv(buf));
     if(*errorCode!=FRONTIER_OK)goto cleanup;
    }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
   
   for(i=0;i<FRONTIER_MAX_PROXYN;i++)
    {
@@ -181,6 +180,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   *errorCode=frontierConfig_doProxyConfig(cfg);
   if(*errorCode!=FRONTIER_OK)goto cleanup;
 
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);
     
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Retrieve zip level is %d",cfg->retrieve_zip_level);
