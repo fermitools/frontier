@@ -1,5 +1,6 @@
 $Id$
 
+v2_8_5 - 29 Apr 2013 (dwd)
  - Change retry strategy so that if a proxy or directly-connected server
    translates to a round-robin DNS name and there are errors, all of the
    IP addresses will be tried before giving up.  NOTE: this does not
@@ -39,6 +40,8 @@ $Id$
    url for this may be a "file://" type but if that fails it is a
    fatal error.  Also the client IP address for matching inside the
    PAC file is determined in a less reliable manner with file:// URLs.
+   Can specify a directory for the pacparser library install with 
+   the PACPARSER_DIR make variable.
  - Add new environment variable FRONTIER_PROXYCONFIGS which is a
    semicolon-separated list of proxyconfigurl values.
  - Add new connection string parameter "maxagesecs=N" which sets the
