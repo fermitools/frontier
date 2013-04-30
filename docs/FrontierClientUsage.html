@@ -79,15 +79,19 @@ backupproxyurl below.
 <li>
 proxyconfigurl - URL pointing to a
 <a href="http://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto-Config</a>
-file that can return a list of proxies.  May begin with "http://" or
+(PAC) file that can return a list of proxies.  May begin with "http://" or
 "file://", or "auto" which is replaced with "http://wpad/wpad.dat".
 The first serverurl listed is given as the url/host parameter to the
 FindProxyForURL function in the file.  Multiple proxyconfigurl
 keywords may be used so if http requests fail the next one will be
-tried, but if a file request fails it is a fatal error.  If any
-proxyconfigurl is present and all of them fail, it is also a fatal
-error.  May also be semicolon-separated in a FRONTIER_PROXYCONFIGS
-environment variable.
+tried, but if all fail it is a fatal error.  If a file:// request
+fails it is immediately a fatal error (that is, any further
+proxyconfigurl keywords will be ignored).  Another difference with
+file:// is that a less reliable method is used for finding the
+client's IP address for use inside of the PAC file (using a DNS lookup
+on the hostname as opposed to finding the outgoing IP address used to
+connect to the http server).  PAC URLs may also be semicolon-separated
+in a FRONTIER_PROXYCONFIGS environment variable.
 <li>
 logicalserverurl - logical server of the form http://logical_name
 which, when encountered in a later connection as a server name, will
