@@ -640,6 +640,13 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c)
   frontier_mem_free(c);
  }
 
+void frontierHttpClnt_clear(FrontierHttpClnt *c)
+ {
+  // set so if there is a next time, it will reset the proxy & server lists
+  c->whenresetproxy=1;
+  c->whenresetserver=1;
+ }
+
 void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
  {
   int i;
