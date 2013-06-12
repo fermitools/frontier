@@ -823,6 +823,8 @@ trydirectconnect:
     break;
    }
    
+  if(ret!=FRONTIER_OK) frontierHttpClnt_clear(clnt);
+
   return ret;
  }
 
