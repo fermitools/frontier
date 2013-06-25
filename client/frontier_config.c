@@ -36,6 +36,8 @@ static int default_connect_timeout_secs=-1;
 static int default_read_timeout_secs=-1;
 static int default_write_timeout_secs=-1;
 static int default_max_age_secs=-1;
+static int default_secured=0;
+static char *default_capath="/etc/grid-security/certificates";
 static char *default_force_reload=0;
 static char *default_freshkey=0;
 static int default_retrieve_zip_level=-1;
@@ -109,8 +111,10 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
    }
   frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
 
-  // No env variable for max_age_secs
+  // No env variable for these
   frontierConfig_setMaxAgeSecs(cfg,default_max_age_secs);
+  frontierConfig_setSecured(cfg,default_secured);
+  frontierConfig_setCAPath(cfg,default_capath);
 
   if(default_force_reload==0)
    {
@@ -257,6 +261,8 @@ void frontierConfig_delete(FrontierConfig *cfg)
   if(cfg->force_reload!=0)frontier_mem_free(cfg->force_reload);
 
   if(cfg->freshkey!=0)frontier_mem_free(cfg->freshkey);
+
+  if(cfg->capath!=0)frontier_mem_free(cfg->capath);
 
   frontier_mem_free(cfg);
  }
@@ -415,6 +421,27 @@ char *frontierConfig_getDefaultPhysicalServers()
   return default_physical_servers;
  }
 
+void frontierConfig_setSecured(FrontierConfig *cfg,int secured)
+ {
+  cfg->secured=secured;
+ }
+
+int frontierConfig_getSecured(FrontierConfig *cfg)
+ {
+  return cfg->secured;
+ }
+
+void frontierConfig_setCAPath(FrontierConfig *cfg,char *capath)
+ {
+  if(cfg->capath!=0)frontier_mem_free(cfg->capath);
+  cfg->capath=frontier_str_copy(capath);
+ }
+
+char *frontierConfig_getCAPath(FrontierConfig *cfg)
+ {
+  return cfg->capath;
+ }
+
 void frontierConfig_setClientCacheMaxResultSize(FrontierConfig *cfg,int size)
  {
   cfg->client_cache_max_result_size=size;
@@ -545,6 +572,10 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
 	  else if(strcmp(valp,"servers")==0)
 	    frontierConfig_setBalancedServers(cfg);
 	 }
+	else if(strcmp(keyp,"security")==0)
+	  frontierConfig_setSecured(cfg,(strcmp(valp,"sig")==0));
+	else if(strcmp(keyp,"capath")==0)
+	  frontierConfig_setCAPath(cfg,valp);
 	else if(strcmp(keyp,"clientcachemaxresultsize")==0)
 	  frontierConfig_setClientCacheMaxResultSize(cfg,atoi(valp));
 	else
