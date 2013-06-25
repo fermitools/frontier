@@ -37,7 +37,7 @@ extern void (*frontier_mem_free)(void *ptr);
   */
 #define MEMBUF_SIZE	(16*4096-sizeof(FrontierMemBuf)-128)
 
-FrontierMemData *frontierMemData_create(int zipped)
+FrontierMemData *frontierMemData_create(int zipped,int secured,const char *params1,const char *params2)
  {
   FrontierMemData *md;
   FrontierMemBuf *mb;
@@ -46,26 +46,47 @@ FrontierMemData *frontierMemData_create(int zipped)
   if(!md) return md;
 
   mb=(FrontierMemBuf *)frontier_mem_alloc(sizeof(*mb)+MEMBUF_SIZE);
-  if(!mb)
-   {
-    frontier_mem_free(md);
-    md=(void*)0;
-    return md;
-   }
+  if(!mb) goto err;
   mb->nextbuf=0;
   mb->len=0;
   md->firstbuf=mb;
   md->lastbuf=mb;
   md->error=FRONTIER_OK;
   md->total=0;
+  md->secured=secured;
   bzero(&md->b64context,sizeof(md->b64context));
-  bzero(md->md5,sizeof(md->md5));
-  frontier_md5_init(&md->md5_ctx);
+  if(secured)
+   {
+    bzero(md->sha256,sizeof(md->sha256));
+    if (!SHA256_Init(&md->sha256_ctx))
+      goto err;
+    // include the URL starting at the last '/' in the secure checksum
+    if(params1)
+     {
+      // only look for '/' before the first '&', just in case
+      char *p=strchr(params1,'&');
+      if(p) *p='\0';
+      params1=strrchr(params1,'/');  // there is always a slash
+      if(p) *p='&';
+      (void)SHA256_Update(&md->sha256_ctx,(u8 *)params1,strlen(params1));
+     }
+    if(params2)
+      (void)SHA256_Update(&md->sha256_ctx,(u8 *)params2,strlen(params2));
+   }
+  else
+   {
+    bzero(md->md5,sizeof(md->md5));
+    frontier_md5_init(&md->md5_ctx);
+   }
   md->zipped_total=0;
   md->binzipped=zipped;
   md->zipbuflen=0;
   fn_gunzip_init();
   return md;
+err:
+  frontier_mem_free(md);
+  if(!mb)frontier_mem_free(mb);
+  return 0;
  }
 
 
@@ -98,9 +119,9 @@ static FrontierMemBuf *frontierMemData_allocbuffer(FrontierMemData *md)
   return mb;
  }
 
-// append new base64-encoded data: decode it, calculate the md5 of the
-//  decoded data, and unzip it if it was zipped.  Put the result in 
-//  membufs.  If it is a final update, finalize the md5 & unzipping.
+// append new base64-encoded data: decode it, calculate the message digest
+//  of the decoded data, and unzip it if it was zipped.  Put the result in 
+//  membufs.  If it is a final update, finalize the message digest & unzipping.
 static int frontierMemData_append(FrontierMemData *md,
 			const unsigned char *buf,int size,int final)
  {
@@ -143,8 +164,11 @@ static int frontierMemData_append(FrontierMemData *md,
 	// all the incoming buffer was copied to the zipbuf
         return FRONTIER_OK;
        }
-      // else finished filling the zipbuf, update md5
-      frontier_md5_update(&md->md5_ctx,((u8 *)&md->zipbuf[0]),md->zipbuflen);
+      // else finished filling the zipbuf, update message digest
+      if(md->secured)
+        (void)SHA256_Update(&md->sha256_ctx,((u8 *)&md->zipbuf[0]),md->zipbuflen);
+      else
+        frontier_md5_update(&md->md5_ctx,((u8 *)&md->zipbuf[0]),md->zipbuflen);
       // and unzip the zipbuf
       p=md->zipbuf;
       size2=md->zipbuflen;
@@ -215,8 +239,11 @@ static int frontierMemData_append(FrontierMemData *md,
       md->total+=spaceused;
       if((size==0)&&!final)
         return FRONTIER_OK;
-      //else finished with this membuf, update md5
-      frontier_md5_update(&md->md5_ctx,((u8 *)mb)+sizeof(*mb),mb->len);
+      //else finished with this membuf, update message digest
+      if(md->secured)
+        (void)SHA256_Update(&md->sha256_ctx,((u8 *)mb)+sizeof(*mb),mb->len);
+      else
+        frontier_md5_update(&md->md5_ctx,((u8 *)mb)+sizeof(*mb),mb->len);
       if(!final)
        {
 	// allocate another membuf
@@ -233,7 +260,10 @@ static int frontierMemData_append(FrontierMemData *md,
      }
     if(final)
      {
-      frontier_md5_final(&md->md5_ctx,md->md5);
+      if(md->secured)
+        (void)SHA256_Final(md->sha256,&md->sha256_ctx);
+      else
+        frontier_md5_final(&md->md5_ctx,md->md5);
       return FRONTIER_OK;
      }
    }
@@ -249,7 +279,10 @@ int frontierMemData_finalize(FrontierMemData *md)
   return frontierMemData_append(md,0,0,1);
  }
 
-unsigned char *frontierMemData_getmd5(FrontierMemData *md)
+unsigned char *frontierMemData_getDigest(FrontierMemData *md)
  {
-  return md->md5;
+  if(md->secured)
+    return(md->sha256);
+  else
+    return md->md5;
  }
