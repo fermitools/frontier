@@ -706,6 +706,10 @@ void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
   return;
  }
 
+int frontierHttpClnt_getContentLength(FrontierHttpClnt *c)
+ {
+  return c->content_length;
+ }
 
 int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
  {
