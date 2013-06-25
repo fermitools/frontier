@@ -25,7 +25,7 @@ extern void (*frontier_mem_free)(void *ptr);
 extern int frontier_log_level;
 
 
-FrontierPayload *frontierPayload_create(const char *encoding)
+FrontierPayload *frontierPayload_create(const char *encoding,int secured,const char *params1,const char *params2)
  {
   FrontierPayload *fpl;
 
@@ -41,7 +41,7 @@ FrontierPayload *frontierPayload_create(const char *encoding)
     fpl->encoding=(void*)0;
   else
     fpl->encoding=frontier_str_copy(encoding);
-  fpl->md=frontierMemData_create(strstr(encoding,"zip")!=NULL);
+  fpl->md=frontierMemData_create((strstr(encoding,"zip")!=NULL),secured,params1,params2);
   if(!fpl->md)
    {
     frontierPayload_delete(fpl);
@@ -52,9 +52,10 @@ FrontierPayload *frontierPayload_create(const char *encoding)
   fpl->blob=(void*)0;
   fpl->blob_size=0;
   
-  bzero(fpl->md5_str,sizeof(fpl->md5_str));
   bzero(fpl->srv_md5_str,sizeof(fpl->srv_md5_str));
-  
+  fpl->srv_sig_len=0;
+  fpl->srv_sig=0;
+
   fpl->error=0;
   fpl->error_code=0;
   fpl->error_msg=(void*)0;
@@ -72,6 +73,8 @@ void frontierPayload_delete(FrontierPayload *fpl)
   if(fpl->encoding) frontier_mem_free(fpl->encoding);
 
   if(fpl->error_msg) frontier_mem_free(fpl->error_msg);
+
+  if(fpl->srv_sig) frontier_mem_free(fpl->srv_sig);
 
   if(fpl->md) frontierMemData_delete(fpl->md);
 
@@ -93,7 +96,6 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   int zipped_size=0;
   unsigned char *p;
   FrontierMemBuf *mb;
-  unsigned char *md5;
   
   fpl->blob = 0;
   fpl->error = FRONTIER_OK;
@@ -135,13 +137,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   if(fpl->error!=FRONTIER_OK)
     goto errcleanup;
 
-  md5=frontierMemData_getmd5(fpl->md);
-  bzero(fpl->md5_str,sizeof(fpl->md5_str));
-  // convert the binary md5 characters into printable
-  for(i=0;i<16;i++)
-   {
-    snprintf(((char*)(fpl->md5_str))+(i*2),3,"%02x",md5[i]);
-   }
+  bcopy(frontierMemData_getDigest(fpl->md),fpl->digest,sizeof(fpl->digest));
 
   // put all the buffered pieces together into one
   fpl->blob_size=fpl->md->total;
@@ -216,7 +212,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     goto errcleanup;
    }
 
-  //printf("Blob size %d md5 %s\n",fpl->blob_size,fpl->md5_str);
+  //printf("Blob size %d\n",fpl->blob_size);
 
   return FRONTIER_OK;
 
