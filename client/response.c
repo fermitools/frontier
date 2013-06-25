@@ -324,7 +324,7 @@ int frontierResponse_finalize(FrontierResponse *fr)
        }
 
       if(memcmp(digest,sha256_buf,declen)==0)
-        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Payload[%d] signature passed");
+        frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Payload[%d] signature passed",i+1);
       else
        {
         char digest_str[SHA256_DIGEST_LENGTH*2+1];

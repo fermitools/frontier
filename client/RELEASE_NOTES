@@ -1,5 +1,28 @@
 $Id$
 
+v2_8_7
+ - Added support for digital signatures on responses.  This is enabled
+   by the connection string option "(security=sig)".  This option
+   requires a directory of Certifying Authorities certificates and
+   CRLs which can be set with "(capath=/path/to/dir)". The default
+   path is /etc/grid-security/certificates.  Also requires frontier
+   servlet version of at least 3.30.  The signature is made up of a
+   SHA256 checksum of the requested URL plus the response, encrypted
+   with the RSA private key of the server's X509 host key.  The
+   server's X509 certificate is read from the server and verified by
+   openssl.  Either the certificate's primary subject name or one of
+   its alternate DNS names is required to match the host name in the
+   serverurl.  The signature is decrypted with the certificate's RSA
+   public key, and the resulting value is required to match the
+   calculated SHA256 checksum of the URL plus the response.
+ - Fix a segfault that happened when the application tries to do
+   another query after an error with all proxies & servers.  The
+   problem was introduced in the last release.
+ - Removed internal MD5 implementation and switched to use openssl's
+   implementation instead.
+ - Added -ldl to the library link line because that's needed by
+   Fedora 18.
+
 v2_8_6 - 29 Apr 2013 (dwd)
  - Change retry strategy so that if a proxy or directly-connected server
    translates to a round-robin DNS name and there are errors, all of the
