@@ -70,8 +70,7 @@ int do_main(int argc, char **argv)
   long long vl;
   float vf;
   double vd;
-  std::string stringBuf;
-  std::string *vs=&stringBuf;
+  std::string *vs=0;
   frontier::AnyData ad;
   char *file_name=0;
   int arg_ind;
@@ -229,6 +228,7 @@ int do_main(int argc, char **argv)
 		vs=ad.getString(); 
 		str_escape_quota(vs);
 		std::cout<<'\''<<(*vs)<<'\''<<'('<<ad.getRawStrS()<<')'; 
+		delete vs;
 	      }
 	      break;	  
 	    default: 
