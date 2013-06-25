@@ -120,6 +120,7 @@ void frontierHttpClnt_drop(FrontierHttpClnt *c);
 void frontierHttpClnt_delete(FrontierHttpClnt *c);
 void frontierHttpClnt_clear(FrontierHttpClnt *c);
 void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c);
+int frontierHttpClnt_getContentLength(FrontierHttpClnt *c);
 int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c);
 int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c);
 int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c);
