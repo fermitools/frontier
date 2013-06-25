@@ -25,6 +25,7 @@ public class Command
   public static final String[] domain_name={"admin","get","update","meta"};
   
   public int cmd_domain;
+  public String query;
   public String obj_name;
   public String obj_version;
   public String method;
@@ -73,12 +74,14 @@ public class Command
     //System.out.println("Query string ["+query_str+"]");
     String[] param=new String[4];
     Object[] env=new Object[2];
-        
+
     boolean completed=get_next_param(param,env,query_str);
     
     while(!completed)
      {
       Command c=new Command();
+
+      c.query=query_str;
       
       //System.out.println("p0=["+param[0]+"]");
       
