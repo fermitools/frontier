@@ -128,8 +128,8 @@ xml_startElement(void *userData,const char *name,const char **atts)
        }
       if(strcmp(atts[i],"md5")==0)
        {
-        bcopy(atts[i+1],fr->payload[fr->payload_num-1]->srv_md5_str,32);
-	fr->payload[fr->payload_num-1]->srv_md5_str[32]=0;
+        bcopy(atts[i+1],fr->payload[fr->payload_num-1]->srv_md5_str,MD5_DIGEST_LENGTH*2);
+	fr->payload[fr->payload_num-1]->srv_md5_str[MD5_DIGEST_LENGTH*2]=0;
 	continue;       
        }
       if(strcmp(atts[i],"sig")==0)
@@ -357,10 +357,10 @@ endsigned:
 
       bzero(md5_str,sizeof(md5_str));
       // convert the binary md5 characters into printable
-      for(i=0;i<16;i++)
+      for(i=0;i<MD5_DIGEST_LENGTH;i++)
 	snprintf(&md5_str[i*2],3,"%02x",digest[i]);
 
-      if(strncmp(srv_md5_str,md5_str,32)!=0) 
+      if(strcmp(srv_md5_str,md5_str)!=0) 
        {
 	frontier_setErrorMsg(__FILE__,__LINE__,"Payload[%d]: MD5 hash mismatch: server [%s], local [%s]",(i+1),srv_md5_str,md5_str);
 	return FRONTIER_EPROTO;
