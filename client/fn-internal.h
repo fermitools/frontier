@@ -24,7 +24,7 @@
 # define FRONTIER_FAILURE 1
 
 #include "fn-base64.h"
-#include "fn-md5.h"
+#include "openssl/md5.h"
 #include "openssl/sha.h"
 
 struct s_FrontierMemBuf
@@ -42,8 +42,8 @@ struct s_FrontierMemData
   size_t zipped_total;
   int error;
   fn_b64a2b_context b64context;
-  unsigned char md5[16];
-  struct md5_ctx md5_ctx;
+  unsigned char md5[MD5_DIGEST_LENGTH];
+  MD5_CTX md5_ctx;
   unsigned char sha256[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256_ctx;
   int secured;
@@ -70,7 +70,7 @@ struct s_FrontierPayload
   int blob_size;
   unsigned int nrec;
   long full_size;
-  char srv_md5_str[36];
+  char srv_md5_str[MD5_DIGEST_LENGTH*2+1];
   unsigned char digest[SHA256_DIGEST_LENGTH];
   unsigned char *srv_sig;
   int srv_sig_len;

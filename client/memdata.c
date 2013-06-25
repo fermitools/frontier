@@ -68,15 +68,16 @@ FrontierMemData *frontierMemData_create(int zipped,int secured,const char *param
       if(p) *p='\0';
       params1=strrchr(params1,'/');  // there is always a slash
       if(p) *p='&';
-      (void)SHA256_Update(&md->sha256_ctx,(u8 *)params1,strlen(params1));
+      (void)SHA256_Update(&md->sha256_ctx,(unsigned char *)params1,strlen(params1));
      }
     if(params2)
-      (void)SHA256_Update(&md->sha256_ctx,(u8 *)params2,strlen(params2));
+      (void)SHA256_Update(&md->sha256_ctx,(unsigned char *)params2,strlen(params2));
    }
   else
    {
     bzero(md->md5,sizeof(md->md5));
-    frontier_md5_init(&md->md5_ctx);
+    if (!MD5_Init(&md->md5_ctx))
+      goto err;
    }
   md->zipped_total=0;
   md->binzipped=zipped;
@@ -166,9 +167,9 @@ static int frontierMemData_append(FrontierMemData *md,
        }
       // else finished filling the zipbuf, update message digest
       if(md->secured)
-        (void)SHA256_Update(&md->sha256_ctx,((u8 *)&md->zipbuf[0]),md->zipbuflen);
+        (void)SHA256_Update(&md->sha256_ctx,((unsigned char *)&md->zipbuf[0]),md->zipbuflen);
       else
-        frontier_md5_update(&md->md5_ctx,((u8 *)&md->zipbuf[0]),md->zipbuflen);
+        (void)MD5_Update(&md->md5_ctx,((unsigned char *)&md->zipbuf[0]),md->zipbuflen);
       // and unzip the zipbuf
       p=md->zipbuf;
       size2=md->zipbuflen;
@@ -241,9 +242,9 @@ static int frontierMemData_append(FrontierMemData *md,
         return FRONTIER_OK;
       //else finished with this membuf, update message digest
       if(md->secured)
-        (void)SHA256_Update(&md->sha256_ctx,((u8 *)mb)+sizeof(*mb),mb->len);
+        (void)SHA256_Update(&md->sha256_ctx,((unsigned char *)mb)+sizeof(*mb),mb->len);
       else
-        frontier_md5_update(&md->md5_ctx,((u8 *)mb)+sizeof(*mb),mb->len);
+        (void)MD5_Update(&md->md5_ctx,((unsigned char *)mb)+sizeof(*mb),mb->len);
       if(!final)
        {
 	// allocate another membuf
@@ -263,7 +264,7 @@ static int frontierMemData_append(FrontierMemData *md,
       if(md->secured)
         (void)SHA256_Final(md->sha256,&md->sha256_ctx);
       else
-        frontier_md5_final(&md->md5_ctx,md->md5);
+        (void)MD5_Final(md->md5,&md->md5_ctx);
       return FRONTIER_OK;
      }
    }
