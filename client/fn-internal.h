@@ -25,6 +25,7 @@
 
 #include "fn-base64.h"
 #include "fn-md5.h"
+#include "openssl/sha.h"
 
 struct s_FrontierMemBuf
  {
@@ -43,14 +44,17 @@ struct s_FrontierMemData
   fn_b64a2b_context b64context;
   unsigned char md5[16];
   struct md5_ctx md5_ctx;
+  unsigned char sha256[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256_ctx;
+  int secured;
   int binzipped;
   unsigned char zipbuf[4096];
   int zipbuflen;
  };
 typedef struct s_FrontierMemData FrontierMemData;
-FrontierMemData *frontierMemData_create(int zipped);
+FrontierMemData *frontierMemData_create(int zipped,int secured,const char *params1,const char *params2);
 int frontierMemData_finalize(FrontierMemData *md);
-unsigned char *frontierMemData_getmd5(FrontierMemData *md);
+unsigned char *frontierMemData_getDigest(FrontierMemData *md);
 void frontierMemData_delete(FrontierMemData *md);
 int frontierMemData_b64append(FrontierMemData *md,const char *buf,int size);
 
@@ -66,12 +70,14 @@ struct s_FrontierPayload
   int blob_size;
   unsigned int nrec;
   long full_size;
-  char md5_str[36];
   char srv_md5_str[36];
+  unsigned char digest[SHA256_DIGEST_LENGTH];
+  unsigned char *srv_sig;
+  int srv_sig_len;
   FrontierMemData *md;
  };
 typedef struct s_FrontierPayload FrontierPayload;
-FrontierPayload *frontierPayload_create(const char *encoding);
+FrontierPayload *frontierPayload_create(const char *encoding,int secured,const char *params1,const char *params2);
 void frontierPayload_delete(FrontierPayload *pl);
 void frontierPayload_append(FrontierPayload *pl,const char *s,int len);
 int frontierPayload_finalize(FrontierPayload *pl);
@@ -88,10 +94,13 @@ struct s_FrontierResponse
   int p_state;
   int zipped;
   int seqnum;
+  void *srv_rsakey;
+  const char *params1;
+  const char *params2;
   FrontierPayload *payload[FRONTIER_MAX_PAYLOADNUM];
  };
 typedef struct s_FrontierResponse FrontierResponse;
-FrontierResponse *frontierResponse_create(int *ec);
+FrontierResponse *frontierResponse_create(int *ec,void *srv_rsakey,const char *params1,const char *params2);
 void frontierResponse_delete(FrontierResponse *fr);
 int FrontierResponse_append(FrontierResponse *fr,char *buf,int len);
 int frontierResponse_finalize(FrontierResponse *fr);
@@ -125,6 +134,7 @@ struct s_Channel
   char *ttlshort_suffix;
   char *ttllong_suffix;
   int client_cache_maxsize;
+  void *serverrsakey[FRONTIER_MAX_SERVERN];
  };
 typedef struct s_Channel Channel;
 
