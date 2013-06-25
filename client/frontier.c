@@ -33,7 +33,7 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
-
+#include <openssl/x509v3.h>
 
 int frontier_log_level;
 char *frontier_log_file;
@@ -216,7 +216,7 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   const char *p;
   fn_client_cache_list *cache_listp;
   char *servlet;
-  int n;
+  int n,s;
   int longfresh=0;
 
   chn=frontier_mem_alloc(sizeof(Channel));
@@ -354,7 +354,12 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
     chn->client_cache=cache_listp;
    }
 
-  // calculate the url suffixes for short and long time-to-live
+  // calculate the url suffixes for short and long time-to-live, including
+  //  &sec and &freshkey if needed
+  if(frontierConfig_getSecured(chn->cfg))
+    s=strlen("&sec=sig");
+  else
+    s=0;
   p=frontierConfig_getFreshkey(chn->cfg);
   n=strlen(p);
   if(strncmp(p,"long",4)==0)
@@ -365,8 +370,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
    }
   if(n>0)
     n+=strlen("&freshkey=");
-  chn->ttlshort_suffix=(char *)frontier_mem_alloc(strlen("&ttl=short")+n+1);
-  chn->ttllong_suffix=(char *)frontier_mem_alloc((longfresh?n:0)+1);
+  chn->ttlshort_suffix=(char *)frontier_mem_alloc(s+strlen("&ttl=short")+n+1);
+  chn->ttllong_suffix=(char *)frontier_mem_alloc(s+(longfresh?n:0)+s+1);
   if(!chn->ttlshort_suffix||!chn->ttllong_suffix)
    {
     *ec=FRONTIER_EMEM;
@@ -374,8 +379,14 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
     channel_delete(chn);    
     return (void*)0;
    }
-  strcpy(chn->ttlshort_suffix,"&ttl=short");
+  *chn->ttlshort_suffix='\0';
   *chn->ttllong_suffix='\0';
+  if(s>0)
+   {
+    strcat(chn->ttlshort_suffix,"&sec=sig");
+    strcat(chn->ttllong_suffix,"&sec=sig");
+   }
+  strcat(chn->ttlshort_suffix,"&ttl=short");
   if(n>0)
    {
     strcat(chn->ttlshort_suffix,"&freshkey=");
@@ -411,6 +422,7 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
 
 static void channel_delete(Channel *chn)
  {
+  int i;
   if(!chn) return;
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing chan %d at %s",chn->seqnum,frontier_str_now());
   frontierHttpClnt_delete(chn->ht_clnt);
@@ -419,6 +431,10 @@ static void channel_delete(Channel *chn)
   if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
   if(chn->ttlshort_suffix)frontier_mem_free(chn->ttlshort_suffix);
   if(chn->ttllong_suffix)frontier_mem_free(chn->ttllong_suffix);
+  for(i=0;i<FRONTIER_MAX_SERVERN;i++)
+    if(chn->serverrsakey[i])
+      RSA_free((RSA *)chn->serverrsakey[i]);
+  EVP_cleanup();
   frontier_mem_free(chn);
   fn_gzip_cleanup();
   frontier_log_close();
@@ -460,24 +476,244 @@ static int write_data(FrontierResponse *resp,void *buf,int len)
  }
 
 
-static int prepare_channel(Channel *chn)
+static int prepare_channel(Channel *chn,int curserver,const char *params1,const char *params2)
  {
   int ec;
   
   if(chn->resp) frontierResponse_delete(chn->resp);
-  chn->resp=frontierResponse_create(&ec);  
+  chn->resp=frontierResponse_create(&ec,curserver<0?0:chn->serverrsakey[curserver],params1,params2);
   chn->resp->seqnum=++chn->response_seqnum;
   if(!chn->resp) return ec;
   
   return FRONTIER_OK;
  }
  
+static char *vcb_curservername;
+static int cert_verify_callback(int ok,X509_STORE_CTX *ctx)
+ {
+  if (!ok)
+    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,X509_verify_cert_error_string(ctx->error));
+  return ok;
+ }
  
-static int get_data(Channel *chn,const char *uri,const char *body)
+static int get_cert(Channel *chn,const char *uri,int curserver)
+ {
+  int ret;
+  int reload;
+  char *certuri=0;
+  char *p,*cert=0;
+  int n,len;
+  char *servername,*commonname=0;
+  BIO *bio=0;
+  X509 *x509cert=0;
+  X509_STORE *x509store=0;
+  X509_STORE_CTX *x509storectx=0;
+  X509_VERIFY_PARAM *x509verifyparam=0;
+  X509_LOOKUP *x509lookup=0;
+  char *x509subject=0;
+  GENERAL_NAMES *subjectAltNames=0;
+  EVP_PKEY *pubkey=0;
+  RSA *rsakey=0;
+
+  ret=prepare_channel(chn,curserver,0,0);
+  if(ret) return ret;
+
+  if(strcmp(frontierConfig_getForceReload(chn->cfg),"long")==0)
+    reload=2;
+  else if(strcmp(frontierConfig_getForceReload(chn->cfg),"softlong")==0)
+    reload=1;
+  else
+    reload=0;
+  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,reload);
+  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,"");
+  frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
+
+  ret=frontierHttpClnt_open(chn->ht_clnt);
+  if(ret) goto end;
+
+  p=strstr(uri,"/type=");
+  if(p==0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"cannot find /type= in URI: %s",uri);
+    return FRONTIER_EIARG;
+   }
+  len=p-uri;
+#define CERTURISTR "/type=cert_request:1&encoding=pem"
+  certuri=frontier_mem_alloc(len+sizeof(CERTURISTR));
+  if(!certuri) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  strncpy(certuri,uri,len);
+  strcpy(certuri+len,CERTURISTR);
+#undef CERTURISTR
+  
+  ret=frontierHttpClnt_get(chn->ht_clnt,certuri);
+  if(ret) goto end;
+
+  servername=frontierHttpClnt_curservername(chn->ht_clnt);
+  if((p=strchr(servername,'['))!=0)
+    *p='\0';
+
+  len=frontierHttpClnt_getContentLength(chn->ht_clnt);
+  if(len<=0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"no content length from server cert request to server %s",servername);
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+
+  cert=frontier_mem_alloc(len+1);
+  if(!cert) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+
+  n=0;
+  while(n<len)
+   {
+    ret=frontierHttpClnt_read(chn->ht_clnt,cert+n,len-n);
+    if(ret<=0)
+     {
+      if(ret==0)
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,"server cert from %s too short: expected %d bytes, got %d",servername,len,n);
+	ret=FRONTIER_ESERVER;
+       }
+      goto end;
+     }
+    n+=ret;
+   }
+  cert[len]='\0';
+
+  if(strncmp(cert,"-----BEGIN ",11)!=0)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"server cert from %s bad response",servername);
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+
+  bio=BIO_new_mem_buf(cert,len);
+  if(!bio) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  x509cert=PEM_read_bio_X509(bio,0,0,0);
+  if(!x509cert)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"error reading x509 certificate from server %s",servername);
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+
+  OpenSSL_add_all_algorithms();
+  x509store=X509_STORE_new();
+  x509verifyparam=X509_VERIFY_PARAM_new();
+  X509_VERIFY_PARAM_set_flags(x509verifyparam,X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+  X509_STORE_set1_param(x509store,x509verifyparam);
+  X509_STORE_set_verify_cb_func(x509store,cert_verify_callback);
+  x509lookup=X509_STORE_add_lookup(x509store,X509_LOOKUP_hash_dir());
+  if(!x509lookup) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  if(!X509_LOOKUP_add_dir(x509lookup,frontierConfig_getCAPath(chn->cfg),X509_FILETYPE_PEM))
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"error adding %s as x509 lookup dir",frontierConfig_getCAPath(chn->cfg));
+    ret=FRONTIER_ECFG;
+    goto end;
+   }
+
+  x509storectx=X509_STORE_CTX_new();
+  if(!x509storectx) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  if(!X509_STORE_CTX_init(x509storectx,x509store,x509cert,0)) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  x509subject=X509_NAME_oneline(X509_get_subject_name(x509cert),0,0);
+  if(!x509subject) {ret=FRONTIER_EMEM;FRONTIER_MSG(ret);goto end;}
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"verifying server certificate %s",x509subject);
+
+  // Have to put server name in a static variable for the error, unfortunately,
+  //  because there's no way to pass a value to the callback. 
+  vcb_curservername=servername;
+  if(!X509_verify_cert(x509storectx))
+   {
+    // error message is set inside callback
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+
+  if((p=strstr(x509subject,"/CN="))!=0)
+   {
+    commonname=p+4;
+    if((p=strchr(commonname,'/'))!=0)
+      *p='\0';
+   }
+  if((commonname!=0)&&(strcmp(commonname,servername)==0))
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"servername %s matched CN",servername);
+  else
+   {
+    int numalts,i;
+    subjectAltNames=(GENERAL_NAMES *)X509_get_ext_d2i(x509cert,NID_subject_alt_name,0,0);
+    if(!subjectAltNames)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"server %s name does not match cert common name %s",servername,commonname?commonname:"none");
+      ret=FRONTIER_ESERVER;
+      goto end;
+     }
+    numalts=sk_GENERAL_NAME_num(subjectAltNames);
+    for(i=0;i<numalts;i++)
+     {
+      GENERAL_NAME *altname=sk_GENERAL_NAME_value(subjectAltNames,i);
+      if(altname->type==GEN_DNS)
+       {
+	unsigned char *dns;
+	ASN1_STRING_to_UTF8(&dns,altname->d.dNSName);
+	if(strcmp((char *)dns,servername)==0)
+	 {
+	  OPENSSL_free(dns);
+	  break;
+	 }
+	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"cert alternative DNS name %s didn't match server name %s",dns,servername);
+	OPENSSL_free(dns);
+       }
+     }
+    if(i==numalts)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"server %s name does not match cert common name %s nor any of the alternative DNS subject names",servername,commonname?commonname:"none");
+      ret=FRONTIER_ESERVER;
+      goto end;
+     }
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"server name %s matched alternative DNS subject name",servername);
+   }
+
+  pubkey=X509_get_pubkey(x509cert);
+  if(!pubkey)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"error extracting public key from server %s cert",servername);
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+
+  rsakey=EVP_PKEY_get1_RSA(pubkey);
+  if(!rsakey)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"error extracting rsa key from server %s cert",servername);
+    ret=FRONTIER_ESERVER;
+    goto end;
+   }
+  
+  ret=FRONTIER_OK;
+  chn->serverrsakey[curserver]=rsakey;
+
+end:
+  frontierHttpClnt_close(chn->ht_clnt);
+  if(certuri)frontier_mem_free(certuri);
+  if(x509store)X509_STORE_free(x509store);
+  // X509_STORE_free does X509_LOOKUP_free
+  if(x509storectx)X509_STORE_CTX_free(x509storectx);
+  if(x509verifyparam)X509_VERIFY_PARAM_free(x509verifyparam);
+  if(pubkey)EVP_PKEY_free(pubkey);
+  if(x509cert)X509_free(x509cert);
+  if(bio)BIO_free(bio);
+  if(cert)frontier_mem_free(cert);
+  if(x509subject)OPENSSL_free(x509subject);
+  if(subjectAltNames)sk_GENERAL_NAME_pop_free(subjectAltNames,GENERAL_NAME_free);
+  return ret;
+ }
+
+static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
  {
   int ret=FRONTIER_OK;
   char buf[8192];
   const char *force_reload;
+  char *url_suffix;
   char *uri_copy,*data_copy;
   int uri_len;
   int reload;
@@ -490,9 +726,6 @@ static int get_data(Channel *chn,const char *uri,const char *body)
     frontier_setErrorMsg(__FILE__,__LINE__,"wrong channel");
     return FRONTIER_EIARG;
    }
-
-  ret=prepare_channel(chn);
-  if(ret) return ret;
 
   reload=chn->reload;
   if(!reload)
@@ -514,9 +747,12 @@ static int get_data(Channel *chn,const char *uri,const char *body)
      where the length of time is defined by the server.  Add the suffix
      even when reloads are forced to make sure the same URL is cleared
      in the caches. */
-  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,
-    chn->user_reload ? chn->ttlshort_suffix : chn->ttllong_suffix);
+  url_suffix=(chn->user_reload?chn->ttlshort_suffix:chn->ttllong_suffix);
+  frontierHttpClnt_setUrlSuffix(chn->ht_clnt,url_suffix);
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
+
+  ret=prepare_channel(chn,curserver,uri,url_suffix);
+  if(ret) return ret;
   
   ret=frontierHttpClnt_open(chn->ht_clnt);
   if(ret) goto end;
@@ -661,7 +897,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if((hashval=fn_hashtable_search(chn->client_cache->table,(char *)uri))!=0)
      {
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"HIT in %s client cache, skipping contacting server",chn->client_cache->servlet);
-      ret=prepare_channel(chn);
+      ret=prepare_channel(chn,-1,0,0);
       if(ret) return ret;
       return write_data(chn->resp,hashval->data,hashval->len);
      }
@@ -677,23 +913,33 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   
   while(1)
    {
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now());
-
     // because this is a retry loop, transfer errors aren't necessarily errors
     frontier_turnErrorsIntoDebugs(1);
 
-    ret=get_data(chn,uri,body);    
-    if(ret==FRONTIER_OK) 
+    ret=FRONTIER_OK;
+    if(frontierConfig_getSecured(chn->cfg)&&(chn->serverrsakey[curserver]==0))
      {
-      ret=frontierResponse_finalize(chn->resp);
-      frontier_turnErrorsIntoDebugs(0);
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now());
-      if(ret==FRONTIER_OK) break;
+      // don't yet have the server certificate, get that first
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"getting certificate on chan %d at %s",chn->seqnum,frontier_str_now());
+      ret=get_cert(chn,uri,curserver);
      }
+    if(ret==FRONTIER_OK)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now());
+      ret=get_data(chn,uri,body,curserver);    
+      if(ret==FRONTIER_OK) 
+       {
+	ret=frontierResponse_finalize(chn->resp);
+	frontier_turnErrorsIntoDebugs(0);
+	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now());
+	if(ret==FRONTIER_OK) break;
+       }
+     }
+
     frontier_turnErrorsIntoDebugs(0);
 
     snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
-    if(ret==FRONTIER_EMEM)
+    if((ret==FRONTIER_EMEM)||(ret==FRONTIER_EIARG)||(ret==FRONTIER_ECFG))
      {
       frontier_setErrorMsg(__FILE__,__LINE__,err_last_buf);
       break;
