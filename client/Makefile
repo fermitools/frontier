@@ -71,9 +71,9 @@ LIBDIR		=
 # -ldl needed by Fedora 18
 LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto -L. ${ZLIB_LD_FLAGS} -lz -ldl
 
-OBJ		=	fn-base64.o fn-hash.o fn-md5.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
+OBJ		=	fn-base64.o fn-hash.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o pacparser-dlopen.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
-HDR		=	include/frontier_client/frontier.h fn-internal.h fn-md5.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
+HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
 BINAPP		=	fn-req fn-fileget
 BINSCRIPTS	= 	fnget.py frontierqueries
@@ -190,9 +190,6 @@ fn-base64.o: fn-base64.c $(HDR) fn-base64.h
 
 fn-hash.o: fn-hash.c $(HDR) fn-hash.h chashtable/hashtable.c chashtable/hashtable.h
 	$(CC) $(COPT) $(INC) -c fn-hash.c
-
-fn-md5.o: fn-md5.c $(HDR)
-	$(CC) $(COPT) $(INC) -c fn-md5.c
 
 fn-zlib.o: fn-zlib.c $(HDR) fn-zlib.h fn-base64.h
 	$(CC) $(COPT) $(INC) -c fn-zlib.c
