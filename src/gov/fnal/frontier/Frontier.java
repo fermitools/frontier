@@ -11,11 +11,14 @@
 
 package gov.fnal.frontier;
 
+import gov.fnal.frontier.codec.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 import java.io.*;
+import java.security.*;
+import java.security.spec.*;
 
 
 public final class Frontier
@@ -25,6 +28,8 @@ public final class Frontier
   private static String conf_server_name="not_set";
   private static String conf_ds_name;
   private static String conf_file_base_dir;
+  private static String conf_key_file_name;
+  private static String conf_cert_file_name;
   private static String conf_xsd_table="";
   private static final int SHORTCACHE=0;
   private static final int LONGCACHE=1;
@@ -52,6 +57,11 @@ public final class Frontier
   //  6-1/3rd minutes for DataSource.getConnection() to return
   public static int max_db_acquire_seconds=300;
   public static int max_db_execute_seconds=10;
+  public static byte[] cert_bytes;
+  public static byte[] key_bytes;
+  public static PrivateKey private_key;
+
+  private boolean certRequested=false;
 
   public long max_age=-1;
   public long error_max_age=Frontier.errorDefaultMaxAge();
@@ -84,6 +94,41 @@ public final class Frontier
      }
    }
   
+  private static PrivateKey extractPrivateKeyFromPEM(String pem) throws Exception
+   {
+    // Read PEM into a private key.
+    // Bouncycastle has a function for this (PEMReader), but want to avoid
+    //    that dependency.
+
+    // First convert PEM into DER, the equivalent of
+    //  openssl pkcs8 -topk8 -outform DER -in key.pem -out key.der -nocrypt
+    String b64key=new Scanner(pem).useDelimiter("-----(BEGIN|END) RSA PRIVATE KEY-----\n").next();
+    b64key=b64key.replace("\n","");
+    byte [] derdata=Base64Coder.decode(b64key.getBytes());
+    // these bytes were copied from openssl conversion output
+    byte [] derhead={(byte)0x30,(byte)0x82,(byte)0x00,(byte)0x00,
+		     (byte)0x02,(byte)0x01,(byte)0x00,(byte)0x30,
+		     (byte)0x0d,(byte)0x06,(byte)0x09,(byte)0x2a, 
+		     (byte)0x86,(byte)0x48,(byte)0x86,(byte)0xf7,
+		     (byte)0x0d,(byte)0x01,(byte)0x01,(byte)0x01, 
+		     (byte)0x05,(byte)0x00,(byte)0x04,(byte)0x82};
+    byte [] pkcs8key=new byte[derhead.length+2+derdata.length];
+    System.arraycopy(derhead,0,pkcs8key,0,derhead.length);
+    // stuff in the 2-byte length, high byte first
+    int pkcs8keylen=derdata.length;
+    pkcs8key[24]=(byte)((pkcs8keylen>>8)&0xff);
+    pkcs8key[25]=(byte)(pkcs8keylen&0xff);
+    // length including the header (after first 4 byes) is in the header 
+    pkcs8keylen+=22;
+    pkcs8key[2]=(byte)((pkcs8keylen>>8)&0xff);
+    pkcs8key[3]=(byte)(pkcs8keylen&0xff);
+    System.arraycopy(derdata,0,pkcs8key,derhead.length+2,derdata.length);
+
+    // Convert the DER key into a PrivateKey structure
+    PKCS8EncodedKeySpec keySpec=new PKCS8EncodedKeySpec(pkcs8key);
+    KeyFactory kf=KeyFactory.getInstance("RSA");
+    return kf.generatePrivate(keySpec);
+   }
   
   protected static synchronized void init() throws Exception
    {
@@ -108,6 +153,27 @@ public final class Frontier
     highVerbosity=(verbosityLevel>=4);
     if (verbosityLevel>0)
       Frontier.Log("VerbosityLevel set to "+verbosityLevel);
+
+    conf_key_file_name=getPropertyString(prb,"KeyFileName");
+    if(conf_key_file_name!=null)
+     {
+      File file=new File(conf_key_file_name);
+      key_bytes=new byte[(int)file.length()];
+      DataInputStream dis=new DataInputStream(new FileInputStream(file));
+      dis.readFully(key_bytes);
+      dis.close();
+      private_key=extractPrivateKeyFromPEM(new String(key_bytes));
+     }
+
+    conf_cert_file_name=getPropertyString(prb,"CertFileName");
+    if(conf_cert_file_name!=null)
+     {
+      File file=new File(conf_cert_file_name);
+      cert_bytes=new byte[(int)file.length()];
+      DataInputStream dis=new DataInputStream(new FileInputStream(file));
+      dis.readFully(cert_bytes);
+      dis.close();
+     }
 
     String maxthreads=getPropertyString(prb,"MaxThreads");
     if(maxthreads!=null)
@@ -193,11 +259,6 @@ public final class Frontier
     if(monitor!=null) monitor.increment();
 
     logClientDesc(req);          
-    if(getDsName()!=null)
-      connMgr=DbConnectionMgr.getDbConnectionMgr();
-    commandList=Command.parse(req);
-    payloads_num=commandList.size();
-    aPayloads=new ArrayList<Payload>();
     if(validate_last_modified_seconds>0)
      {
       if_modified_since=req.getDateHeader("if-modified-since");
@@ -207,15 +268,30 @@ public final class Frontier
     if(conf_cache_expire_seconds[SHORTCACHE]!=null)
      {
       //if set and less than the default error max age, use the short cache
-      //  short cache age also for errors
+      //  age also for errors
       long age=Long.parseLong(conf_cache_expire_seconds[SHORTCACHE]);
       if(age<error_max_age)
         error_max_age=age;
      }
     int cachelength=LONGCACHE;
+
+    commandList=Command.parse(req);
+
+    Command cmd=(Command)commandList.get(0);
+    if(cmd.obj_name.equals("cert_request")&&cmd.obj_version.equals("1"))
+     {
+      certRequested=true;
+      max_age=error_max_age;
+      return;
+     }
+
+    payloads_num=commandList.size();
+    aPayloads=new ArrayList<Payload>();
+    if(getDsName()!=null)
+      connMgr=DbConnectionMgr.getDbConnectionMgr();
     for(int i=0;i<payloads_num;i++)
      {
-      Command cmd=(Command)commandList.get(i);
+      cmd=(Command)commandList.get(i);
       Payload p=new Payload(cmd,connMgr);
       if(p.noCache) noCache=true;
       String ttl=cmd.fds.getOptionalString("ttl");
@@ -296,6 +372,21 @@ public final class Frontier
       Payload p=(Payload)aPayloads.get(i);          
       p.close(sos);
      }
+   }
+
+  public boolean nonXmlResponse(HttpServletResponse response) throws Exception
+   {
+    if(certRequested)
+     {
+      if(cert_bytes==null)
+        throw new Exception("no CertFileName found");
+      response.setContentType("text/plain");
+      response.setContentLength(cert_bytes.length);
+      response.getOutputStream().write(cert_bytes);
+      Frontier.Log("cert size="+cert_bytes.length);
+      return true;
+     }
+    return false;
    }
 
   private void logClientDesc(HttpServletRequest req) throws Exception
