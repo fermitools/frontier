@@ -20,7 +20,8 @@ public class ResponseFormat
  {
   static void handleError(String where, Exception e)
    {
-    Frontier.Log("Error is ignored in ResponseFormat."+where+": ",e);
+    if(!e.getClass().getSimpleName().equals("ClientAbortException"))
+      Frontier.Log("Error is ignored in ResponseFormat."+where+": ",e);
    }
 
   
@@ -83,7 +84,14 @@ public class ResponseFormat
    
   static void transaction_end(ServletOutputStream out) throws Exception
    {
-    out.print(" </transaction>\n");
+    try
+     {
+      out.print(" </transaction>\n");
+     }
+    catch(Exception e)
+     {
+      handleError("transaction_end",e);
+     }
    }
       
    
