@@ -28,7 +28,7 @@ public interface Encoder
   public void writeStream(InputStream is,int len) throws Exception;
   public void writeDate(java.util.Date v) throws Exception;
   public long getOutputSize();
-  public byte[] getMD5Digest() throws Exception;
+  public byte[] getMessageDigest() throws Exception;
   public void close() throws Exception;
  }
 
