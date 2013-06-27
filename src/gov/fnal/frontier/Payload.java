@@ -17,6 +17,7 @@ import gov.fnal.frontier.codec.*;
 import gov.fnal.frontier.fdo.*;
 import java.util.*;
 import javax.servlet.ServletOutputStream;
+import javax.crypto.Cipher;
 
 public class Payload
  {
@@ -25,6 +26,8 @@ public class Payload
   private DbConnectionMgr dbm;
   private Command cmd;
   private FrontierDataObject fdo;
+  private Encoder enc;
+  private boolean sign;
   
   private static final String fds_sql=
    "select xsd_type,xsd_data from "+Frontier.getXsdTableName()+" where name = ? and version = ? ";
@@ -36,7 +39,6 @@ public class Payload
   public String encoder;
   public int err_code;
   public String err_msg;
-  public String md5;
   public int rec_num;
   public long full_size;
   
@@ -50,9 +52,12 @@ public class Payload
     encoder=cmd.encoder;
     err_code=0;
     err_msg="";
-    md5="";
     rec_num=0;
     full_size=0;
+
+    String sec=cmd.fds.getOptionalString("sec");
+    if((sec!=null)&&(sec.equals("sig")))sign=true;
+    else sign=false;
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
@@ -134,7 +139,6 @@ public class Payload
 
   public void send(ServletOutputStream out) throws Exception
    {
-    Encoder enc=null;
     rec_num=0;
 
     if ((cmd.encoder.length() < 4) ||
@@ -150,7 +154,7 @@ public class Payload
     switch(cmd.cmd_domain)
      {
       case Command.CMD_GET:
-       enc=new BlobTypedEncoder(out,encparam);
+       enc=new BlobTypedEncoder(out,encparam,sign?cmd.query:null);
        try { 
 	   rec_num=fdo.fdo_get(enc,cmd.method,out); 
 	   // System.out.println("Number of records after fdo_get: " + rec_num);
@@ -158,14 +162,13 @@ public class Payload
        finally 
         { 
          enc.close(); 
-         md5=md5Digest(enc);
 	 full_size=enc.getOutputSize();
          Frontier.Log("rows="+rec_num+", full size="+full_size);
         }
        return;
       
       case Command.CMD_META:
-       enc=new BlobTypedEncoder(out,encparam);
+       enc=new BlobTypedEncoder(out,encparam,null);
        try { 
 	   rec_num=fdo.fdo_meta(enc,cmd.method); 
 	   // System.out.println("Number of records after fdo_meta: " + rec_num);
@@ -173,12 +176,11 @@ public class Payload
        finally 
         { 
          enc.close(); 
-         md5=md5Digest(enc);
         }
        return;
 
       case Command.CMD_WRITE:
-       enc=new BlobTypedEncoder(out,encparam);
+       enc=new BlobTypedEncoder(out,encparam,null);
        try { 
 	   rec_num=fdo.fdo_write(enc,cmd.method,out); 
 	   // System.out.println("Number of records after fdo_write: " + rec_num);
@@ -186,7 +188,6 @@ public class Payload
        finally 
         { 
          enc.close(); 
-         md5=md5Digest(enc);
         }
        return;       
               
@@ -196,19 +197,33 @@ public class Payload
    }
    
    
-  private String md5Digest(Encoder encoder) throws Exception
+  public String getCheck() throws Exception
    {
-    StringBuffer md5_ascii=new StringBuffer("");
-    byte[] md5_digest=encoder.getMD5Digest();
-    for(int i=0;i<md5_digest.length;i++) 
+    byte[] digest=enc.getMessageDigest();
+    if(sign)
      {
-      int v=(int)md5_digest[i];
-      if(v<0)v=256+v;
-      String str=Integer.toString(v,16);
-      if(str.length()==1)md5_ascii.append("0");
-      md5_ascii.append(str);
+      if(Frontier.private_key==null)
+        throw new Exception("No private key available for signing");
+      final Cipher cipher=Cipher.getInstance("RSA");
+      cipher.init(Cipher.ENCRYPT_MODE,Frontier.private_key);
+      byte[] encsig=cipher.doFinal(digest);
+      byte[] b64sig=Base64Coder.encode(encsig);
+      String sig=new String(b64sig);
+      return "sig=\""+sig+"\"";
      }
-    return md5_ascii.toString();
+    else
+     {
+      StringBuffer md5_ascii=new StringBuffer("");
+      for(int i=0;i<digest.length;i++) 
+       {
+	int v=(int)digest[i];
+	if(v<0)v=256+v;
+	String str=Integer.toString(v,16);
+	if(str.length()==1)md5_ascii.append("0");
+	md5_ascii.append(str);
+       }
+      return "md5=\""+md5_ascii.toString()+"\"";
+     }
    }  
 
   public void close(ServletOutputStream sos) throws Exception
