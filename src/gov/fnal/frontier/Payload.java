@@ -199,6 +199,8 @@ public class Payload
    
   public String getCheck() throws Exception
    {
+    if(enc==null)
+      return "";
     byte[] digest=enc.getMessageDigest();
     if(sign)
      {
