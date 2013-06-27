@@ -78,7 +78,7 @@ public class BlobTypedEncoder implements Encoder
   private byte[] streambuf=null;
 
   private DataOutputStream os;
-  private MessageDigest md5;
+  private MessageDigest md;
   //private Base64.OutputStream b64os;
   private Base64CoderOutputStream b64os;
   private OutputStream channel;
@@ -89,14 +89,20 @@ public class BlobTypedEncoder implements Encoder
   private int ziplevel=0;
   private long out_size=0;
 
-  public BlobTypedEncoder(OutputStream out,String param) throws Exception
+  public BlobTypedEncoder(OutputStream out,String param,String signparams) throws Exception
    {
     channel=out;
 
     //b64os=new Base64.OutputStream(out);
     b64os=new Base64CoderOutputStream(out);
-    md5=MessageDigest.getInstance("MD5");
-    dgos=new DigestOutputStream(b64os,md5);
+    if(signparams!=null)
+     {
+      md=MessageDigest.getInstance("SHA-256");
+      md.update(signparams.getBytes());
+     }
+    else
+     md=MessageDigest.getInstance("MD5");
+    dgos=new DigestOutputStream(b64os,md);
 
     if ((param.length() >= 3) && (param.substring(0,3).equals("zip")))
      {
@@ -261,9 +267,9 @@ public class BlobTypedEncoder implements Encoder
     return out_size;
    }
 
-  public byte[] getMD5Digest() throws Exception
+  public byte[] getMessageDigest() throws Exception
    {
-    return md5.digest();
+    return md.digest();
    }
 
 
