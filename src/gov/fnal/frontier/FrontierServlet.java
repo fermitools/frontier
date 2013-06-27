@@ -110,7 +110,7 @@ public final class FrontierServlet extends HttpServlet
     Thread.currentThread().setName(Frontier.getServerName()+" id="+newid);
 
     String globalErrorMsg="";
-    Exception globalCloseException=null;
+    Throwable fatalErrorThrowable=null;
     boolean nonXml=false;
     try
      {
@@ -330,7 +330,8 @@ public final class FrontierServlet extends HttpServlet
 	     }
 	    catch(Exception e)
 	     {
-	      globalCloseException=e;
+	      Frontier.Log("Error closing payload: "+throwableDescript(e));
+	      fatalErrorThrowable=e;
 	     }
 	   }
          }
@@ -342,21 +343,30 @@ public final class FrontierServlet extends HttpServlet
      }
     catch(Throwable e)
      {
-      Frontier.Log("Internal Error: MUST NEVER HAPPEN HERE!:",e);
+      if(fatalErrorThrowable==null)
+       {
+	Frontier.Log("Internal Error: MUST NEVER HAPPEN HERE!: "+throwableDescript(e));
+	fatalErrorThrowable=e;
+       }
+      else
+	Frontier.Log("Internal Error: MUST NEVER HAPPEN HERE!:",e);
+
       // sometimes global error message gets through here to client and
       //  sometimes it causes an XML error, depending on where failure occurred
-      ResponseFormat.putGlobalError(out,"Internal Error: "+throwableDescript(e));
+      if(globalErrorMsg.equals(""))
+        globalErrorMsg="Internal Error: "+throwableDescript(e);
+
       // no need to try to affect uncommitted headers because client should
       // re-try with flush cache, and besides this indicates coding error
      }
     finally
      {
-      if(globalErrorMsg!="")
+      if(!globalErrorMsg.equals(""))
        {
 	// this causes client to re-try with cache flush
         ResponseFormat.putGlobalError(out,globalErrorMsg);
        }
-      if((frontier!=null)&&(globalCloseException==null))
+      if(frontier!=null)
        {
 	try
 	 {
@@ -364,7 +374,9 @@ public final class FrontierServlet extends HttpServlet
 	 }
 	catch(Exception e)
 	 {
-	  globalCloseException=e;
+	  Frontier.Log("Error closing connection: "+throwableDescript(e));
+	  if(fatalErrorThrowable==null)
+	    fatalErrorThrowable=e;
 	 }
        }
       if(!nonXml)
@@ -387,10 +399,10 @@ public final class FrontierServlet extends HttpServlet
         --count_current;
        }
 
-      if(globalCloseException!=null)
+      if(fatalErrorThrowable!=null)
        {
         String touchpath=getServletConfig().getServletContext().getRealPath("WEB-INF/classes/config.properties");
-	Frontier.Log("FATAL ERROR closing payload:",globalCloseException);
+	Frontier.Log("FATAL ERROR:",fatalErrorThrowable);
 	Frontier.Log("Touching "+touchpath+" to force restart of servlet");
 	try 
 	 {
