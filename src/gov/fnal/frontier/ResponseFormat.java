@@ -82,7 +82,7 @@ public class ResponseFormat
    }
 
    
-  static void transaction_end(ServletOutputStream out) throws Exception
+  static void transaction_end(ServletOutputStream out)
    {
     try
      {
