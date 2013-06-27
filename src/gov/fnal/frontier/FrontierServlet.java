@@ -279,7 +279,7 @@ public final class FrontierServlet extends HttpServlet
 		   }
 		  catch(Throwable e)
 		   {
-		    Frontier.Log("Error getting last-modified time:",e);
+		    Frontier.Log("Error getting last-modified time: "+throwableDescript(e));
 		    setAgeExpires(request,response,frontier.error_max_age);
 		    ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
 		    return;
@@ -295,23 +295,31 @@ public final class FrontierServlet extends HttpServlet
 	     }
 	    catch(Throwable e)
 	     {
-	      Frontier.Log("Error while processing payload "+i+":",e);
-	      ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
-	      if(!response.isCommitted())
+	      if(e.getClass().getSimpleName().equals("ClientAbortException"))
 	       {
-		// still have a chance to affect cache age and last-modified 
-		setAgeExpires(request,response,frontier.error_max_age);
-		// this leaves an empty header but it doesn't hurt and
-		//  there doesn't appear to be any way to delete a header
-		response.setHeader("Last-Modified","");
+		// client has disconnected, don't send anything else
+		Frontier.Log("Client disconnected while processing payload "+i+": "+throwableDescript(e));
 	       }
 	      else
 	       {
-		// also signal global error to tell client to clear cache
-		Frontier.Log("too late to affect header, also signaling global error");
-		globalErrorMsg=throwableDescript(e);
+		Frontier.Log("Error while processing payload "+i+":",e);
+		ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
+		if(!response.isCommitted())
+		 {
+		  // still have a chance to affect cache age and last-modified 
+		  setAgeExpires(request,response,frontier.error_max_age);
+		  // this leaves an empty header but it doesn't hurt and
+		  //  there doesn't appear to be any way to delete a header
+		  response.setHeader("Last-Modified","");
+		 }
+		else
+		 {
+		  // also signal global error to tell client to clear cache
+		  Frontier.Log("too late to affect header, also signaling global error");
+		  globalErrorMsg=throwableDescript(e);
+		 }
+		break;
 	       }
-	      break;
 	     }
 	   }
 	  finally
@@ -329,16 +337,7 @@ public final class FrontierServlet extends HttpServlet
        }
       finally
        {
-	try
-	 {
-          ResponseFormat.transaction_end(out);
-	 }
-	catch(Exception e)
-	 {
-	  // ignore error in putting out that little transaction-end message
-	  //  because it was probably after a previous error such as a broken
-	  //  pipe to the client
-	 }
+	ResponseFormat.transaction_end(out);
        }
      }
     catch(Throwable e)
