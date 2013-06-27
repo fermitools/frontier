@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.servlet.ServletOutputStream;
@@ -168,6 +169,7 @@ public class DbConnectionMgr
 	    "DB acquire",Frontier.getMaxDbAcquireSeconds(),timer);
     timer.schedule(task,
     	SECONDS_BETWEEN_KEEPALIVES*1000,SECONDS_BETWEEN_KEEPALIVES*1000);
+    long timestamp=(new Date()).getTime();
     try
      {
       Frontier.Log("Acquiring DB connection lock");
@@ -201,7 +203,7 @@ public class DbConnectionMgr
      {
       active=++numAcquiredConnections;
      }
-    Frontier.Log("DB connection acquired active="+active);
+    Frontier.Log("DB connection acquired active="+active+" msecs="+((new Date()).getTime()-timestamp));
     int seconds=Frontier.getMaxDbExecuteSeconds();
     if(seconds==0)
       task.shutdown();
