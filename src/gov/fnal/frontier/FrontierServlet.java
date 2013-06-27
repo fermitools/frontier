@@ -111,6 +111,7 @@ public final class FrontierServlet extends HttpServlet
 
     String globalErrorMsg="";
     Exception globalCloseException=null;
+    boolean nonXml=false;
     try
      {
       out=response.getOutputStream();      
@@ -138,6 +139,20 @@ public final class FrontierServlet extends HttpServlet
       }
       setAgeExpires(request,response,frontier.max_age);
       if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): setAgeExpires: frontier.max_age: "+ frontier.max_age);
+
+      try
+       {
+	if(frontier.nonXmlResponse(response))
+	 {
+	  nonXml=true;
+	  return;
+	 }
+       }
+      catch(Throwable e)
+       {
+        Frontier.Log("Error in nonXmlResponse: "+throwableDescript(e));
+	return;
+       }
 
       long last_modified=-1;
       long if_modified_since=frontier.if_modified_since;
@@ -201,7 +216,7 @@ public final class FrontierServlet extends HttpServlet
 	      // tell it to cache the message for a short time
 	      setAgeExpires(request,response,frontier.error_max_age);
 	     }
-	    ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
+	    ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
 	    return;
 	   }
 
@@ -266,7 +281,7 @@ public final class FrontierServlet extends HttpServlet
 		   {
 		    Frontier.Log("Error getting last-modified time:",e);
 		    setAgeExpires(request,response,frontier.error_max_age);
-		    ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
+		    ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
 		    return;
 		   }
 		 }
@@ -276,12 +291,12 @@ public final class FrontierServlet extends HttpServlet
 	    try
 	     {
 	      p.send(out);
-	      ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.md5,p.rec_num,p.full_size);
+	      ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.getCheck(),p.rec_num,p.full_size);
 	     }
 	    catch(Throwable e)
 	     {
 	      Frontier.Log("Error while processing payload "+i+":",e);
-	      ResponseFormat.payload_end(out,1,throwableDescript(e),"",-1,0);
+	      ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
 	      if(!response.isCommitted())
 	       {
 		// still have a chance to affect cache age and last-modified 
@@ -353,7 +368,8 @@ public final class FrontierServlet extends HttpServlet
 	  globalCloseException=e;
 	 }
        }
-      ResponseFormat.close(out);
+      if(!nonXml)
+        ResponseFormat.close(out);
 
       if(response.isCommitted())
        {
