@@ -1,5 +1,21 @@
 $Id$
 
+3.30 2013/06/28 (dwd)
+    - Add support for sending digital signatures on responses instead
+      of an md5 hash, when the client includes the URL parameter
+      "&sec=sig".  Also add support for sending the host certificate
+      when the client requests it as type "cert_request".  Requires
+      the certificate to be specified in a new parameter 'CertFileName'
+      and the key in a new parameter 'KeyFileName'.
+    - Change to just print one error message to the log when the
+      client drops the connection instead of multiple stack traces.
+    - Change to not print a stack trace when there's an error getting
+      the last-modified time.
+    - Add msecs= on the DB connection acquired message to show how 
+      long it took to acquire the connection.
+    - Change internal errors to force a restart of the servlet just
+      like database close problems do.
+
 3.29 2011/05/17 (dwd)
     - Fixed a bug that corrupts the response when a query for a
       last-modified time timestamp takes more than 5 seconds, causing
