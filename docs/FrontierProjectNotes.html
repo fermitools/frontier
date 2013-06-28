@@ -128,21 +128,6 @@ installation)
 <li>
 ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
 version number for the server sources and binary
-<li>
-To install on the server (this is in a script called upgradeservlet):
-<ul>
-<li>
-unpack the war file with "jar xf" in a new temporary directory
-<li>
-cd to WEB-INF in the temporary directory and save copies of web.xml
-and classes/config.properties.  Copy in the old versions
-of those files from the old tomcat directory
-(/var/lib/tomcat5/webapps/SERVLET/WEB-INF where SERVLET is the servlet
-name) and merge in any new changes from the release.
-<li>
-Rename the old SERVLET to something else and rename the new temporary
-directory into its place.  This can be done while tomcat is live and it
-should notice the update.
 </ul>
 
 </ol>
