@@ -1,6 +1,6 @@
 $Id$
 
-v2_8_7
+v2_8_7 - 28 Jun 2013 (dwd)
  - Added support for digital signatures on responses.  This is enabled
    by the connection string option "(security=sig)".  This option
    requires a directory of Certifying Authorities certificates and
