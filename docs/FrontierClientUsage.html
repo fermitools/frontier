@@ -153,6 +153,13 @@ to direct connections to servers if proxy connections fail.  Default 'yes'.
 backupproxyurl - Just like proxyurl, except that they are always tried
 after all proxyurls and they are not included in the load balancing
 done when loadbalance=proxies.  Implies failovertoserver=no.
+<li>
+security - When set to "sig", requests that the server send digital
+signatures on every response.  Requires access to a directory of
+Certifying Authority certificates and CRLs.
+<li>
+capath - Directory containing Certifying Authority certificates and CRLs.
+Default is /etc/grid-security/certificates.
 </ul>
 
 <p>
