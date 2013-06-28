@@ -21,10 +21,9 @@ Update the version number in Makefile
 <li>
 Update client version and date in ../README and then do
 <br>
-<tt>scp ../README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
+<tt>scp ../README dbfrontier@frontier1.cern.ch:dist/frontiersourcereadme.txt</tt>
 <br>
-(It will be easiest if you first ssh from the same host in another window
-to dbfrontier@frontier.cern.ch, because of ssh ControlPath sharing)
+(NOTE: if frontier2 is the current master, use frontier2 instead of frontier1, throughout).
 <li>
 Commit all your changes to CVS
 <li>
@@ -39,11 +38,11 @@ cvsuser@cdcvs.fnal.gov:/cvs/cd do
 <li>
 <tt>make PACPARSER_DIR=$HOME/devFRONTIER/FRONTIER all-dist # or wherever pacparser is installed </tt>
 <li>
-<tt>scp tmp/* dbfrontier@frontier.cern.ch:dist</tt>
+<tt>scp tmp/* dbfrontier@frontier1.cern.ch:dist</tt>
 <li>
-<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/clientreleasenotes.txt</tt>
+<tt>scp RELEASE_NOTES dbfrontier@frontier1.cern.ch:dist/clientreleasenotes.txt</tt>
 <li>
-<tt>ssh dbfrontier@frontier.cern.ch</tt> and edit dist/index.html with the new
+<tt>ssh dbfrontier@frontier1.cern.ch</tt> and edit dist/index.html with the new
 version numbers for the client sources and binary
 <li>
 <tt>scp tmp/*src* lxvoadm.cern.ch:/afs/cern.ch/sw/lcg/external/tarFiles</tt>
@@ -60,7 +59,7 @@ package <tt>fnclnt270</tt>.
 Send an email to <a href=mailto:project-lcg-peb-spi-support@cern.ch>
 project-lcg-peb-spi-support@cern.ch</a> and ask them to build the
 new frontier_client release and give them a copy of or link to the
-<a href=http://frontier.cern.ch/dist/clientreleasenotes.txt>release notes</a>
+<a href=http://frontier1.cern.ch/dist/clientreleasenotes.txt>release notes</a>
 for the new version.
 <li>
 Send a message to Andrea.Valassi@cern.ch and Benedikt.Hegner@cern.ch about
@@ -87,7 +86,7 @@ Update the version number in src/gov/fnal/frontier/FrontierServlet.java
 <li>
 Update servlet version and date in README and then do
 <br>
-<tt>scp README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
+<tt>scp README dbfrontier@frontier1.cern.ch:dist/frontiersourcereadme.txt</tt>
 <li>
 Commit all your changes to CVS
 <li>
@@ -109,7 +108,7 @@ Prepare and release the sources:
 <br>
 <tt>tar zcf Frontier_servlet__3.12__src.tar.gz Frontier_3_12</tt>
 <br>
-<tt>scp Frontier_servlet__3.12__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
+<tt>scp Frontier_servlet__3.12__src.tar.gz dbfrontier@frontier1.cern.ch:dist</tt>
 <li>
 Prepare and release the binaries:
 <br>
@@ -122,11 +121,11 @@ Prepare and release the binaries:
 (where CATALINA_HOME is set to the top level directory of a tomcat
 installation)
 <br>
-<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.12.war</tt>
+<tt>scp dist/Frontier.war dbfrontier@frontier1.cern.ch:dist/Frontier_3.12.war</tt>
 <br>
-<tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
+<tt>scp RELEASE_NOTES dbfrontier@frontier1.cern.ch:dist/servletreleasenotes.txt</tt>
 <li>
-ssh dbfrontier@frontier.cern.ch and edit dist/index.html with the new
+ssh dbfrontier@frontier1.cern.ch and edit dist/index.html with the new
 version number for the server sources and binary
 </ul>
 
