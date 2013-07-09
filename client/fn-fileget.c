@@ -146,5 +146,5 @@ int main(int argc, char **argv)
    }
 
   frontier_closeChannel(channel);
-  return (ec==FRONTIER_OK);
+  return (ec!=FRONTIER_OK);
  }
