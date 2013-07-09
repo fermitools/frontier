@@ -1,5 +1,9 @@
 $Id$
 
+v2_8_8 - 9 Jul 2013 (dwd)
+ - Fixed the exit code from the fn-fileget command so it returns a
+   zero on success and a one on failure rather than the opposite.
+
 v2_8_7 - 28 Jun 2013 (dwd)
  - Added support for digital signatures on responses.  This is enabled
    by the connection string option "(security=sig)".  This option
