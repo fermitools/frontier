@@ -28,7 +28,7 @@ public class FilePlugin implements FrontierPlugin
     filename=fds.getString("p1");
 
     // eliminate the possibility of any "../" to escape the base path
-    if(filename.indexOf("..")>0)
+    if(filename.indexOf("..")>=0)
       throw new Exception("'..' not allowed in file path "+filename);
 
     if(Frontier.getFileBaseDir()==null)
