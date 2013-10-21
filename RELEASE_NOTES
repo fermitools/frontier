@@ -1,5 +1,9 @@
 $Id$
 
+3.31 2013/10/21 (dwd)
+    - Fix off-by-one error in FilePlugin that had the effect of
+      allowing ".." in the file path.
+
 3.30 2013/06/28 (dwd)
     - Add support for sending digital signatures on responses instead
       of an md5 hash, when the client includes the URL parameter
