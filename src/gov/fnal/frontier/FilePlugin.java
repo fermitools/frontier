@@ -29,8 +29,8 @@ public class FilePlugin implements FrontierPlugin
  {
   private String param;
   private InputStream instream;
+  private File file;
   private int length;
-  private long lastModified=-1;
   private boolean acquired;
 
   private static Semaphore semaphore;
@@ -101,8 +101,40 @@ public class FilePlugin implements FrontierPlugin
    
   public long fp_cachedLastModified() throws Exception
    {
-    // we'll return an answer later in getLastModified, don't know yet
-    return 0;
+    String baseDir=Frontier.getFileBaseDir();
+    if(baseDir==null)
+      throw new Exception("FileBaseDirectory not defined");
+
+    if (baseDir.substring(0,7).equals("http://"))
+     {
+      // We'll return an answer later in getLastModified, don't want to
+      //  ask the server until we have acquired the connection
+      return 0;
+     }
+
+    // For files, read the lastModified time before acquiring a
+    //  connection so an immediate NOT MODIFIED can be returned if
+    //  an If-Modified-Since was given and the file hasn't changed
+
+    // eliminate the possibility of any "../" to escape the base path
+    if(param.indexOf("..")>=0)
+      throw new Exception("'..' not allowed in file path "+param);
+
+    String pathname=baseDir+"/"+param;
+    file=new File(pathname);
+    length=(int)file.length();
+    long lastModified=file.lastModified();
+
+    if(!file.canRead())
+     {
+      Frontier.Log("Cannot read path "+pathname);
+      throw new Exception("Cannot read file "+param);
+     }
+
+    // wait to actually open the file until after connection is acquired
+
+    if(Frontier.getHighVerbosity())Frontier.Log("FilePlugin.fp_cachedLastModified returning "+lastModified);
+    return lastModified;
    }
 
   private long open_connection(long if_modified_since) throws Exception
@@ -111,6 +143,7 @@ public class FilePlugin implements FrontierPlugin
     if(baseDir==null)
       throw new Exception("FileBaseDirectory not defined");
 
+    long lastModified=0;
     if (baseDir.substring(0,7).equals("http://"))
      {
       // Retrieve file from http
@@ -224,25 +257,11 @@ public class FilePlugin implements FrontierPlugin
      }
     else
      {
-      // really a File
-      // eliminate the possibility of any "../" to escape the base path
-      if(param.indexOf("..")>=0)
-	throw new Exception("'..' not allowed in file path "+param);
-
-      String pathname=baseDir+"/"+param;
-      File file=new File(pathname);
-      length=(int)file.length();
-      lastModified=file.lastModified();
-
       Frontier.Log("Reading "+length+"-byte file ["+param+"]");
       
-      if(!file.canRead())
-       {
-	Frontier.Log("Cannot read path "+pathname);
-	throw new Exception("Cannot read file "+param);
-       }
-
       instream=new FileInputStream(file);
+
+      // don't need lastModified here, returned it earlier
      }
 
     if(Frontier.getHighVerbosity())Frontier.Log("FilePlugin.open_connection returning "+lastModified);
