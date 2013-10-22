@@ -30,20 +30,12 @@ public final class Frontier
   private static String conf_file_base_dir;
   private static String conf_key_file_name;
   private static String conf_cert_file_name;
-  private static String conf_xsd_table="";
   private static final int SHORTCACHE=0;
   private static final int LONGCACHE=1;
   private static final int NUMCACHELENGTHS=2;
   private static String[] conf_cache_expire_hourofday = new String[NUMCACHELENGTHS];
   private static String[] conf_cache_expire_seconds = new String[NUMCACHELENGTHS];
   
-  private static String conf_monitor_node;  // MonAlisa stuff, node address events to be sent to
-  private static String conf_monitor_delay; // MonAlisa stuff, delay between events sent,in msec
-  private static Monitor monitor;           // MonAlisa stuff, wrapper class
-  
-  private static boolean use_fdo_cache;     // If true, the FDO info is created once (
-                                            // based on XSD or else)
- 
   private static int verbosityLevel=0;      // Higher numbers show more messages.
                                             // In addition, from level 2, file name
 					    //    and line numbers appear.
@@ -53,6 +45,7 @@ public final class Frontier
   public static boolean send_stale_if_error=true;
   public static int validate_last_modified_seconds=-1;
   public static String last_modified_table_name;
+  public static int max_file_connections=5;
   // Note that when the DB is down, at least on SLC4 it takes about
   //  6-1/3rd minutes for DataSource.getConnection() to return
   public static int max_db_acquire_seconds=300;
@@ -144,7 +137,14 @@ public final class Frontier
     conf_file_base_dir=getPropertyString(prb,"FileBaseDirectory");
     if((conf_ds_name==null)&&(conf_file_base_dir==null))
       throw new Exception("Both DataSourceName and FileBaseDirectory are missing in FrontierConfig");
-    conf_xsd_table=getPropertyString(prb,"XsdTableName");
+
+    if(conf_file_base_dir!=null)
+     {
+      String maxcons=getPropertyString(prb,"MaxFileConnections");
+      if(maxcons!=null)
+	max_file_connections=Integer.parseInt(maxcons);
+      Frontier.Log("max file connections: "+max_file_connections);
+     }
 
     // Verbosity level related
     String verbosity=getPropertyString(prb,"VerbosityLevel");
@@ -222,29 +222,6 @@ public final class Frontier
     Frontier.Log("long hour: "+conf_cache_expire_hourofday[LONGCACHE]+", long secs: "+conf_cache_expire_seconds[LONGCACHE]);
     Frontier.Log("short hour: "+conf_cache_expire_hourofday[SHORTCACHE]+", short secs: "+conf_cache_expire_seconds[SHORTCACHE]);
 
-    conf_monitor_node=getPropertyString(prb,"MonitorNode");
-    conf_monitor_delay=getPropertyString(prb,"MonitorMillisDelay");
-    if(conf_monitor_node!=null && conf_monitor_delay!=null) 
-     {
-      try
-       {
-        monitor=new Monitor(conf_monitor_node,conf_monitor_delay);
-        monitor.setDaemon(true);
-        monitor.start();
-       }
-      catch(Exception e)
-       {
-        Frontier.Log("MonAlisa monitor failed to start:",e);
-        monitor=null;
-       }
-     } 
-    else Frontier.Log("MonAlisa monitor was not configured.");
-    
-    String tmp=getPropertyString(prb,"UseFdoCache");
-    use_fdo_cache=(tmp!=null && tmp.equalsIgnoreCase("yes"));
-    if(use_fdo_cache) Frontier.Log("FDO cache is in use");
-    else Frontier.Log("FDO cache is DISABLED");
-        
     initialized=true;
    }
           
@@ -256,15 +233,12 @@ public final class Frontier
     DbConnectionMgr connMgr=null;
     ArrayList<Command> commandList=null;
     
-    if(monitor!=null) monitor.increment();
-
     logClientDesc(req);          
-    if(validate_last_modified_seconds>0)
-     {
-      if_modified_since=req.getDateHeader("if-modified-since");
-      if(if_modified_since!=-1)
-	Frontier.Log("if-modified-since: "+req.getHeader("if-modified-since"));
-     }
+
+    if_modified_since=req.getDateHeader("if-modified-since");
+    if(if_modified_since!=-1)
+      Frontier.Log("if-modified-since: "+req.getHeader("if-modified-since"));
+
     if(conf_cache_expire_seconds[SHORTCACHE]!=null)
      {
       //if set and less than the default error max age, use the short cache
@@ -287,8 +261,7 @@ public final class Frontier
 
     payloads_num=commandList.size();
     aPayloads=new ArrayList<Payload>();
-    if(getDsName()!=null)
-      connMgr=DbConnectionMgr.getDbConnectionMgr();
+    connMgr=DbConnectionMgr.getDbConnectionMgr();
     for(int i=0;i<payloads_num;i++)
      {
       cmd=(Command)commandList.get(i);
@@ -333,8 +306,6 @@ public final class Frontier
   public long cachedLastModified() throws Exception
    {
     if(highVerbosity)Frontier.Log("cachedLastModified()");
-    if(validate_last_modified_seconds<=0)
-      return -1;
     long last_modified=0;
     // look for max last_modified of cachedLastModified() of each payload
     for(int i=0;i<payloads_num;i++)
@@ -350,7 +321,7 @@ public final class Frontier
     return last_modified;
    }
 
-  public long getLastModified(ServletOutputStream out) throws Exception
+  public long getLastModified(ServletOutputStream out,long if_modified_since) throws Exception
    {
     if(highVerbosity)Frontier.Log("Frontier.java:getLastModified()");
     long last_modified=0;
@@ -358,7 +329,7 @@ public final class Frontier
      {
       Payload p=(Payload)aPayloads.get(i);          
       if(highVerbosity)Frontier.Log("Frontier.java:getLastModified(): payload: "+i);
-      long lm=p.getLastModified(out);
+      long lm=p.getLastModified(out,if_modified_since);
       if(lm>last_modified)
         last_modified=lm;
      }
@@ -491,14 +462,9 @@ public final class Frontier
    }
   
   
-  public static String getXsdTableName()
+  public static int getMaxFileConnections()
    {
-    return conf_xsd_table;
-   }
-   
-  public static boolean isFdoCache()
-   {
-    return use_fdo_cache;
+    return max_file_connections;
    }
 
   public static int getMaxDbAcquireSeconds()
