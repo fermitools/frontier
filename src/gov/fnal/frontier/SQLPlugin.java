@@ -14,16 +14,24 @@ package gov.fnal.frontier;
 import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import gov.fnal.frontier.codec.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.sql.*;
+import javax.sql.DataSource;
 import java.util.Hashtable;
 import java.util.HashSet;
 import com.jcraft.jzlib.*;
 import java.util.regex.*;
 import java.util.Iterator;
 import java.util.Date;
+import javax.servlet.ServletOutputStream;
 
 public class SQLPlugin implements FrontierPlugin
  {
+  private static DataSource dataSource;
+  private java.sql.Connection connection;
+
   private static Hashtable<HashSet<String>,SQLTimes> tableNames=new Hashtable<HashSet<String>,SQLTimes>();
 
   private HashSet<String> queryTableNames=null;
@@ -31,8 +39,20 @@ public class SQLPlugin implements FrontierPlugin
   private String query;
   private String queryLower;
 
+  private static synchronized void getDataSource() throws Exception
+   {
+    Context initContext=new InitialContext();
+    Context envContext=(Context)initContext.lookup("java:/comp/env");
+    //System.out.println("Looking for ["+Frontier.getDsName()+"]");
+    dataSource=(DataSource)envContext.lookup(Frontier.getDsName());
+    if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
+   }
+
   public SQLPlugin(FrontierDataStream fds) throws Exception
    {
+    if(dataSource==null)
+      getDataSource();
+
     String param=fds.getString("p1");
     //System.out.println("Got param ["+param+"]");
     
@@ -91,12 +111,25 @@ public class SQLPlugin implements FrontierPlugin
     return ret;
    }
    
+  public void fp_acquire() throws Exception
+   {
+    connection=dataSource.getConnection();
+   }
    
-  public int fp_get(java.sql.Connection con,DbConnectionMgr mgr,Encoder enc,String method) throws Exception
+  public void fp_release() throws Exception
+   {
+    if(connection!=null)
+     {
+      connection.close();
+      connection=null;
+     }
+   }
+   
+  public int fp_get(DbConnectionMgr mgr,Encoder enc,String method) throws Exception
    {
     if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
 
-    if(con==null)
+    if(connection==null)
       throw new Exception("No database connection available");
     
     if(queryLower.indexOf("drop ")>=0 ||
@@ -112,14 +145,14 @@ public class SQLPlugin implements FrontierPlugin
      {
       Frontier.Log("Executing DB query");
       if((query.indexOf(':')==-1)||(query.indexOf('?')==-1))
-        stmt=con.prepareStatement(query);
+        stmt=connection.prepareStatement(query);
       else
        {
 	// Have query with question marks signifying bind variables
 	//  and values for the variables following the queries separated
 	//  by colons.  Pass those as separate string parameters.
         String[] tokens=query.split(":");
-	stmt=con.prepareStatement(tokens[0]);
+	stmt=connection.prepareStatement(tokens[0]);
 	for(int i=1;i<tokens.length;i++)
 	  stmt.setString(i,tokens[i]);
        }
@@ -206,7 +239,7 @@ public class SQLPlugin implements FrontierPlugin
    }
    
    
-  public int fp_write(java.sql.Connection con,Encoder enc,String method) throws Exception
+  public int fp_write(Encoder enc,String method) throws Exception
    {
     throw new Exception("Not implemented");
    }
@@ -326,6 +359,10 @@ public class SQLPlugin implements FrontierPlugin
   public long fp_cachedLastModified() throws Exception
    {
     if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified()");
+
+    if(Frontier.validate_last_modified_seconds<=0)
+      return -1;
+
     // - Must start with 'select X'
     if(!queryLower.startsWith("select ")){
       if(Frontier.getHighVerbosity())Frontier.Log("fp_cachedLastModified() !'select '");
@@ -372,13 +409,13 @@ public class SQLPlugin implements FrontierPlugin
     return last_modified;
    }
 
-  public long fp_getLastModified(java.sql.Connection con) throws Exception
+  public long fp_getLastModified(long if_modified_since) throws Exception
    {
     if(queryTableNames==null)
       throw new Exception("SQLPlugin usage error -- fp_cachedLastModified must be called and return zero before calling fp_getLastModified");
     SQLTimes times=getSQLTimesObject(queryTableNames,true);
     Frontier.Log("getting last-modified time of "+queryTableNames.toString());
-    long last_modified=times.getLastModified(con);
+    long last_modified=times.getLastModified(connection);
     return last_modified;
    }
  }
