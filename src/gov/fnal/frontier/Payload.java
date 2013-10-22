@@ -29,9 +29,6 @@ public class Payload
   private Encoder enc;
   private boolean sign;
   
-  private static final String fds_sql=
-   "select xsd_type,xsd_data from "+Frontier.getXsdTableName()+" where name = ? and version = ? ";
-   
   public boolean noCache=false;
   public long time_expire;
   public String type;
@@ -61,65 +58,21 @@ public class Payload
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
-    if(Frontier.isFdoCache()) fdo=htFdo.get(key);
-    if(fdo!=null)
-     {
-      //System.out.println("Got "+key+" from cache");
-      MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
-      time_expire=md.getExpire();
-      noCache=md.isNoCache();
-      return;      
-     }
-     
     // BUILTINS
     if((cmd.obj_name.equals("frontier_request")&&cmd.obj_version.equals("1"))||
       (cmd.obj_name.equals("frontier_file")&&cmd.obj_version.equals("1")))
      {
       fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds,true);
-      //fdo_init() MUST NOT BE CALLED FOR BUILTINS!
       MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
       time_expire=md.getExpire();
       //System.out.println("Time_expire="+time_expire);      
       noCache=md.isNoCache();
-      if(Frontier.isFdoCache()) htFdo.put(key,fdo);
       return;
      }
     // END BUILTINS
     
-    Connection con=null;
-    PreparedStatement stmt=null;
-    ResultSet rs=null;
-    try
-     {
-      con=dbm.getDescriptorConnection();
-      stmt=con.prepareStatement(fds_sql);
-      stmt.setString(1,cmd.obj_name);
-      stmt.setString(2,cmd.obj_version);
-      rs=stmt.executeQuery();
-      if(!rs.next()) throw new Exception("Object "+cmd.obj_name+":"+cmd.obj_version+" does not exists");
-      String xsd_type=rs.getString("xsd_type");      
-      Blob blob=rs.getBlob("xsd_data");
-      int len=(int)blob.length();
-      byte[] b=blob.getBytes((long)1,len);
-      
-      if(xsd_type.equals("xml"))       fdo=new XsdDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
-      else if(xsd_type.equals("xsd2")) fdo=new Xsd2DataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
-      else if(xsd_type.equals("plugin")) fdo=new PluginDataObject(dbm,cmd.obj_name,cmd.obj_version,cmd.fds);
-      else                             throw new Exception("Unsupported xsd_type "+xsd_type+".");
-      
-      fdo.fdo_init(b);
-      MethodDesc md=fdo.fdo_getMethodDesc(cmd.method);
-      time_expire=md.getExpire();
-      //System.out.println("Time_expire="+time_expire);      
-      noCache=md.isNoCache();
-      if(Frontier.isFdoCache()) htFdo.put(key,fdo);      
-     }
-    finally
-     {
-      if(rs!=null) try{rs.close();}catch(Exception e){}
-      if(stmt!=null) try{stmt.close();}catch(Exception e){}
-      if(con!=null) try{dbm.release(con,null);}catch(Exception e){}
-     }     
+    // there are no non-builtins anymore
+    throw new Exception("Unsupported command: "+cmd.obj_name);
    }
    
   public void start(ServletOutputStream out) throws Exception
@@ -132,9 +85,9 @@ public class Payload
     return fdo.fdo_cachedLastModified();
    }
 
-  public long getLastModified(ServletOutputStream out) throws Exception
+  public long getLastModified(ServletOutputStream out,long if_modified_since) throws Exception
    {
-    return fdo.fdo_getLastModified(out);
+    return fdo.fdo_getLastModified(out,if_modified_since);
    }
 
   public void send(ServletOutputStream out) throws Exception
