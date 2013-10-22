@@ -205,13 +205,13 @@ public class DbConnectionMgr
   public void release(FrontierPlugin plugin,ServletOutputStream sos) throws Exception 
    {
     cancelKeepAlive();
-    plugin.fp_release();
     int remaining;
     synchronized(counterMutex)
      {
       remaining=--numAcquiredConnections;
      }
     Frontier.Log("DB connection released remaining="+remaining);
+    plugin.fp_release();
    }
 
  }
