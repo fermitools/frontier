@@ -1,5 +1,37 @@
 $Id$
 
+3.32 2013/10/22 (dwd)
+    - Add support to the FilePlugin for reading from http URLs in
+      addition to files on the local disk.  If FileBaseDirectory
+      begins with http://, this new feature is enabled.  If the http
+      query returns a Content-Length header, the response is streamed
+      through to the client, otherwise the response is read into a
+      memory buffer to determine the length.  Last-Modified headers
+      are passed through from the backend http server to the client,
+      and If-Modified-Since is passed through from the client to the
+      backend http server.
+    - Fix bug in the FilePlugin that prevented it from sending the
+      Last-Modified header for files.
+    - Add queuing and keepalive support to the FilePlugin, similar to
+      the SQLPlugin.  The maximum number of simultaneous connections are
+      specified in the new config.properties option MaxFileConnections,
+      default 5.  The options MaxDbAcquireSeconds and MaxDbExecuteSeconds
+      then become relevant for sending keepalive messages while waiting,
+      even though it isn't technically a "DB".  When reading files (as
+      opposed to http urls) the time to "execute" is instantaneous
+      because it just opens the file, so MaxDbExecuteSeconds isn't
+      important then, but when reading http urls the execute time is
+      significant because the http server can take a while to respond.
+    - Improve the accuracy of the active connection count in the log by
+      moving the counter decrement to be before the connection release.
+    - Remove old unused code that supported reading an "xsd_type" from
+      a database table whose name was specified in config.properties
+      option XsdTableName, and that executed a plugin based on the name
+      read from the database.  Also remove related config.properties
+      option UseFdoCache.
+    - Remove old unused code related to MonAlisa monitoring, including
+      config.properties options MonitorNode and MonitorMillisDelay.
+
 3.31 2013/10/21 (dwd)
     - Fix off-by-one error in FilePlugin that had the effect of
       allowing ".." in the file path.
@@ -48,8 +80,8 @@ $Id$
       time.
 
 3.26 2011/01/12 (dwd)
-    - Add new StaleIfError property, default true, which will send the
-      Cache-control header "stale-if-error" if the client sends in
+    - Add new SendStaleIfError property, default true, which will send
+      the Cache-control header "stale-if-error" if the client sends in
       Cache-control: max-stale.  This prevents squid from re-using
       expired data when there's a server error (by default it will
       reuse data that's up to a week old).  Setting max-stale on the
