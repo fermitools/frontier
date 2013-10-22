@@ -11,12 +11,7 @@
 
 package gov.fnal.frontier;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import javax.sql.DataSource;
+import gov.fnal.frontier.plugin.*;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Timer;
@@ -101,7 +96,6 @@ public class DbConnectionMgr
 
   private static DbConnectionMgr instance=null;
   private static Boolean mutex=new Boolean(true);
-  private DataSource dataSource=null;
   private ReentrantLock acquireLock=new ReentrantLock(true);
   private Boolean counterMutex=new Boolean(true);
   private int numAcquiredConnections=0;
@@ -126,12 +120,6 @@ public class DbConnectionMgr
 
   private DbConnectionMgr() throws Exception
    {
-    Context initContext=new InitialContext();
-    Context envContext=(Context)initContext.lookup("java:/comp/env");
-    //System.out.println("Looking for ["+Frontier.getDsName()+"]");
-    dataSource = (DataSource)envContext.lookup(Frontier.getDsName());
-    //dataSource=(DataSource)initContext.lookup(Frontier.getDsName());
-    if(dataSource==null) throw new Exception("DataSource ["+Frontier.getDsName()+"] not found");
    }
 
   private synchronized void saveTimerTask(KeepAliveTimerTask task)
@@ -160,9 +148,8 @@ public class DbConnectionMgr
      }
    }
 
-  public Connection acquire(ServletOutputStream sos) throws Exception 
+  public void acquire(FrontierPlugin plugin,ServletOutputStream sos) throws Exception 
    {
-    Connection connection;
     Timer timer=new Timer();
     KeepAliveTimerTask task=
         new KeepAliveTimerTask(Thread.currentThread().getName()+"-ka",sos,
@@ -184,7 +171,7 @@ public class DbConnectionMgr
         if(task.isShutdown())
           throw new Exception("Timed out waiting to acquire DB connection");
         Frontier.Log("Acquiring DB connection");
-        connection=dataSource.getConnection();
+        plugin.fp_acquire();
        }
       finally
        {
@@ -212,31 +199,19 @@ public class DbConnectionMgr
       task.setWaitFor("DB execute",seconds);
       saveTimerTask(task);
      }
-    return connection;
    }
 
  
-  public void release(Connection dbConnection,ServletOutputStream sos) throws Exception 
+  public void release(FrontierPlugin plugin,ServletOutputStream sos) throws Exception 
    {
     cancelKeepAlive();
-    if(dbConnection!=null)
+    plugin.fp_release();
+    int remaining;
+    synchronized(counterMutex)
      {
-      dbConnection.close();
-      int remaining;
-      synchronized(counterMutex)
-       {
-        remaining=--numAcquiredConnections;
-       }
-      Frontier.Log("DB connection released remaining="+remaining);
+      remaining=--numAcquiredConnections;
      }
+    Frontier.Log("DB connection released remaining="+remaining);
    }
-   
-   
-  // This one to get frontier descriptors (or plugins), could have different DS
-  public Connection getDescriptorConnection() throws Exception
-   {
-    Connection connection;
-    connection=dataSource.getConnection();
-    return connection;   
-   }
+
  }
