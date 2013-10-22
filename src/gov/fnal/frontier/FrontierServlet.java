@@ -21,7 +21,7 @@ import com.jcraft.jzlib.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.31";
+  private static final String frontierVersion="3.32";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
@@ -83,7 +83,7 @@ public final class FrontierServlet extends HttpServlet
      response.setHeader("Cache-Control","max-age="+age);
    }
 
-  private String dateHeader(long datestamp)
+  public static String dateHeader(long datestamp)
    {
     // could use HttpServletResponse.setDateHeader but then can't read it back
     //  for logging
@@ -92,6 +92,12 @@ public final class FrontierServlet extends HttpServlet
     SimpleDateFormat df=new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
     df.setTimeZone(TimeZone.getTimeZone("GMT"));
     return(df.format(new Date(datestamp)));
+   }
+
+  public static long parseDateHeader(String dateheader) throws Exception
+   {
+    SimpleDateFormat df=new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+    return df.parse(dateheader).getTime();
    }
 
   public void service(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
@@ -231,6 +237,8 @@ public final class FrontierServlet extends HttpServlet
 		// The database was acquired with keepalives
 		if(last_modified==0)
 		  Frontier.Log("response committed, too late to query for last-modified time");
+		else if(last_modified>0)
+		  Frontier.Log("response committed, too late to send last-modified time");
 	       }
 	      else
 	       {
@@ -256,7 +264,7 @@ public final class FrontierServlet extends HttpServlet
 		  try
 		   {
 		    if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
-		    last_modified=frontier.getLastModified(out);
+		    last_modified=frontier.getLastModified(out,if_modified_since);
 		    if(response.isCommitted())
 		     {
 		      Frontier.Log("response committed while querying last-modified time, too late to use");
@@ -267,7 +275,7 @@ public final class FrontierServlet extends HttpServlet
 		      Frontier.Log("not modified");
 		      return;
 		     }
-		    else
+		    else if(last_modified>0)
 		     {
 		      String lastmod=dateHeader(last_modified);
 		      if(if_modified_since>0)
