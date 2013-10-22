@@ -15,38 +15,35 @@ import java.io.*;
 import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import java.util.*;
-import java.sql.*;
 import javax.servlet.ServletOutputStream;
 
 
 public class PluginDataObject implements FrontierDataObject
  {
   private DbConnectionMgr dbm=null;
-  private Connection acquiredConnection=null;
+  private FrontierPlugin plugin;
+  private boolean acquired;
   
-  // Public stuff
+  protected FrontierDataStream frontier_data_stream;
+
   public String obj_name;
   public String obj_version;
-  private FrontierPlugin plugin;
-  protected FrontierDataStream frontier_data_stream;
   
   
   protected PluginDataObject(DbConnectionMgr dbm,String builtin_name,String builtin_version,FrontierDataStream fds,boolean is_plugin) throws Exception
    {
+    this.dbm=dbm;
+    obj_name=builtin_name;
+    obj_version=builtin_version;
     if(builtin_name.equals("frontier_request"))
      {
       //System.out.println("PluginDataObject(builtin:frontier_request)");
-      this.dbm=dbm;
-      obj_name=builtin_name;
-      obj_version=builtin_version;
       plugin=new SQLPlugin(fds);
       return;
      }
     if(builtin_name.equals("frontier_file"))
      {
       //System.out.println("PluginDataObject(builtin:frontier_file)");
-      obj_name=builtin_name;
-      obj_version=builtin_version;
       plugin=new FilePlugin(fds);
       return;
      }
@@ -65,14 +62,6 @@ public class PluginDataObject implements FrontierDataObject
    }
 
          
-  public void fdo_init(byte[] body) throws Exception
-   {
-    String class_name=new String(body,"US-ASCII");
-    Class c_p=Class.forName(class_name);
-    plugin=(FrontierPlugin)c_p.newInstance();
-   }
- 
-   
   public MethodDesc fdo_getMethodDesc(String method) throws Exception
    {
     MethodDesc md=plugin.fp_getMethodDesc(method);
@@ -81,8 +70,11 @@ public class PluginDataObject implements FrontierDataObject
      
   private void acquireConnectionIfNeeded(ServletOutputStream sos) throws Exception
    {
-    if((acquiredConnection==null)&&(dbm!=null))
-      acquiredConnection=dbm.acquire(sos);
+    if(!acquired)
+     {
+      dbm.acquire(plugin,sos);
+      acquired=true;
+     }
    }
 
   public void fdo_start(ServletOutputStream sos) throws Exception
@@ -96,7 +88,7 @@ public class PluginDataObject implements FrontierDataObject
     int rec_num=0;
     
     acquireConnectionIfNeeded(sos);
-    rec_num=plugin.fp_get(acquiredConnection,dbm,enc,method);
+    rec_num=plugin.fp_get(dbm,enc,method);
     return rec_num;
    }
    
@@ -117,7 +109,7 @@ public class PluginDataObject implements FrontierDataObject
     int rec_num=0;
     
     acquireConnectionIfNeeded(sos);
-    rec_num=plugin.fp_write(acquiredConnection,enc,method);
+    rec_num=plugin.fp_write(enc,method);
     return rec_num;
    }
    
@@ -126,26 +118,26 @@ public class PluginDataObject implements FrontierDataObject
     return plugin.fp_cachedLastModified();
    }
 
-  public long fdo_getLastModified(ServletOutputStream sos) throws Exception
+  public long fdo_getLastModified(ServletOutputStream sos,long if_modified_since) throws Exception
    {
     acquireConnectionIfNeeded(sos);
-    return plugin.fp_getLastModified(acquiredConnection);
+    return plugin.fp_getLastModified(if_modified_since);
    }
 
   public void fdo_close(ServletOutputStream sos) throws Exception
    {
-    if(acquiredConnection!=null)
-     {
+    if(acquired)
+     {     
+      acquired=false;
       try
        {
-        dbm.release(acquiredConnection,sos);
+	dbm.release(plugin,sos);
        }
       catch(Exception e)
        {
-        Frontier.Log("Error releasing DB connection "+e);
+	Frontier.Log("Error releasing DB connection "+e);
 	throw e;
        }
-      acquiredConnection=null;
      }
    }
  }
