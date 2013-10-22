@@ -9,33 +9,80 @@
  *  http://fermitools.fnal.gov/about/terms.html
  */
 
+/**
+ * Supports both regular files and files that come from http URLs:
+ *  if FileBaseDirectory starts with "http://" then the files will be
+ *  read from that "directory".  %xx in the given url will be converted
+ *  to the corresponding ascii character.
+ */
+
 package gov.fnal.frontier;
 
 import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
-import java.sql.Connection;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
+import java.net.Socket;
+import java.util.Date;
+import java.util.concurrent.Semaphore;
 
 public class FilePlugin implements FrontierPlugin
  {
-  private String filename;
-  private String pathname;
-  private File file;
+  private String param;
+  private InputStream instream;
+  private int length;
+  private long lastModified=-1;
+  private boolean acquired;
+
+  private static Semaphore semaphore;
+  private static synchronized void initSemaphore() throws Exception
+   {
+    if(semaphore==null)
+      semaphore=new Semaphore(Frontier.getMaxFileConnections(),true);
+   }
+
+  private String readHeaderLine(BufferedInputStream in) throws Exception
+   {
+    // Replacement for readLine because that requires BufferedReader which
+    //  wants everything as chars instead of bytes and reads ahead beyond
+    //  the header.  Ignore bytes beyond 256 in a header.  Ignore carriage
+    //  return, and don't include the newline in the result.
+    byte[] buf=new byte[256];
+    int idx=0;
+    int b;
+    while((b=in.read())!=-1)
+     {
+      if(b=='\r')
+	continue;
+      if(b=='\n')
+	return new String(buf,0,idx);
+      if(idx<256)
+	buf[idx++]=(byte)b;
+     }
+    return null;
+   }
 
   public FilePlugin(FrontierDataStream fds) throws Exception
    {
-    filename=fds.getString("p1");
+    param=fds.getString("p1");
+   }
 
-    // eliminate the possibility of any "../" to escape the base path
-    if(filename.indexOf("..")>=0)
-      throw new Exception("'..' not allowed in file path "+filename);
+  public void fp_acquire() throws Exception
+   {
+    if(semaphore==null)
+      initSemaphore();
+    // avoid doing too many of these in parallel
+    semaphore.acquire();
+    acquired=true;
 
-    if(Frontier.getFileBaseDir()==null)
-      throw new Exception("FileBaseDirectory not defined");
+   }
 
-    pathname=Frontier.getFileBaseDir()+"/"+filename;
-    file=new File(pathname);
+  public void fp_release() throws Exception
+   {
+    if(acquired)
+     {
+      semaphore.release();
+      acquired=false;
+     }
    }
 
   public String[] fp_getMethods()
@@ -52,51 +99,198 @@ public class FilePlugin implements FrontierPlugin
     return ret;
    }
    
-  public int fp_get(java.sql.Connection con,DbConnectionMgr mgr,Encoder enc,String method) throws Exception
+  public long fp_cachedLastModified() throws Exception
    {
-    if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
-    
-    Frontier.Log("Reading file ["+filename+"]");
-    
-    if(!file.canRead())
+    // we'll return an answer later in getLastModified, don't know yet
+    return 0;
+   }
+
+  private long open_connection(long if_modified_since) throws Exception
+   {
+    String baseDir=Frontier.getFileBaseDir();
+    if(baseDir==null)
+      throw new Exception("FileBaseDirectory not defined");
+
+    if (baseDir.substring(0,7).equals("http://"))
      {
-      Frontier.Log("Cannot read path "+pathname);
-      throw new Exception("Cannot read file "+filename);
+      // Retrieve file from http
+      int port=80;
+      String basePath="/";
+      String host=baseDir.substring(7);
+      int endHost=host.indexOf(':');
+      if(endHost<0)
+	endHost=host.indexOf('/');
+      if(endHost>0)
+       {
+	host=host.substring(0,endHost);
+	if(baseDir.charAt(7+endHost)==':')
+	 {
+	  String portStr=baseDir.substring(7+endHost+1);
+	  int endPort=portStr.indexOf('/');
+	  if(endPort>0)
+	   {
+	    portStr=portStr.substring(0,endPort);
+	    basePath=baseDir.substring(7+endHost+1+endPort);
+	   }
+	  port=Integer.parseInt(portStr);
+	 }
+	else
+	  basePath=baseDir.substring(7+endHost);
+       }
+
+      String getStr=basePath+param;
+      String url="http://"+host+":"+port+getStr;
+      Frontier.Log("Reading url "+url);
+
+      Socket sock=new Socket(host,port);
+
+      try
+       {
+        long timestamp=(new Date()).getTime();
+	PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
+
+	out.println("GET "+getStr+" HTTP/1.0\r");
+	out.println("User-Agent: frontier\r");
+	out.println("Host: "+host+"\r");
+	if(if_modified_since>0)
+	  out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
+	out.println("\r");
+
+	BufferedInputStream in=new BufferedInputStream(sock.getInputStream());
+	String line=readHeaderLine(in);
+	if(line==null)
+	  throw new Exception("empty response from "+url);
+	if(!line.substring(0,7).equals("HTTP/1."))
+	  throw new Exception("bad response "+line+" from "+url);
+	String responsecode=line.substring(8,8+5);
+	if(responsecode.equals(" 304 "))
+	 {
+	  if(Frontier.getHighVerbosity())Frontier.Log("NOT MODIFIED response");
+	  sock.close();
+	  return if_modified_since;
+	 }
+	if(!responsecode.equals(" 200 "))
+	  throw new Exception("bad response code "+line+" from "+url);
+        if(Frontier.getHighVerbosity())Frontier.Log("OK");
+
+	while((line=readHeaderLine(in))!=null)
+	 {
+	  // look at each header line
+	  if(line.equals(""))
+	    break;
+	  int colonidx=line.indexOf(':');
+	  if(colonidx<0)
+	    continue;
+	  String key=line.substring(0,colonidx).toLowerCase();
+	  String val=line.substring(colonidx+2);
+	  // Frontier.Log("header: "+key+": "+line.substring(colonidx+2));
+	  if(key.equals("content-length"))
+	   {
+	    length=Integer.parseInt(val);
+	    Frontier.Log("Content-Length: "+length);
+	   }
+	  else if(key.equals("last-modified"))
+	   {
+	    if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
+	    lastModified=FrontierServlet.parseDateHeader(val);
+	   }
+	 }
+
+	if(length==0)
+	 {
+	  // This could be delayed to fp_get() but it is more convenient here.
+	  // Need to read everything in to a buffer in order to find the length.
+	  ByteArrayOutputStream bout=new ByteArrayOutputStream();
+	  int len;
+	  byte[] buf=new byte[8192];
+	  while((len=in.read(buf,0,8192))>0)
+	   {
+	    bout.write(buf,0,len);
+	    length+=len;
+	   }
+	  instream=new ByteArrayInputStream(bout.toByteArray());
+	  sock.close();
+	 }
+	else
+	  instream=in; // when this is closed the socket will be closed
+        Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
+       }
+      catch(Exception e)
+       {
+	// if any exception, close the socket & rethrow
+	sock.close();
+	throw e;
+       }
+     }
+    else
+     {
+      // really a File
+      // eliminate the possibility of any "../" to escape the base path
+      if(param.indexOf("..")>=0)
+	throw new Exception("'..' not allowed in file path "+param);
+
+      String pathname=baseDir+"/"+param;
+      File file=new File(pathname);
+      length=(int)file.length();
+      lastModified=file.lastModified();
+
+      Frontier.Log("Reading "+length+"-byte file ["+param+"]");
+      
+      if(!file.canRead())
+       {
+	Frontier.Log("Cannot read path "+pathname);
+	throw new Exception("Cannot read file "+param);
+       }
+
+      instream=new FileInputStream(file);
      }
 
-    FileInputStream fis=new FileInputStream(file);
+    if(Frontier.getHighVerbosity())Frontier.Log("FilePlugin.open_connection returning "+lastModified);
+    return lastModified;
+   }
+
+  public long fp_getLastModified(long if_modified_since) throws Exception
+   {
+    if(Frontier.getHighVerbosity())Frontier.Log("FilePlugin.fp_getLastModified()");
+    return(open_connection(if_modified_since));
+   }
+
+  public int fp_get(DbConnectionMgr mgr,Encoder enc,String method) throws Exception
+   {
+    if(!method.equals("DEFAULT")) throw new Exception("Unknown method "+method);
+
+    if(instream==null)
+     {
+      // this means it was too late to read the Last-Modified time,
+      //  so open the connection now and ignore Last-Modified
+      open_connection(0);
+     }
+
+    // now data is fully ready, cancel keep alive timer
+    mgr.cancelKeepAlive();
+    
     try
      {
-      enc.writeStream(fis,(int)file.length()); 
+      enc.writeStream(instream,length); 
+      enc.writeEOR();
      }
     finally
      {
-      fis.close();
+      instream.close();
      }        
     return 1;
    }
 
-      
+
   public int fp_meta(Encoder enc,String method) throws Exception
    {
     throw new Exception("META methods are not supported by this object");
    }
    
    
-  public int fp_write(java.sql.Connection con,Encoder enc,String method) throws Exception
+  public int fp_write(Encoder enc,String method) throws Exception
    {
     throw new Exception("Not implemented");
-   }
-
-  public long fp_cachedLastModified() throws Exception
-   {
-    return file.lastModified();
-   }
-
-  public long fp_getLastModified(java.sql.Connection con) throws Exception
-   {
-    // never called because fp_cachedLastModified() always returns an answer
-    throw new Exception("Never called");
    }
 
  }
