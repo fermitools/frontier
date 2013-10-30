@@ -97,7 +97,15 @@ public final class Frontier
     //  openssl pkcs8 -topk8 -outform DER -in key.pem -out key.der -nocrypt
     String b64key=new Scanner(pem).useDelimiter("-----(BEGIN|END) RSA PRIVATE KEY-----\n").next();
     b64key=b64key.replace("\n","");
-    byte [] derdata=Base64Coder.decode(b64key.getBytes());
+    byte [] derdata;
+    try
+     {
+      derdata=Base64Coder.decode(b64key.getBytes());
+     }
+    catch(Exception e)
+     {
+      throw new Exception("invalid RSA private key");
+     }
     // these bytes were copied from openssl conversion output
     byte [] derhead={(byte)0x30,(byte)0x82,(byte)0x00,(byte)0x00,
 		     (byte)0x02,(byte)0x01,(byte)0x00,(byte)0x30,
@@ -162,7 +170,14 @@ public final class Frontier
       DataInputStream dis=new DataInputStream(new FileInputStream(file));
       dis.readFully(key_bytes);
       dis.close();
-      private_key=extractPrivateKeyFromPEM(new String(key_bytes));
+      try
+       {
+        private_key=extractPrivateKeyFromPEM(new String(key_bytes));
+       }
+      catch(Exception e)
+       {
+        throw new Exception(conf_key_file_name+": "+e.getMessage());
+       }
      }
 
     conf_cert_file_name=getPropertyString(prb,"CertFileName");
