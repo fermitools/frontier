@@ -30,13 +30,13 @@ import curses.ascii
 import time
 import os.path
 
-frontierId = "fnget.py 1.7"
+frontierId = "fnget.py 1.8"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
   print "Usage:"
   print "  %s --url=<frontier url> --sql=<sql query> [--no-decode]" % progName
-  print "     [--refresh-cache] [--retrieve-ziplevel=N]"
+  print "     [--refresh-cache] [--retrieve-ziplevel=N] [--sign]"
   print " "
 
 frontierUrl = None
@@ -45,6 +45,7 @@ decodeFlag = True
 refreshFlag = False
 statsFlag = False
 retrieveZiplevel = "zip"
+signParam=""
 for a in sys.argv[1:]:
   arg = string.split(a, "=")
   if arg[0] == "--url":
@@ -60,6 +61,8 @@ for a in sys.argv[1:]:
     retrieveZiplevel="zip%s" % (level)
     if level == "0":
       retrieveZiplevel = ""
+  elif arg[0] == "--sign":
+    signParam="&sec=sig"
   elif arg[0] == "--stats-only":
     statsFlag = True
   else:
@@ -81,7 +84,7 @@ else:
 encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
 
 # frontier request
-frontierRequest="%s/type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s&sec=sig" % (frontierUrl, retrieveZiplevel, encQuery)
+frontierRequest="%s/type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s%s" % (frontierUrl, retrieveZiplevel, encQuery, signParam)
 if statsFlag:
   pass
 else:
