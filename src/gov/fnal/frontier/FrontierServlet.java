@@ -100,6 +100,36 @@ public final class FrontierServlet extends HttpServlet
     return df.parse(dateheader).getTime();
    }
 
+  private String error_payload_end(ServletOutputStream out,HttpServletRequest request,HttpServletResponse response,String descript,String check,long error_max_age) throws Exception
+   {
+    String msg="";
+    long max_age=0;
+    if(response.isCommitted())
+     {
+      // Response is commited, too late to affect http header.
+      // Signal global error to tell clients to clear cache.
+      // This is needed if a Last-Modified header was already sent because
+      //  a normal cache check will think the cache is up to date if
+      //  the modification time hasn't changed.  It's also needed for
+      //  older clients that don't honor max_age in the payload; older
+      //  clients would only re-try if the global error was signaled.
+      Frontier.Log("too late to affect header, signaling global error");
+      msg=descript;
+      // set max cache age in the payload
+      max_age=error_max_age;
+     }
+    else
+     {
+      // tell proxies to cache the error for a short time
+      setAgeExpires(request,response,error_max_age);
+      // this leaves an empty header but it doesn't hurt and
+      //  there doesn't appear to be any way to delete a header
+      response.setHeader("Last-Modified","");
+     }
+    ResponseFormat.payload_end(out,1,descript,max_age,check,-1,0);
+    return msg;
+  }
+
   public void service(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
    {
     if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service()");
@@ -193,6 +223,16 @@ public final class FrontierServlet extends HttpServlet
 	return;
        }
 
+      if(last_modified>0)
+       {
+	String lastmod=dateHeader(last_modified);
+	if(if_modified_since>0)
+	  Frontier.Log("modified at time: "+lastmod+" (cached)");
+	else
+	  Frontier.Log("last-modified time: "+lastmod+" (cached)");
+	response.setHeader("Last-Modified",lastmod);
+       }
+
       ResponseFormat.begin(out,frontierVersion,xmlVersion);
       ResponseFormat.transaction_start(out,frontier.payloads_num);
       
@@ -211,18 +251,7 @@ public final class FrontierServlet extends HttpServlet
 	  catch(Throwable e)
 	   {
 	    Frontier.Log("Error acquiring database:",e);
-	    if(response.isCommitted())
-	     {
-	      // signal global error to tell client to clear cache
-	      Frontier.Log("too late to affect header, signaling global error");
-	      globalErrorMsg=throwableDescript(e);
-	     }
-	    else
-	     {
-	      // tell it to cache the message for a short time
-	      setAgeExpires(request,response,frontier.error_max_age);
-	     }
-	    ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
+	    globalErrorMsg=error_payload_end(out,request,response,throwableDescript(e),p.getCheck(),frontier.error_max_age);
 	    return;
 	   }
 
@@ -230,68 +259,49 @@ public final class FrontierServlet extends HttpServlet
 	  //  and cancel keepalive timer
 	  try
 	   {
-	    if(frontier.payloads_num==1)
+	    if((frontier.payloads_num==1)&&(last_modified==0))
 	     {
 	      if(response.isCommitted())
 	       {
 		// The database was acquired with keepalives
-		if(last_modified==0)
-		  Frontier.Log("response committed, too late to query for last-modified time");
-		else if(last_modified>0)
-		  Frontier.Log("response committed, too late to send last-modified time");
+		Frontier.Log("response committed, too late to query for last-modified time");
 	       }
 	      else
 	       {
-		// The database was acquired without keepalives, now set
-		//  last-modified time.   Didn't want to set it before
-		//  even if it was cached because don't want error messages
-		//  to stay cached forever.
-		if(last_modified>0)
+		// The database was acquired without keepalives, read
+		//  last-modified time from the database. 
+		// Need to do it here because acquiring the database could
+		//  have taken a long time and may have needed to send
+		//  keepalives, and those have to be after payload_start().
+		try
+		 {
+		  if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
+		  last_modified=frontier.getLastModified(out,if_modified_since);
+		 }
+		catch(Throwable e)
+		 {
+		  Frontier.Log("Error getting last-modified time: "+throwableDescript(e));
+		  globalErrorMsg=error_payload_end(out,request,response,throwableDescript(e),p.getCheck(),frontier.error_max_age);
+		  return;
+		 }
+		if(response.isCommitted())
+		 {
+		  Frontier.Log("response committed while querying last-modified time, too late to use");
+		 }
+		else if((if_modified_since>0)&&(if_modified_since==last_modified))
+		 {
+		  response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+		  Frontier.Log("not modified");
+		  return;
+		 }
+		else if(last_modified>0)
 		 {
 		  String lastmod=dateHeader(last_modified);
 		  if(if_modified_since>0)
-		    Frontier.Log("modified at time: "+lastmod+" (cached)");
+		      Frontier.Log("modified at time: "+lastmod);
 		  else
-		    Frontier.Log("last-modified time: "+lastmod+" (cached)");
+		      Frontier.Log("last-modified time: "+lastmod);
 		  response.setHeader("Last-Modified",lastmod);
-		 }
-		else if(last_modified==0)
-		 {
-		  // Read the last modified time from the database.
-		  // Need to do it here because acquiring the database could
-		  //  have taken a long time and may have needed to send
-		  //  keepalives, and those have to be after payload_start().
-		  try
-		   {
-		    if(Frontier.getHighVerbosity())Frontier.Log("FrontierServlet.java:service(): Going to call frontier.getLastModified()");
-		    last_modified=frontier.getLastModified(out,if_modified_since);
-		    if(response.isCommitted())
-		     {
-		      Frontier.Log("response committed while querying last-modified time, too late to use");
-		     }
-		    else if((if_modified_since>0)&&(if_modified_since==last_modified))
-		     {
-		      response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-		      Frontier.Log("not modified");
-		      return;
-		     }
-		    else if(last_modified>0)
-		     {
-		      String lastmod=dateHeader(last_modified);
-		      if(if_modified_since>0)
-			  Frontier.Log("modified at time: "+lastmod);
-		      else
-			  Frontier.Log("last-modified time: "+lastmod);
-		      response.setHeader("Last-Modified",lastmod);
-		     }
-		   }
-		  catch(Throwable e)
-		   {
-		    Frontier.Log("Error getting last-modified time: "+throwableDescript(e));
-		    setAgeExpires(request,response,frontier.error_max_age);
-		    ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
-		    return;
-		   }
 		 }
 	       }
 	     }
@@ -299,7 +309,25 @@ public final class FrontierServlet extends HttpServlet
 	    try
 	     {
 	      p.send(out);
-	      ResponseFormat.payload_end(out,p.err_code,p.err_msg,p.getCheck(),p.rec_num,p.full_size);
+
+	      long max_age=0;
+	      if(p.rec_num==0)
+	       {
+		// empty responses can be an error as well so make sure they're
+		//  cached only a short time
+		if(response.isCommitted())
+		 {
+		  max_age=frontier.error_max_age;
+		  Frontier.Log("empty response, setting payload max age to "+max_age);
+		 }
+		else
+		 {
+		  setAgeExpires(request,response,frontier.error_max_age);
+		  Frontier.Log("empty response, setting max age to "+frontier.error_max_age);
+		 }
+	       }
+
+	      ResponseFormat.payload_end(out,p.err_code,p.err_msg,max_age,p.getCheck(),p.rec_num,p.full_size);
 	     }
 	    catch(Throwable e)
 	     {
@@ -311,21 +339,7 @@ public final class FrontierServlet extends HttpServlet
 	      else
 	       {
 		Frontier.Log("Error while processing payload "+i+":",e);
-		ResponseFormat.payload_end(out,1,throwableDescript(e),p.getCheck(),-1,0);
-		if(!response.isCommitted())
-		 {
-		  // still have a chance to affect cache age and last-modified 
-		  setAgeExpires(request,response,frontier.error_max_age);
-		  // this leaves an empty header but it doesn't hurt and
-		  //  there doesn't appear to be any way to delete a header
-		  response.setHeader("Last-Modified","");
-		 }
-		else
-		 {
-		  // also signal global error to tell client to clear cache
-		  Frontier.Log("too late to affect header, also signaling global error");
-		  globalErrorMsg=throwableDescript(e);
-		 }
+		globalErrorMsg=error_payload_end(out,request,response,throwableDescript(e),p.getCheck(),frontier.error_max_age);
 		break;
 	       }
 	     }
