@@ -21,6 +21,8 @@ $Id$
       client) or an empty result from a database query.
     - Show a more user friendly error message if the private key file
       cannot be decoded.
+    - Added removal of any excess text from before the "BEGIN" line in
+      the host certificate.
 
 3.32 2013/10/22 (dwd)
     - Add support to the FilePlugin for reading from http URLs in
