@@ -189,6 +189,13 @@ public final class Frontier
       DataInputStream dis=new DataInputStream(new FileInputStream(file));
       dis.readFully(cert_bytes);
       dis.close();
+      String cert_str=new String(cert_bytes);
+      int begin=cert_str.indexOf("-----BEGIN");
+      if(begin>0)
+       {
+	// remove excess junk before beginning of cert
+        cert_bytes=cert_str.substring(begin).getBytes();
+       }
      }
 
     String maxthreads=getPropertyString(prb,"MaxThreads");
