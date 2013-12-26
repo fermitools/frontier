@@ -28,6 +28,7 @@ public class Payload
   private FrontierDataObject fdo;
   private Encoder enc;
   private boolean sign;
+  private boolean emptyiserror;
   
   public boolean noCache=false;
   public long time_expire;
@@ -55,6 +56,13 @@ public class Payload
     String sec=cmd.fds.getOptionalString("sec");
     if((sec!=null)&&(sec.equals("sig")))sign=true;
     else sign=false;
+
+    String ttl=cmd.fds.getOptionalString("ttl");
+    // Empty results are never allowed for forever cache
+    // This doesn't affect caching time (since empty results are cached
+    //   only a short time like errors) but it is an extra sanity check
+    if((ttl!=null)&&(ttl.equals("forever")))emptyiserror=true;
+    else emptyiserror=false;
         
     String key="_fdo__"+cmd.obj_name+"_@<:>@__"+cmd.obj_version;
     
@@ -118,6 +126,8 @@ public class Payload
 	 full_size=enc.getOutputSize();
          Frontier.Log("rows="+rec_num+", full size="+full_size);
         }
+       if(emptyiserror&&(rec_num==0))
+	 throw new Exception("Empty result from query not allowed");
        return;
       
       case Command.CMD_META:
