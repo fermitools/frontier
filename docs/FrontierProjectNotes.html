@@ -91,29 +91,31 @@ Update servlet version and date in README and then do
 <li>
 Commit all your changes to CVS
 <li>
+Set an environment variable SERVLETVERSION=3_NN where NN is the current number.
+<li>
 Set a cvs tag at the top level (above src and client) in the format
-<tt>servlet_3_12</tt>.  This will unnecessarily add tags in the client
+<tt>servlet_$SERVLETVERSION</tt>.  This will unnecessarily add tags in the client
 directory, which can optionally be removed with cvs tag -d in the
 client directory.
 <li>
 In a scratch directory, and with CVSROOT set to
 cvsuser@cdcvs.fnal.gov:/cvs/cd do
 <br>
-<tt>cvs co -r servlet_3_12 frontier</tt>
+<tt>cvs co -r servlet_$SERVLETVERSION frontier</tt>
 <li>
 Prepare and release the sources:
 <br>
-<tt>mkdir Frontier_3_12</tt>
+<tt>mkdir Frontier_$SERVLETVERSION</tt>
 <br>
-<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_3_12</tt>
+<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_$SERVLETVERSION</tt>
 <br>
-<tt>tar zcf Frontier_servlet__3.12__src.tar.gz Frontier_3_12</tt>
+<tt>tar zcf Frontier_servlet__`echo $SERVLETVERSION|tr _ .`__src.tar.gz Frontier_$SERVLETVERSION</tt>
 <br>
-<tt>scp Frontier_servlet__3.12__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
+<tt>scp Frontier_servlet__`echo $SERVLETVERSION|tr _ .`__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
 <li>
 Prepare and release the binaries:
 <br>
-<tt>cd Frontier_3_12</tt>
+<tt>cd Frontier_$SERVLETVERSION</tt>
 <br>
 <tt>ant -f build.local clean</tt>
 <br>
@@ -122,7 +124,7 @@ Prepare and release the binaries:
 (where CATALINA_HOME is set to the top level directory of a tomcat
 installation)
 <br>
-<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_3.12.war</tt>
+<tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_`echo $SERVLETVERSION|tr _ .`.war</tt>
 <br>
 <tt>scp RELEASE_NOTES dbfrontier@frontier.cern.ch:dist/servletreleasenotes.txt</tt>
 <li>
