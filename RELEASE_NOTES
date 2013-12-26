@@ -1,5 +1,27 @@
 $Id$
 
+3.33 2013/12/26 (dwd)
+    - Added new "forever" time to live, a third cache expiration time
+      requested by clients, in addition to "short" and "long" times to
+      live.  Added config.properties option ForeverCacheExpireSeconds
+      which defaults to a year of seconds.  If a "forever" query returns
+      empty results, it is considered to be an error.
+    - Reduced the time that empty query results will be cached for
+      "short" or "long" time to live queries to a maximum of 5 minutes
+      or the "short" time, whichever is smaller.
+    - Added a "max_age" value at the end of the response if the http
+      header has already been sent with a longer Cache-control: max-age
+      than is later determined to be necessary.  The things that can
+      cause the http header to be sent are either a keepalive message
+      because the request had to wait longer than 5 seconds to read
+      from the database, or at least a buffer full of data was already
+      sent before an error occurred.  The events that can reduce the
+      max age late are some kind of error with the database (which
+      used to be handled by only signalling "global" errors to the
+      client) or an empty result from a database query.
+    - Show a more user friendly error message if the private key file
+      cannot be decoded.
+
 3.32 2013/10/22 (dwd)
     - Add support to the FilePlugin for reading from http URLs in
       addition to files on the local disk.  If FileBaseDirectory
