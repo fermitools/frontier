@@ -2,8 +2,8 @@
 
 
 Product Name:           Frontier
-Product Version:        servlet: 3.32 		client: 2.8.8
-Date (yyyy/mm/dd):      servlet: 2013/10/22	client: 2013/07/09
+Product Version:        servlet: 3.33 		client: 2.8.8
+Date (yyyy/mm/dd):      servlet: 2013/12/26	client: 2013/07/09
 
 ------------------------------------------------------------------------
 
@@ -44,17 +44,24 @@ in the COPYING file.
                              PRODUCT DESCRIPTION
                              ===================
 
-The Frontier system distributes data from central databases that are
-read by many client systems around the world. The name comes from "N
-Tier" where N is any number and tiers are layers of locations of
-distribution. The central database is located at Tier 0, which
-distributes data to to all the Tier 1, Tier 2, and Tier 3 sites around
-the world. Within each site the Frontier system also distributes the
-data to all the worker nodes (typically hundreds or thousands) that
-need to use the data. The protocol is http-based and uses a RESTful
-architecture which is excellent for caching and scales well. The
-Frontier system uses the standard web caching tool squid to cache the
-http objects at every site. 
+The Frontier distributed database caching system distributes data from
+data sources to many client systems around the world. The name comes
+from "N Tier" where N is any number and tiers are layers of locations
+of distribution. The central data source is located at Tier 0, and the
+Frontier system distributes data to to all the Tier 1, Tier 2, and
+Tier 3 sites.  Within each site the Frontier system also distributes
+the data to all the worker nodes (typically hundreds or thousands)
+that need to read the data. The protocol is http-based and uses a
+RESTful architecture which is excellent for caching and scales well.
+The Frontier system uses the standard web caching tool squid to cache
+the http objects at every site. Frontier uses a plugin architecture
+that allows great flexibility in the data transferred.  Back ends are
+currently available for SQL-based databases, http web servers, and
+files.  The main advantage of using Frontier with a web server, as
+opposed to directly using the web server with a squid proxy, is that
+years of experience have resulted in Frontier supplying many features
+that are important for robust and flexible operation on computing
+grids. 
 
 Documentation
 -------------
