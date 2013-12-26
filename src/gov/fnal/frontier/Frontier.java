@@ -32,7 +32,8 @@ public final class Frontier
   private static String conf_cert_file_name;
   private static final int SHORTCACHE=0;
   private static final int LONGCACHE=1;
-  private static final int NUMCACHELENGTHS=2;
+  private static final int FOREVERCACHE=2;
+  private static final int NUMCACHELENGTHS=3;
   private static String[] conf_cache_expire_hourofday = new String[NUMCACHELENGTHS];
   private static String[] conf_cache_expire_seconds = new String[NUMCACHELENGTHS];
   
@@ -228,6 +229,9 @@ public final class Frontier
     conf_cache_expire_seconds[LONGCACHE]=getPropertyString(prb,"LongCacheExpireSeconds");
     conf_cache_expire_hourofday[SHORTCACHE]=getPropertyString(prb,"ShortCacheExpireHourOfDay");
     conf_cache_expire_seconds[SHORTCACHE]=getPropertyString(prb,"ShortCacheExpireSeconds");
+    conf_cache_expire_seconds[FOREVERCACHE]=getPropertyString(prb,"ForeverCacheExpireSeconds");
+    if(conf_cache_expire_seconds[FOREVERCACHE]==null)
+      conf_cache_expire_seconds[FOREVERCACHE]=Integer.toString(60*60*24*365);
 
     // If no short time set, default it to 0 seconds
     if((conf_cache_expire_hourofday[SHORTCACHE]==null)&&
@@ -239,7 +243,7 @@ public final class Frontier
 
     initialized=true;
    }
-          
+
 
   public Frontier(HttpServletRequest req) throws Exception 
    {
@@ -283,7 +287,13 @@ public final class Frontier
       Payload p=new Payload(cmd,connMgr);
       if(p.noCache) noCache=true;
       String ttl=cmd.fds.getOptionalString("ttl");
-      if((ttl!=null)&&(ttl.equals("short"))) cachelength=SHORTCACHE;
+      if(ttl!=null)
+       {
+        if(ttl.equals("short"))
+	  cachelength=SHORTCACHE;
+        else if(ttl.equals("forever"))
+	  cachelength=FOREVERCACHE;
+       }
       long p_max_age=p.time_expire/1000;
       if(max_age<0) max_age=p_max_age;
       if(p_max_age<max_age) max_age=p_max_age;
