@@ -108,7 +108,7 @@ public class ResponseFormat
    }
 
    
-  static void payload_end(ServletOutputStream out,int err_code,String err_msg,String check,int rec_num,long full_size) throws Exception
+  static void payload_end(ServletOutputStream out,int err_code,String err_msg,long max_age,String check,int rec_num,long full_size) throws Exception
    {
     out.print("</data>\n");
     out.print("   <quality error=\"");
@@ -119,6 +119,12 @@ public class ResponseFormat
       out.print("message=\"");
       err_msg=Frontier.getServerName()+" "+err_msg;
       out.print(xml_str(err_msg));
+      out.print("\" ");
+     }
+    if(max_age>0)
+     {
+      out.print("max_age=\"");
+      out.print(max_age);
       out.print("\" ");
      }
     if(check.length()>0)
