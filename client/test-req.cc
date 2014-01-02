@@ -15,6 +15,7 @@
 #include "frontier_client/frontier-cpp.h"
 #include "frontier_client/FrontierException.hpp"
 
+#include <unistd.h>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -55,12 +56,13 @@ int main(int argc, char **argv)
 static void print_usage(char **argv)
  {
   std::cout<<"Usage: \n"<<argv[0]<<" -h\n\tPrint this info\n";
-  std::cout<<"\n"<<argv[0]<<" [-r] [-n] [-c N] [-F N] [-f file_name]\n";
+  std::cout<<"\n"<<argv[0]<<" [-r|-R] [-n] [-c N] [-F N] [-f file_name]\n";
   std::cout<<"  if -f file_name is missing, reads query from stdin\n";
-  std::cout<<"  [-r] means to force a reload\n";
-  std::cout<<"  [-n] means do not print data\n";
-  std::cout<<"  [-c N] repeat the query N count times\n";
-  std::cout<<"  [-F N] fork after Nth repitition\n";
+  std::cout<<"  -r: request short time-to-live\n";
+  std::cout<<"  -R: request forever time-to-live\n";
+  std::cout<<"  -n: do not print data\n";
+  std::cout<<"  -c N: repeat the query N count times\n";
+  std::cout<<"  -F N: fork after Nth repetition\n";
  }
  
 int do_main(int argc, char **argv)
@@ -74,7 +76,7 @@ int do_main(int argc, char **argv)
   frontier::AnyData ad;
   char *file_name=0;
   int arg_ind;
-  int do_reload=0;
+  int ttl=2;
   int do_print=1;
   int repeat_count=1;
   int fork_count=0;
@@ -94,7 +96,9 @@ int do_main(int argc, char **argv)
         exit(0);
        }
       if(strcmp(argv[arg_ind],"-r")==0)
-        do_reload=1;
+        ttl=1;
+      else if(strcmp(argv[arg_ind],"-R")==0)
+        ttl=3;
       else if(strcmp(argv[arg_ind],"-n")==0)
         do_print=0;
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
@@ -160,7 +164,7 @@ int do_main(int argc, char **argv)
         fork();
 
       frontier::Session ses(&con);
-      con.setReload(do_reload);
+      con.setTimeToLive(ttl);
 
       frontier::Request req(req_data,frontier::BLOB);
       req.addKey("p1",param);
@@ -176,7 +180,7 @@ int do_main(int argc, char **argv)
       std::cout<<"\nObject fields:\n";
       
       ses.next();
-      // MetaData consists of one record with filed names.
+      // MetaData consists of one record with field names.
       // Let's go over all fields:
       std::string name,type;
       
