@@ -170,8 +170,11 @@ class Connection
 
    virtual ~Connection();
   
-   // If reload!=0 then all requested objects will be refreshed at all caches
-   // New object copy will be obtained directly from server
+   // Set cache time to live for following requested objects.
+   // 1=short, 2=long, 3=forever.  Default 2.
+   void setTimeToLive(int ttl);
+
+   // Deprecated interface: 0 -> setTimeToLive(2), !0 -> setTimeToLive(1)
    void setReload(int reload);
 
    // Set default parameters for later-created Connections.

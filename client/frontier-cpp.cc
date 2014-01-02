@@ -164,7 +164,13 @@ Connection::~Connection()
 
 void Connection::setReload(int reload)
  {
-  frontier_setReload(channel,reload);
+  // deprecated interface
+  setTimeToLive(reload?1:2);
+ }
+ 
+void Connection::setTimeToLive(int ttl)
+ {
+  frontier_setTimeToLive(channel,ttl);
  }
  
 
