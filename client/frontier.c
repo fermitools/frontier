@@ -104,10 +104,11 @@ static char *getX509Subject()
  
 
 // get current time as a string
-char *frontier_str_now()
+// buf should be a space at least 26 bytes long, according to man ctime_r
+char *frontier_str_now(char *buf)
  {
   time_t now=time(NULL);
-  char *cnow=ctime(&now);
+  char *cnow=ctime_r(&now,buf);
   // eliminate trailing newline
   cnow[strlen(cnow)-1]='\0';
   return cnow;
@@ -371,8 +372,9 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   if(n>0)
     n+=strlen("&freshkey=");
   chn->ttlshort_suffix=(char *)frontier_mem_alloc(s+strlen("&ttl=short")+n+1);
-  chn->ttllong_suffix=(char *)frontier_mem_alloc(s+(longfresh?n:0)+s+1);
-  if(!chn->ttlshort_suffix||!chn->ttllong_suffix)
+  chn->ttllong_suffix=(char *)frontier_mem_alloc(s+(longfresh?n:0)+1);
+  chn->ttlforever_suffix=(char *)frontier_mem_alloc(s+strlen("&ttl=forever")+1);
+  if(!chn->ttlshort_suffix||!chn->ttllong_suffix||!chn->ttlforever_suffix)
    {
     *ec=FRONTIER_EMEM;
     FRONTIER_MSG(*ec);
@@ -381,12 +383,16 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
    }
   *chn->ttlshort_suffix='\0';
   *chn->ttllong_suffix='\0';
+  *chn->ttlforever_suffix='\0';
   if(s>0)
    {
     strcat(chn->ttlshort_suffix,"&sec=sig");
     strcat(chn->ttllong_suffix,"&sec=sig");
+    strcat(chn->ttlforever_suffix,"&sec=sig");
    }
   strcat(chn->ttlshort_suffix,"&ttl=short");
+  // long is the default ttl so don't need to add anything to it
+  strcat(chn->ttlforever_suffix,"&ttl=forever");
   if(n>0)
    {
     strcat(chn->ttlshort_suffix,"&freshkey=");
@@ -396,6 +402,7 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
       strcat(chn->ttllong_suffix,"&freshkey=");
       strcat(chn->ttllong_suffix,p);
      }
+    // freshkey never applies to the forever time-to-live
    }
 
   frontierHttpClnt_setConnectTimeoutSecs(chn->ht_clnt,
@@ -404,10 +411,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   		frontierConfig_getReadTimeoutSecs(chn->cfg));
   frontierHttpClnt_setWriteTimeoutSecs(chn->ht_clnt,
   		frontierConfig_getWriteTimeoutSecs(chn->cfg));
-  frontierHttpClnt_setCacheMaxAgeSecs(chn->ht_clnt,
-  		frontierConfig_getMaxAgeSecs(chn->cfg));
 
-  chn->reload=0;
+  chn->ttl=2; // default time-to-live is "long"
   *ec=FRONTIER_OK; 
   return chn;
  }
@@ -423,14 +428,16 @@ static Channel *channel_create(const char *srv,const char *proxy,int *ec)
 static void channel_delete(Channel *chn)
  {
   int i;
+  char nowbuf[26];
   if(!chn) return;
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing chan %d at %s",chn->seqnum,frontier_str_now());
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing chan %d at %s",chn->seqnum,frontier_str_now(nowbuf));
   frontierHttpClnt_delete(chn->ht_clnt);
   if(chn->resp)frontierResponse_delete(chn->resp);
   frontierConfig_delete(chn->cfg);
   if(chn->client_cache_buf)frontier_mem_free(chn->client_cache_buf);
   if(chn->ttlshort_suffix)frontier_mem_free(chn->ttlshort_suffix);
   if(chn->ttllong_suffix)frontier_mem_free(chn->ttllong_suffix);
+  if(chn->ttlforever_suffix)frontier_mem_free(chn->ttlforever_suffix);
   for(i=0;i<FRONTIER_MAX_SERVERN;i++)
     if(chn->serverrsakey[i])
       RSA_free((RSA *)chn->serverrsakey[i]);
@@ -460,15 +467,29 @@ void frontier_closeChannel(FrontierChannel fchn)
  }
 
  
-void frontier_setReload(FrontierChannel u_channel,int reload)
+// 1: short time
+// 2: long time
+// 3: forever
+void frontier_setTimeToLive(FrontierChannel u_channel,int ttl)
  {
   Channel *chn=(Channel*)u_channel;  
-  if(chn->user_reload!=reload)
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"changing chan %d reload flag to %d",chn->seqnum,reload);
-  chn->user_reload=reload;
+  if((ttl<1)||(ttl>3))
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"ignoring bad value of TimeToLive %d on chan %d",ttl,chn->seqnum);
+  else if(chn->ttl!=ttl)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"changing chan %d ttl flag to %d",chn->seqnum,ttl);
+    chn->ttl=ttl;
+   }
  }
  
 
+void frontier_setReload(FrontierChannel u_channel,int reload)
+ {
+  // deprecated interface, leave for backward compatibility
+  // 0=long, !0=short
+  frontier_setTimeToLive(u_channel,reload?1:2);
+ }
+ 
 static int write_data(FrontierResponse *resp,void *buf,int len)
  {
   int ret;
@@ -480,7 +501,7 @@ static int write_data(FrontierResponse *resp,void *buf,int len)
 static int prepare_channel(Channel *chn,int curserver,const char *params1,const char *params2)
  {
   int ec;
-  
+
   if(chn->resp) frontierResponse_delete(chn->resp);
   chn->resp=frontierResponse_create(&ec,curserver<0?0:chn->serverrsakey[curserver],params1,params2);
   chn->resp->seqnum=++chn->response_seqnum;
@@ -500,7 +521,8 @@ static int cert_verify_callback(int ok,X509_STORE_CTX *ctx)
 static int get_cert(Channel *chn,const char *uri,int curserver)
  {
   int ret;
-  int reload;
+  int refresh;
+  const char *force_reload;
   char *certuri=0;
   char *p,*cert=0;
   int n,len;
@@ -519,13 +541,15 @@ static int get_cert(Channel *chn,const char *uri,int curserver)
   ret=prepare_channel(chn,curserver,0,0);
   if(ret) return ret;
 
-  if(strcmp(frontierConfig_getForceReload(chn->cfg),"long")==0)
-    reload=2;
-  else if(strcmp(frontierConfig_getForceReload(chn->cfg),"softlong")==0)
-    reload=1;
-  else
-    reload=0;
-  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,reload);
+  force_reload=frontierConfig_getForceReload(chn->cfg);
+  refresh=0;
+  if((strstr(force_reload,"long")!=0)||(strstr(force_reload,"forever")!=0))
+   {
+    refresh=1;
+    if(strncmp(force_reload,"soft",4)!=0)
+      refresh=2;
+   }
+  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,refresh);
   frontierHttpClnt_setUrlSuffix(chn->ht_clnt,"");
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
 
@@ -714,10 +738,11 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
   int ret=FRONTIER_OK;
   char buf[8192];
   const char *force_reload;
+  int force_ttl;
   char *url_suffix;
   char *uri_copy,*data_copy;
   int uri_len;
-  int reload;
+  int refresh,maxage;
   int client_cache_bufsize;
   fn_hashval *hashval;
   char statbuf[128];
@@ -728,27 +753,52 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
     return FRONTIER_EIARG;
    }
 
-  reload=chn->reload;
-  if(!reload)
-  {
-    // Reload not requested, see if need to force a reload
-    force_reload=frontierConfig_getForceReload(chn->cfg);
-    if(strstr(force_reload,"short")!=0)
-      reload=chn->user_reload;
-    else if(strstr(force_reload,"long")!=0)
-      reload=1;
-    if(reload&&(strncmp(force_reload,"soft",4)!=0))
+  refresh=chn->refresh;
+  maxage=frontierConfig_getMaxAgeSecs(chn->cfg);
+  if(refresh)
+   {
+    // refresh requested by server in last response
+    if(refresh==1)
      {
-      // hard reload if force_reload doesn't start with "soft"
-      reload=2;
+      // soft refresh; chn->max_age contains the max cache age to request
+      if((maxage<0)||(maxage>chn->max_age))
+	maxage=chn->max_age;
+      refresh=0; // because httpclient treats a refresh==1 as maxage==0
      }
-  }
-  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,reload);
-  /* User-requested reloads are translated into a "short" time-to-live
-     where the length of time is defined by the server.  Add the suffix
-     even when reloads are forced to make sure the same URL is cleared
-     in the caches. */
-  url_suffix=(chn->user_reload?chn->ttlshort_suffix:chn->ttllong_suffix);
+    // else refresh==2, fall through to do a hard refresh
+   }
+  else
+   {
+    // refresh not requested by server, see if need to force a refresh
+    force_reload=frontierConfig_getForceReload(chn->cfg);
+    if(strcmp(force_reload,"none")!=0)
+     {
+      force_ttl=0;
+      if(strstr(force_reload,"short")!=0)
+	force_ttl=1;
+      else if(strstr(force_reload,"long")!=0)
+	force_ttl=2;
+      else if(strstr(force_reload,"forever")!=0)
+	force_ttl=3;
+      if(force_ttl&&(chn->ttl<=force_ttl))
+       {
+	refresh=1;
+	if(strncmp(force_reload,"soft",4)!=0)
+	 {
+	  // hard refresh if force_reload doesn't start with "soft"
+	  refresh=2;
+	 }
+       }
+     }
+   }
+  frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,refresh);
+  frontierHttpClnt_setCacheMaxAgeSecs(chn->ht_clnt,maxage);
+  if(chn->ttl==1)
+    url_suffix=chn->ttlshort_suffix;
+  else if(chn->ttl==3)
+    url_suffix=chn->ttlforever_suffix;
+  else
+    url_suffix=chn->ttllong_suffix;
   frontierHttpClnt_setUrlSuffix(chn->ht_clnt,url_suffix);
   frontierHttpClnt_setFrontierId(chn->ht_clnt,frontier_id);
 
@@ -865,6 +915,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   int curproxy,curserver;
   int have_reset_serverlist=0;
   pid_t pid;
+  char nowbuf[26];
 
   if((pid=getpid())!=frontier_pid)
    {
@@ -909,7 +960,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   frontierHttpClnt_resetwhenold(clnt);
   curproxy=frontierHttpClnt_shuffleproxygroup(clnt);
   curserver=frontierHttpClnt_shuffleservergroup(clnt);
-  chn->reload=0;
+  chn->refresh=0;
   bzero(err_last_buf,ERR_LAST_BUF_SIZE);
   
   while(1)
@@ -921,55 +972,81 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if(frontierConfig_getSecured(chn->cfg)&&(chn->serverrsakey[curserver]==0))
      {
       // don't yet have the server certificate, get that first
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"getting certificate on chan %d at %s",chn->seqnum,frontier_str_now());
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"getting certificate on chan %d at %s",chn->seqnum,frontier_str_now(nowbuf));
       ret=get_cert(chn,uri,curserver);
      }
     if(ret==FRONTIER_OK)
      {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now());
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now(nowbuf));
       ret=get_data(chn,uri,body,curserver);    
       if(ret==FRONTIER_OK) 
        {
 	ret=frontierResponse_finalize(chn->resp);
 	frontier_turnErrorsIntoDebugs(0);
-	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now());
-	if(ret==FRONTIER_OK) break;
+	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now(nowbuf));
        }
      }
 
-    frontier_turnErrorsIntoDebugs(0);
-
-    snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(),ret,frontier_getErrorMsg());
-    if((ret==FRONTIER_EMEM)||(ret==FRONTIER_EIARG)||(ret==FRONTIER_ECFG))
+    if(ret!=FRONTIER_OK)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,err_last_buf);
-      break;
-     }
+      frontier_turnErrorsIntoDebugs(0);
 
-    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
+      snprintf(err_last_buf,ERR_LAST_BUF_SIZE,"Request %d on chan %d failed at %s: %d %s",chn->resp->seqnum,chn->seqnum,frontier_str_now(nowbuf),ret,frontier_getErrorMsg());
+      if((ret==FRONTIER_EMEM)||(ret==FRONTIER_EIARG)||(ret==FRONTIER_ECFG))
+       {
+	frontier_setErrorMsg(__FILE__,__LINE__,err_last_buf);
+	break;
+       }
+
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,err_last_buf);
+     }
     
     /* The retry strategy is unfortunately quite complicated.  It is
 	documented in detail at
 	 https://twiki.cern.ch/twiki/bin/view/Frontier/ClientRetryStrategy
     */
 
-    if(ret==FRONTIER_EPROTO)
+    if((!chn->refresh)&&((chn->resp->max_age>0)||(ret==FRONTIER_EPROTO)))
      {
-      if(chn->reload<2)
+      // try soft refresh on same proxy or server if age is old enough;
+      int age,max_age;
+      max_age=chn->resp->max_age;
+      if(max_age<=0)
+        max_age=FRONTIER_MAX_EPROTOAGE;
+      age=frontierHttpClnt_getCacheAgeSecs(clnt);
+      if(age>max_age)
        {
-	// try to clear protocol error from same proxy or server it was found on
-	// try first with a soft reload and then with a hard reload
-	chn->reload++;
+        chn->refresh=1;
+	chn->max_age=max_age;
 	if(curproxy>=0)
 	 {
-	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying %s reload cache on proxy %s and server %s",chn->reload==1?"soft":"hard",frontierHttpClnt_curproxyname(clnt),frontierHttpClnt_curservername(clnt));
+	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying max cache age %d on proxy %s and server %s",max_age,frontierHttpClnt_curproxyname(clnt),frontierHttpClnt_curservername(clnt));
 	  continue;
 	 }
-	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying %s reload cache on direct connect to server %s",chn->reload==1?"soft":"hard",frontierHttpClnt_curservername(clnt));
+	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying max cache age %d on direct connect to server %s",max_age,frontierHttpClnt_curservername(clnt));
 	continue;
        }
-      chn->reload=0;
      }
+
+    if(ret==FRONTIER_OK)
+      break;
+
+    if((ret==FRONTIER_EPROTO)&&(chn->refresh==1))
+     {
+      // try hard refresh from same proxy or server
+      // this is needed to clear errors that have a Last-Modified time
+      //  that does not change
+      chn->refresh=2;
+      if(curproxy>=0)
+       {
+	frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying hard refresh on proxy %s and server %s",frontierHttpClnt_curproxyname(clnt),frontierHttpClnt_curservername(clnt));
+	continue;
+       }
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying hard refresh on direct connect to server %s",frontierHttpClnt_curservername(clnt));
+      continue;
+     }
+
+    chn->refresh=0;
 
     if((curproxy>=0)&&(ret!=FRONTIER_ESERVER))
      {
