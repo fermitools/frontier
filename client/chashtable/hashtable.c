@@ -246,7 +246,7 @@ void
 hashtable_stats(struct hashtable *h, char *statbuf, int maxstatlen)
 {
     unsigned int i;
-    struct entry *e, *f;
+    struct entry *e;
     struct entry **table = h->table;
     int n;
     int empty = 0, max = 0, total = 0;
@@ -259,7 +259,7 @@ hashtable_stats(struct hashtable *h, char *statbuf, int maxstatlen)
 	{
 	    n++;
 	    total++;
-	    f = e; e = e->next;
+	    e = e->next;
 	}
 	if (n > max) max = n;
     }
