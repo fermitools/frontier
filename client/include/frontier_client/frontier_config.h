@@ -18,6 +18,8 @@
 #define FRONTIER_MAX_PROXYN	24	// Max number of proxies in FRONTIER_PROXY env. variable
 #define FRONTIER_MAX_PROXYCONFIGN 8	// Max number of proxyconfigurl
 
+#define FRONTIER_MAX_EPROTOAGE (5*60)   // Max number of seconds to cache
+					//    protocol errors
 #define FRONTIER_DEFAULT_CLIENTCACHEMAXRESULTSIZE 0
 
 #define FRONTIER_ENV_LOGICALSERVER	"FRONTIER_LOGICALSERVER"
