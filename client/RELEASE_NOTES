@@ -1,5 +1,63 @@
 $Id$
 
+v2_8_9 - 2 Jan 2013 (dwd)
+  - Add support for a "forever" time-to-live ("ttl") for cache
+    expirations in addition to the previous "short" ttl.  The server
+    determines the amount of time to assign to each ttl level, but the
+    client determines which one to apply to each query.  Add new C++
+    API function Connection::setTimeToLive() and C API function
+    frontier_setTimeToLive() which take a "ttl" parameter that is 1
+    for short, 2 for long, and 3 for forever.  The default ttl is 2.
+    Deprecate the Connection::setReload() and frontier_setReload() API
+    functions where a true value is equivalent to setting a ttl to 1
+    with one of the new API functions.  
+  - Extend the forcereload complex connection string option and 
+    FRONTIER_FORCERELOAD environment variable so that a "long" or
+    "softlong" applies to short & long ttl only, and a "forever" or
+    "shortforever" applies to all ttls.  (By contrast the freshkey
+    option/FRONTIER_FRESHKEY variable is not extended to support
+    forever ttl).
+  - If the server requests a maximum cache age in the response payload
+    (not to be confused with the normal max cache age in the http
+    header), or if there was a protocol error (with a default maximum
+    cache age of 5 minutes), and the response is older than the
+    maximum age according to the http "Age" header from squid, then
+    first try a soft retry with that maximum cache age.  Formerly it
+    used to always do a soft retry with maximum cache age of 0 seconds
+    immediately after a protocol error.  This change avoids making a
+    server error condition worse by causing a flash overload with many
+    clients requesting retries at the same time.  If the soft retry
+    still returns a protocol error, continue to do a hard retry like
+    it used to.  New frontier servers (servlet version 3.33 or later)
+    also request a maximum cache age (default 5 minutes) on all empty
+    query responses because those can indicate temporary problems even
+    if they're not technically errors.
+  - Change fnget.py so it doesn't always request &sec=sig, since that
+    fails with newer servers that have no host certificates.  Instead,
+    add --sign option which appends the &sec=sig.
+  - Add '-R' option to fn-req to request "forever" time-to-live.  Add
+    the same option to fn-fileget and also the '-r' option that was
+    on fn-req for a "short" time-to-live.
+  - Change fn-fileget to honor the FRONTIER_RETRIEVEZIPLEVEL environment
+    variable and the retrieve-ziplevel complex connection string option,
+    except that unlike the regular frontier client the default is 0.
+  - Change fn-fileget to doubly URL-encode any characters in the file
+    path that aren't unreserved (that is, anything other than
+    alphanumeric, dash, underscore, forward slash, and period).  URL
+    encoding replaces the other characters with a % and 2 hex digits
+    of their ascii representation.  The % is also encoded (as %25) to
+    make it doubly-encoded, because it is decoded twice by the time
+    it reaches the Frontier servlet file plugin.
+  - When calculating the secure hash on the requested URL, do one
+    level of URL decoding (turning % and 2 hex digits into its ascii
+    equivalent) before calculating the hash, in order to match the
+    server which calculates the URL hash after one decoding.
+  - Extend the frontierqueries tool to put a '+' in the first column
+    for "forever" ttl queries similar to the '*' that's put there for
+    "short" ttl queries.
+  - Use ctime_r() instead of ctime() to get debug time stamps because
+    the latter is not thread-safe.
+
 v2_8_8 - 9 Jul 2013 (dwd)
  - Fixed the exit code from the fn-fileget command so it returns a
    zero on success and a one on failure rather than the opposite.
