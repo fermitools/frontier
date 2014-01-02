@@ -53,7 +53,8 @@ int frontier_init(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void *ptr
 FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec);
 FrontierChannel frontier_createChannel2(FrontierConfig* config, int *ec);
 void frontier_closeChannel(FrontierChannel chn);
-void frontier_setReload(FrontierChannel u_channel,int reload);
+void frontier_setTimeToLive(FrontierChannel u_channel,int ttl); // 1=short, 2=long, 3=forever
+void frontier_setReload(FrontierChannel u_channel,int reload); // deprecated: 0=long ttl, !0=short ttl
 int frontier_getRawData(FrontierChannel chn,const char *uri);
 int frontier_postRawData(FrontierChannel chn,const char *uri,const char *body);
 int frontier_getRetrieveZipLevel(FrontierChannel chn);
