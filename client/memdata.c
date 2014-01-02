@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
+#include <ctype.h>
 #include <frontier_client/frontier.h>
 #include "fn-internal.h"
 #include "fn-zlib.h"
@@ -36,6 +37,32 @@ extern void (*frontier_mem_free)(void *ptr);
    space, minus a little more for whatever overhead malloc might take.
   */
 #define MEMBUF_SIZE	(16*4096-sizeof(FrontierMemBuf)-128)
+
+// decode %XX in strings, in place
+static void
+urldecode(char *src)
+ {
+  char *dst,a,b;
+  dst=src;
+  while(*src)
+   {
+    if((*src=='%')&&
+       ((a = src[1])&&(b = src[2]))&&
+       (isxdigit(a) && isxdigit(b)))
+     {
+      if(a>='a') a-='a'-'A';
+      if(a>='A') a-=('A'-10);
+      else a-='0';
+      if(b>='a') b-='a'-'A';
+      if(b>='A') b-=('A'-10);
+      else b-='0';
+      *dst++=16*a+b;
+      src+=3;
+     }
+    else *dst++=*src++;
+   }
+  *dst = '\0';    
+ }
 
 FrontierMemData *frontierMemData_create(int zipped,int secured,const char *params1,const char *params2)
  {
@@ -68,7 +95,19 @@ FrontierMemData *frontierMemData_create(int zipped,int secured,const char *param
       if(p) *p='\0';
       params1=strrchr(params1,'/');  // there is always a slash
       if(p) *p='&';
+
+      p=0;
+      if(strchr(params1,'%')!=0)
+       {
+	// Need to convert % encodings in URL into what server will see
+	//  before calculating checksum
+	p=frontier_str_copy(params1);
+	urldecode(p);
+	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"decoded URL for checksum: %s",p);
+	params1=p;
+       }
       (void)SHA256_Update(&md->sha256_ctx,(unsigned char *)params1,strlen(params1));
+      if(p) frontier_mem_free(p);
      }
     if(params2)
       (void)SHA256_Update(&md->sha256_ctx,(unsigned char *)params2,strlen(params2));
