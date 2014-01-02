@@ -115,6 +115,13 @@ xml_startElement(void *userData,const char *name,const char **atts)
         fr->payload[fr->payload_num-1]->error_msg=frontier_str_copy(atts[i+1]);
 	continue;
        }            
+      if(strcmp(atts[i],"max_age")==0)
+       {
+	int max_age=atoi(atts[i+1]);
+	if((fr->max_age<=0)||(max_age<fr->max_age))
+	  fr->max_age=max_age;
+	continue;
+       }      
       if(strcmp(atts[i],"records")==0)
        {
 	//printf("Number of records: %d\n", atoi(atts[i+1]));
@@ -190,6 +197,7 @@ FrontierResponse *frontierResponse_create(int *ec,void *srv_rsakey,const char *p
   fr->payload_num=0;
   fr->error_payload_ind=-1;
   fr->keepalives=0;
+  fr->max_age=-1;
   fr->srv_rsakey=srv_rsakey;
   fr->params1=params1;
   fr->params2=params2;
