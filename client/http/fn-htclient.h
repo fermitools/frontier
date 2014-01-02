@@ -77,6 +77,7 @@ struct s_FrontierHttpClnt
   unsigned rand_seed;
   int refresh_flag;
   int max_age;
+  int age;
   int using_proxy;
   int content_length;
   int total_length;
@@ -121,6 +122,7 @@ void frontierHttpClnt_delete(FrontierHttpClnt *c);
 void frontierHttpClnt_clear(FrontierHttpClnt *c);
 void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c);
 int frontierHttpClnt_getContentLength(FrontierHttpClnt *c);
+int frontierHttpClnt_getCacheAgeSecs(FrontierHttpClnt *c);
 int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c);
 int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c);
 int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c);

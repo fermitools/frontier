@@ -55,6 +55,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->data_pos=0;
   c->data_size=0;
   c->content_length=-1;
+  c->age=-1;
   c->url_suffix="";
   c->rand_seed=getpid();
   c->max_age=-1;
@@ -442,6 +443,13 @@ static int read_connection(FrontierHttpClnt *c)
       c->content_length=atoi(buf+CLLEN);
 #undef CLHEAD
 #undef CLLEN
+    /* look for "age" header */
+#define AGEHEAD "age: "
+#define AGELEN (sizeof(AGEHEAD)-1)
+    else if((c->age==-1)&&(ret>AGELEN)&&(strncasecmp(buf,AGEHEAD,AGELEN)==0))
+      c->age=atoi(buf+AGELEN);
+#undef AGEHEAD
+#undef AGELEN
    }while(*buf);
 
   return tot; 
@@ -709,6 +717,11 @@ void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
 int frontierHttpClnt_getContentLength(FrontierHttpClnt *c)
  {
   return c->content_length;
+ }
+
+int frontierHttpClnt_getCacheAgeSecs(FrontierHttpClnt *c)
+ {
+  return c->age;
  }
 
 int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
