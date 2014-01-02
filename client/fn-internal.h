@@ -90,6 +90,7 @@ struct s_FrontierResponse
   int payload_num;
   int error_payload_ind;
   int keepalives;
+  int max_age;
   void *parser;
   int p_state;
   int zipped;
@@ -125,14 +126,16 @@ struct s_Channel
   FrontierHttpClnt *ht_clnt;
   pid_t pid;
   int http_resp_code;
-  int reload; // Current reload flag
-  int user_reload; // reload flag desired by user
+  int refresh; 	// Refresh requested (1=soft, 2=hard)
+  int max_age;	// Max cache age for soft refresh
+  int ttl; 	// Time-to-live requested by API (1=short, 2=long, 3=forever)
   int seqnum;      // sequence number for the channel
   int response_seqnum; // next sequence number for responses using this channel
   fn_client_cache_list *client_cache;
   char *client_cache_buf;
   char *ttlshort_suffix;
   char *ttllong_suffix;
+  char *ttlforever_suffix;
   int client_cache_maxsize;
   void *serverrsakey[FRONTIER_MAX_SERVERN];
  };
