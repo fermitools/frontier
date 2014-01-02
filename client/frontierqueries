@@ -16,8 +16,8 @@
 #  line but with a -sizefirst option it is at the beginning.
 # Before the query will be a hyphen (-) if the query is satisfied from
 #  the frontier internal cache, an asterisk (*) if it is a "short"
-#  expiration time query that is sent out, or a blank if it is a "long"
-#  expiration time query that is sent out.
+#  time-to-live query that is sent out, a plus (+) if it is a "forever"
+#  time-to-live query, or a blank if it is a "long" time-to-live query.
 # The -sort option sorts the output by full size.  Implies -sizefirst.
 # Written by Dave Dykstra
 # $Id$
@@ -68,8 +68,8 @@ BEGIN{
     }
     query=query substr($0,1,end-1)
 }
-/no-cache/{
-    mark="*"
+/<GET .*&ttl=forever/{
+    mark="+"
 }
 /<GET .*&ttl=short/{
     mark="*"
