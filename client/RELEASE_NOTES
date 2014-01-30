@@ -1,5 +1,11 @@
 $Id$
 
+v2_8_10 - 30 Jan 2013 (dwd)
+  - Correct segmentation fault caused by an incomplete conversion to
+    using ctime_r() instead of ctime().  This happens any time a job
+    requests data more than 5 minutes after the first time it requests
+    data.
+
 v2_8_9 - 2 Jan 2013 (dwd)
   - Add support for a "forever" time-to-live ("ttl") for cache
     expirations in addition to the previous "short" ttl.  The server
