@@ -659,6 +659,7 @@ void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
  {
   int i;
   time_t now;
+  char nowbuf[26];
 
   now=time(0);
   if(c->whenresetproxy==0)
@@ -687,7 +688,7 @@ void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
 		(c->cur_proxy>0))
   {
    //print warning if not in the first proxy group anymore
-   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the proxy list at %s",frontier_str_now());
+   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the proxy list at %s",frontier_str_now(nowbuf));
   }
 
   c->cur_proxy=c->first_proxy=0;
@@ -704,7 +705,7 @@ void frontierHttpClnt_resetwhenold(FrontierHttpClnt *c)
   if(!c->balance_servers&&(c->cur_server>0))
   {
    //print warning if not in the first server group anymore
-   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the server list at %s",frontier_str_now());
+   frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Resetting the server list at %s",frontier_str_now(nowbuf));
   }
 
   c->cur_server=c->first_server=0;
