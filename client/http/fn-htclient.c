@@ -34,7 +34,7 @@
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
 
-extern char *frontier_str_now();
+extern char *frontier_str_now(char *);
 
 #define PERSISTCONNECTION 
 
