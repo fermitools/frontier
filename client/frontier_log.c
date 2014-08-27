@@ -13,6 +13,7 @@
  *
  */
 #include "frontier_client/frontier_log.h"
+#include "fn-internal.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -22,11 +23,6 @@
 
 #define LOG_BUF_SIZE	1024*2
 #define MAX_LOG_PATH_SIZE 1024
-
-extern int frontier_log_level;
-extern char *frontier_log_file;
-extern int frontier_log_dup;
-extern pid_t frontier_pid;
 
 static int log_fd=-1;
 

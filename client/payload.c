@@ -20,10 +20,6 @@
 #include <string.h>
 #include <ctype.h>
 
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *ptr);
-extern int frontier_log_level;
-
 
 FrontierPayload *frontierPayload_create(const char *encoding,int secured,const char *params1,const char *params2)
  {

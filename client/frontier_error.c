@@ -14,6 +14,7 @@
  */
 #include "frontier_client/frontier_error.h"
 #include "frontier_client/frontier_log.h"
+#include "fn-internal.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -26,10 +27,6 @@
 
 static char _frontier_error_msg[MSG_BUF_SIZE];
 static int errors_into_debugs=0;
-
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *p);
-
 
 static const char *fn_errs[]=
  {

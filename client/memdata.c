@@ -22,9 +22,6 @@
 #include "fn-zlib.h"
 #include "zlib.h"
 
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *ptr);
-
 /* This is the size of each buffer after base64 decoding is applied.
    The buffers get linked together and as many as needed are allocated
    because we don't know ahead of time how much space is going to be

@@ -14,6 +14,7 @@
  */
 
 #include <fn-htclient.h> 
+#include "../fn-internal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -25,9 +26,6 @@
 #include <arpa/inet.h>
 
 #define PARSE_BUF_SIZE	256
-
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *p);
 
 
 FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)

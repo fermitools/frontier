@@ -14,6 +14,7 @@
  */
  
 #include <fn-htclient.h>
+#include "../fn-internal.h"
 
 #include <errno.h>
 #include <string.h>
@@ -30,11 +31,6 @@
 #define MAX_NAME_LEN	256
 #define URL_FMT_SRV	"http://%127[^/]/%127s"
 #define URL_FMT_PROXY	"http://%s"
-
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *p);
-
-extern char *frontier_str_now(char *);
 
 #define PERSISTCONNECTION 
 

@@ -21,9 +21,6 @@
 
 #define TYPED_BLOB
 
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *p);
-
 union u_Buf32 { int v; float f; char b[4]; };
 union u_Buf64 { long long v; double d; char b[8]; };
 

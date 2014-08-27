@@ -14,12 +14,9 @@
  */
 #include "frontier_client/frontier.h"
 #include "fn-zlib.h"
-#include "fn-base64.h"
+#include "fn-internal.h"
 
 #include "zlib.h"
-
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *ptr);
 
 static z_stream *dezstream=0;
 static z_stream *inzstream=0;

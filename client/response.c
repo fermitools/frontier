@@ -22,10 +22,6 @@
 #include <openssl/rsa.h>
 #include <openssl/err.h>
 
-extern void *(*frontier_mem_alloc)(size_t size);
-extern void (*frontier_mem_free)(void *ptr);
- 
-
 static void XMLCALL
 xml_cdata(void *userData,const XML_Char *s,int len)
  {

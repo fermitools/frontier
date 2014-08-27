@@ -154,6 +154,18 @@ struct s_RSBlob
  };
 typedef struct s_RSBlob RSBlob;
 
+
+
+char *frontier_str_now(char *);
+
+extern char *frontier_log_file;
+extern int frontier_log_dup;
+extern int frontier_log_level;
+extern pid_t frontier_pid;
+extern void *(*frontier_mem_alloc)(size_t size);
+extern void (*frontier_mem_free)(void *p);
+extern void (*frontier_mem_free)(void *ptr);
+
 #endif /*__HEADER_H_FN_INTERNAL_H*/
 
 
