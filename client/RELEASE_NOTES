@@ -1,12 +1,18 @@
 $Id$
 
-v2_8_10 - 30 Jan 2013 (dwd)
+v2_8_11 - 27 Aug 2014 (dwd)
+  - Convert from using select() to poll() in order to be able to work
+    when more than FD_SETSIZE (1024) file descriptors are open.
+  - Move "extern"s for global variables to fn-internal.h instead of
+    separately declared in source files.
+
+v2_8_10 - 30 Jan 2014 (dwd)
   - Correct segmentation fault caused by an incomplete conversion to
     using ctime_r() instead of ctime().  This happens any time a job
     requests data more than 5 minutes after the first time it requests
     data.
 
-v2_8_9 - 2 Jan 2013 (dwd)
+v2_8_9 - 2 Jan 2014 (dwd)
   - Add support for a "forever" time-to-live ("ttl") for cache
     expirations in addition to the previous "short" ttl.  The server
     determines the amount of time to assign to each ttl level, but the
