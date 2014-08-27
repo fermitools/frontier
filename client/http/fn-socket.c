@@ -17,6 +17,7 @@
  
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -68,8 +69,7 @@ void frontier_socket_close(int s)
 int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,int timeoutsecs)
  {
   int ret;
-  fd_set wfds;
-  struct timeval tv;
+  struct pollfd pfd;
   int val;
   socklen_t s_len;
   struct sockaddr_in *sin=(struct sockaddr_in*)(serv_addr);
@@ -94,17 +94,16 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
  
   /* non-blocking connect in progress here */
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d addr %s waiting for response",s,inet_ntoa(sin->sin_addr));
-  FD_ZERO(&wfds);
-  FD_SET(s,&wfds);
-  tv.tv_sec=timeoutsecs;
-  tv.tv_usec=0;
+  pfd.fd=s;
+  pfd.events=POLLOUT;
   do
    {
-    ret=select(s+1,NULL,&wfds,NULL,&tv);
+    pfd.revents=0;
+    ret=poll(&pfd,1,timeoutsecs*1000);
    }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on select when connecting to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll when connecting to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
     return FRONTIER_ESYS;
    }
   if(ret==0)
@@ -112,12 +111,13 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
     frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",inet_ntoa(sin->sin_addr),timeoutsecs);
     return FRONTIER_ECONNECTTIMEOUT;
    }
-  
-  if(!FD_ISSET(s,&wfds))
+
+  if(!(pfd.revents&POLLOUT))
    {
-    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from poll on fd %d",s);
     return FRONTIER_EUNKNOWN;
    }
+  
   s_len=sizeof(val);
   val=0;
   ret=getsockopt(s,SOL_SOCKET,SO_ERROR,&val,&s_len);
@@ -139,19 +139,17 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
 static int socket_write(int s,const char *buf, int len, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
-  fd_set wfds;
-  struct timeval tv;
+  struct pollfd pfd;
   
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"write request %d bytes",len);
 
-  FD_ZERO(&wfds);
-  FD_SET(s,&wfds);
-  tv.tv_sec=timeoutsecs;
-  tv.tv_usec=0;
-  ret=select(s+1,NULL,&wfds,NULL,&tv);
+  pfd.fd=s;
+  pfd.events=POLLOUT;
+  pfd.revents=0;
+  ret=poll(&pfd,1,timeoutsecs*1000);
   if(ret<0) 
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll: %s",errno,strerror(errno));
     return FRONTIER_ESYS;
    }
   if(ret==0)
@@ -160,9 +158,10 @@ static int socket_write(int s,const char *buf, int len, int timeoutsecs,struct a
       inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
-  if(!FD_ISSET(s,&wfds))
+
+  if(!(pfd.revents&POLLOUT))
    {
-    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from poll on fd %d",s);
     return FRONTIER_EUNKNOWN;
    }
    
@@ -206,20 +205,18 @@ int frontier_write(int s,const char *buf, int len, int timeoutsecs,struct addrin
 int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
-  fd_set rfds;
-  struct timeval tv;
+  struct pollfd pfd;
 
-  FD_ZERO(&rfds);
-  FD_SET(s,&rfds);
-  tv.tv_sec=timeoutsecs;
-  tv.tv_usec=0;
+  pfd.fd=s;
+  pfd.events=POLLIN;
   do
    {
-    ret=select(s+1,&rfds,NULL,NULL,&tv);
+    pfd.revents=0;
+    ret=poll(&pfd,1,timeoutsecs*1000);
    }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll: %s",errno,strerror(errno));
     return FRONTIER_ESYS;
    }
   if(ret==0)
@@ -228,9 +225,10 @@ int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *a
       inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
-  if(!FD_ISSET(s,&rfds))
+
+  if(!(pfd.revents&POLLIN))
    {
-    FRONTIER_MSG(FRONTIER_EUNKNOWN);
+    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from poll on fd %d",s);
     return FRONTIER_EUNKNOWN;
    }
    
