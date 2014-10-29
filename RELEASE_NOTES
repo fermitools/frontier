@@ -1,5 +1,16 @@
 $Id$
 
+3.34 2014/10/29 (dwd)
+    - Support host private keys (for digital signatures) that start with
+      'BEGIN PRIVATE KEY' in addition to 'BEGIN RSA PRIVATE KEY'.  That
+      form has begun to be used at CERN with 4096-bit RSA keys; the
+      old form was previously used for 2048-bit keys.
+    - Eliminate an infinite loop when there's an '&' in an error message
+      as sometimes happens with the FilePlugin.
+    - Do one less level of url decoding on the query string put into
+      catalina.out logs, because one level is already done and that
+      better matches the URL seen by a client using the FilePlugin.
+
 3.33 2013/12/26 (dwd)
     - Added new "forever" time to live, a third cache expiration time
       requested by clients, in addition to "short" and "long" times to
