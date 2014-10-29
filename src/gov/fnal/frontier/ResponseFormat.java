@@ -28,11 +28,13 @@ public class ResponseFormat
   static String xml_str(String msg)
    {
     StringBuffer b=new StringBuffer(msg);
+    int oldpos=0;
     while(true)
      {
       int pos=b.indexOf("&");
-      if(pos<0) break;
+      if(pos<oldpos) break;
       b.replace(pos,pos+1,"&amp;");
+      oldpos=pos+1; // look beyond the new '&'
      }
     while(true)
      {
