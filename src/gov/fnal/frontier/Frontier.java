@@ -410,14 +410,13 @@ public final class Frontier
       if((qs=req.getPathInfo())==null)
         throw new Exception("no query");
      }
-    String queryString=java.net.URLDecoder.decode(qs,"US-ASCII"); 
     StringBuffer client_desc=new StringBuffer("");
     client_desc.append("servlet_version:");
     client_desc.append(FrontierServlet.frontierVersion());
     client_desc.append(" start threads:");
     client_desc.append(FrontierServlet.numCurrentThreads());
     client_desc.append(" query ");
-    client_desc.append(queryString);
+    client_desc.append(qs);
     client_desc.append(" raddr ");
     client_desc.append(req.getRemoteAddr());
     client_desc.append(" frontier-id: ");
