@@ -96,7 +96,7 @@ public final class Frontier
 
     // First convert PEM into DER, the equivalent of
     //  openssl pkcs8 -topk8 -outform DER -in key.pem -out key.der -nocrypt
-    String b64key=new Scanner(pem).useDelimiter("-----(BEGIN|END) RSA PRIVATE KEY-----\n").next();
+    String b64key=new Scanner(pem).useDelimiter("-----(BEGIN|END) (RSA |)PRIVATE KEY-----\n").next();
     b64key=b64key.replace("\n","");
     byte [] derdata;
     try
@@ -105,29 +105,39 @@ public final class Frontier
      }
     catch(Exception e)
      {
-      throw new Exception("invalid RSA private key");
+      throw new Exception("invalid private key");
      }
-    // these bytes were copied from openssl conversion output
-    byte [] derhead={(byte)0x30,(byte)0x82,(byte)0x00,(byte)0x00,
-		     (byte)0x02,(byte)0x01,(byte)0x00,(byte)0x30,
-		     (byte)0x0d,(byte)0x06,(byte)0x09,(byte)0x2a, 
-		     (byte)0x86,(byte)0x48,(byte)0x86,(byte)0xf7,
-		     (byte)0x0d,(byte)0x01,(byte)0x01,(byte)0x01, 
-		     (byte)0x05,(byte)0x00,(byte)0x04,(byte)0x82};
-    byte [] pkcs8key=new byte[derhead.length+2+derdata.length];
-    System.arraycopy(derhead,0,pkcs8key,0,derhead.length);
-    // stuff in the 2-byte length, high byte first
-    int pkcs8keylen=derdata.length;
-    pkcs8key[24]=(byte)((pkcs8keylen>>8)&0xff);
-    pkcs8key[25]=(byte)(pkcs8keylen&0xff);
-    // length including the header (after first 4 byes) is in the header 
-    pkcs8keylen+=22;
-    pkcs8key[2]=(byte)((pkcs8keylen>>8)&0xff);
-    pkcs8key[3]=(byte)(pkcs8keylen&0xff);
-    System.arraycopy(derdata,0,pkcs8key,derhead.length+2,derdata.length);
 
-    // Convert the DER key into a PrivateKey structure
-    PKCS8EncodedKeySpec keySpec=new PKCS8EncodedKeySpec(pkcs8key);
+    PKCS8EncodedKeySpec keySpec;
+    if (pem.startsWith("-----BEGIN RSA "))
+     {
+      // these bytes were copied from openssl conversion output
+      byte [] derhead={(byte)0x30,(byte)0x82,(byte)0x00,(byte)0x00,
+		       (byte)0x02,(byte)0x01,(byte)0x00,(byte)0x30,
+		       (byte)0x0d,(byte)0x06,(byte)0x09,(byte)0x2a, 
+		       (byte)0x86,(byte)0x48,(byte)0x86,(byte)0xf7,
+		       (byte)0x0d,(byte)0x01,(byte)0x01,(byte)0x01, 
+		       (byte)0x05,(byte)0x00,(byte)0x04,(byte)0x82};
+      byte [] pkcs8key=new byte[derhead.length+2+derdata.length];
+      System.arraycopy(derhead,0,pkcs8key,0,derhead.length);
+      // stuff in the 2-byte length, high byte first
+      int pkcs8keylen=derdata.length;
+      pkcs8key[24]=(byte)((pkcs8keylen>>8)&0xff);
+      pkcs8key[25]=(byte)(pkcs8keylen&0xff);
+      // length including the header (after first 4 byes) is in the header 
+      pkcs8keylen+=22;
+      pkcs8key[2]=(byte)((pkcs8keylen>>8)&0xff);
+      pkcs8key[3]=(byte)(pkcs8keylen&0xff);
+      System.arraycopy(derdata,0,pkcs8key,derhead.length+2,derdata.length);
+
+      // Convert the DER key into a PrivateKey structure
+      keySpec=new PKCS8EncodedKeySpec(pkcs8key);
+     }
+    else
+     {
+      // It's already in DER format
+      keySpec=new PKCS8EncodedKeySpec(derdata);
+     }
     KeyFactory kf=KeyFactory.getInstance("RSA");
     return kf.generatePrivate(keySpec);
    }
