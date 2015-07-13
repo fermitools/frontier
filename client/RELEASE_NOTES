@@ -1,5 +1,10 @@
 $Id$
 
+v2_8_12 - 13 Jul 2015 (dwd)
+  - Replace unhelpful "inconsistent result from poll" message that can
+    happen in 2.8.11 on a connect failure with more helpful "Connection
+    refused" or "Network unreachable".
+
 v2_8_11 - 27 Aug 2014 (dwd)
   - Convert from using select() to poll() in order to be able to work
     when more than FD_SETSIZE (1024) file descriptors are open.
