@@ -82,7 +82,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    {
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"host %s is down or unreachable",inet_ntoa(sin->sin_addr));
+      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",inet_ntoa(sin->sin_addr),strerror(errno));
       return FRONTIER_ENETWORK;
      }
     else
@@ -112,12 +112,6 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
     return FRONTIER_ECONNECTTIMEOUT;
    }
 
-  if(!(pfd.revents&POLLOUT))
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from poll on fd %d",s);
-    return FRONTIER_EUNKNOWN;
-   }
-  
   s_len=sizeof(val);
   val=0;
   ret=getsockopt(s,SOL_SOCKET,SO_ERROR,&val,&s_len);
@@ -128,9 +122,25 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    }
   if(val)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",val,inet_ntoa(sin->sin_addr),strerror(val));
-    return FRONTIER_ESYS;
+    errno=val;
+    if(errno==ECONNREFUSED || errno==ENETUNREACH)
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",inet_ntoa(sin->sin_addr),strerror(errno));
+      return FRONTIER_ENETWORK;
+     }
+    else
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
+      return FRONTIER_ESYS;     
+     }
    }
+
+  if(!(pfd.revents&POLLOUT))
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from connect poll on fd %d",s);
+    return FRONTIER_EUNKNOWN;
+   }
+  
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connected, s=%d .",s);
   return FRONTIER_OK;
  }
@@ -161,7 +171,7 @@ static int socket_write(int s,const char *buf, int len, int timeoutsecs,struct a
 
   if(!(pfd.revents&POLLOUT))
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from poll on fd %d",s);
+    frontier_setErrorMsg(__FILE__,__LINE__,"inconsistent result from write poll on fd %d",s);
     return FRONTIER_EUNKNOWN;
    }
    
