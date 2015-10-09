@@ -65,13 +65,22 @@ environment variables when applicable:
 <li>
 serverurl - server of the form http://host:port/servlet (:port is
 optional and defaults to 80).  Multiple serverurl keywords may be
-supplied and they will be tried in the order listed.  Environment
+supplied and they will be tried in the order listed.  If a host
+DNS name contains multiple IP addresses, normally only one of those
+addresses is tried because the server is contacted by a proxy;
+however, when connecting directly to a server and the first addresses
+tried fail, all addresses will be tried.  The full retry strategy
+is documented
+<a href=https://twiki.cern.ch/twiki/bin/view/Frontier/ClientRetryStrategy>here</a>.
+Environment
 variables FRONTIER_SERVER and FRONTIER_SERVER[123456] can add
 additional servers.  Each server string also may contain any
 parenthesized keywords.  The maximum number of servers is 16.
 <li>
 proxyurl - proxy of the form http://host:port.  Multiple proxyurl
 keywords may be supplied and they will be tried in the order listed.
+When a DNS lookup on the host returns multiple IP addresses and the
+first ones tried fail, all values will be tried.
 Environment variables FRONTIER_PROXY and FRONTIER_PROXY[1234] can add
 additional proxies (or parenthesized keywords in FRONTIER_SERVER like
 all the other keywords), up to a maximum of 24 total proxies.  See also 
@@ -158,6 +167,12 @@ go to a proxy or server to retrieve the answer.
 <li>
 failovertoserver - when set to a value of 'no', prevents failing over
 to direct connections to servers if proxy connections fail.  Default 'yes'.
+<li>
+preferipfamily - controls the ordering of IP addresses tried when both
+IPv4 and IPv6 values are present in a DNS lookup.  When set to "6",
+prefers IPv6.  When set to "4", prefers IPv4.  When set to "0", uses
+the order set by the operating system.  Default is "4".  When attempts
+fail, all values are tried; this only controls the order.
 <li>
 security - When set to "sig", requests that the server send digital
 signatures on every response.  Requires access to a directory of
