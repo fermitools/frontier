@@ -137,6 +137,11 @@ void frontierHttpClnt_setCacheMaxAgeSecs(FrontierHttpClnt *c,int secs)
   c->max_age=secs;
  }
  
+void frontierHttpClnt_setPreferIpFamily(FrontierHttpClnt *c,int ipfamily)
+ {
+  c->prefer_ip_family=ipfamily;
+ }
+ 
 void frontierHttpClnt_setUrlSuffix(FrontierHttpClnt *c,char *suffix)
  {
   /* note that no copy is made -- caller must insure longevity of suffix */
@@ -175,7 +180,7 @@ static int http_read(FrontierHttpClnt *c)
   //printf("\nhttp_read\n");
   //bzero(c->buf,FRONTIER_HTTP_BUF_SIZE);
   c->data_pos=0;  
-  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE,c->read_timeout_secs,c->cur_addr);
+  c->data_size=frontier_read(c->socket,c->buf,FRONTIER_HTTP_BUF_SIZE,c->read_timeout_secs,c->cur_ai);
 
   return c->data_size;
  }
@@ -243,9 +248,9 @@ static int read_line(FrontierHttpClnt *c,char *buf,int buf_len)
 static int open_connection(FrontierHttpClnt *c)
  {
   int ret;
-  struct sockaddr_in *sin;
-  struct addrinfo *addr;
+  struct addrinfo *ai;
   FrontierUrlInfo *fui_proxy,*fui_server,*fui;
+  in_port_t port;
   
   if(c->socket!=-1)
    {
@@ -277,17 +282,20 @@ static int open_connection(FrontierHttpClnt *c)
     c->using_proxy=0;
    }
      
-  ret=frontier_resolv_host(fui);
+  ret=frontier_resolv_host(fui,c->prefer_ip_family);
   if(ret) return ret;
-  addr=fui->fai->addr;
+  ai=fui->fai->ai;
 
-  c->socket=frontier_socket();
+  c->socket=frontier_socket(ai->ai_addr->sa_family);
   if(c->socket<0) return c->socket;
   
-  sin=(struct sockaddr_in*)(addr->ai_addr);
-  sin->sin_port=htons((unsigned short)(fui->port));
-     
-  ret=frontier_connect(c->socket,addr->ai_addr,addr->ai_addrlen,c->connect_timeout_secs);
+  port=htons((unsigned short)(fui->port));
+  if(ai->ai_addr->sa_family==AF_INET6)
+   ((struct sockaddr_in6*)(ai->ai_addr))->sin6_port=port;
+  else
+   ((struct sockaddr_in*)(ai->ai_addr))->sin_port=port;
+
+  ret=frontier_connect(c->socket,ai->ai_addr,ai->ai_addrlen,c->connect_timeout_secs);
 
   if(ret!=FRONTIER_OK)
    {
@@ -295,7 +303,7 @@ static int open_connection(FrontierHttpClnt *c)
     c->socket=-1;
    }
 
-  c->cur_addr=addr;
+  c->cur_ai=ai;
    
   return ret;
 }
@@ -394,7 +402,7 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
    
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"request <%s>",buf);
    
-  ret=frontier_write(c->socket,buf,len,c->write_timeout_secs,c->cur_addr);
+  ret=frontier_write(c->socket,buf,len,c->write_timeout_secs,c->cur_ai);
   if(ret<0) return ret;
   return FRONTIER_OK;
  }
@@ -481,7 +489,7 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
     if(len>0)
      {
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"body (%d bytes): [\n%s\n]",len,body);
-      ret=frontier_write(c->socket,body,len,c->write_timeout_secs,c->cur_addr);
+      ret=frontier_write(c->socket,body,len,c->write_timeout_secs,c->cur_ai);
       if(ret<0) return ret;
      }
 
@@ -948,7 +956,7 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
    }
   // Note that if the host name has not been resolved because we're going
   // through a proxy, fui->fai will still be a valid FrontierAddrInfo, it
-  // will just have addr=0 and next=0.
+  // will just have ai=0 and next=0.
   if(curhaderror)
     fui->fai->haderror=1;
   // advance the round-robin if there is any
@@ -998,14 +1006,12 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
 static void gethostnameandaddr(FrontierUrlInfo *fui,char *buf,int len)
  {
   strncpy(buf,fui->host,len);
-  if(fui->fai->addr!=0)
+  if(fui->fai->ai!=0)
    {
     int n=strlen(fui->host);
-    struct sockaddr_in *sin;
-    sin=(struct sockaddr_in*)(fui->fai->addr->ai_addr);
     buf+=n;
     len-=n;
-    snprintf(buf,len,"[%s]",inet_ntoa(sin->sin_addr));
+    snprintf(buf,len,"[%s]",frontier_ipaddr(fui->fai->ai->ai_addr));
     buf[len-1]='\0';
    }
  }
@@ -1039,14 +1045,15 @@ char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
 
 char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
  {
-  struct sockaddr_in sinbuf;
-  socklen_t namelen=sizeof(sinbuf);
-  if(getsockname(c->socket, (struct sockaddr *)&sinbuf, &namelen)<0)
+  // allocate a size big enough for ipv6, which will also work for ipv4
+  struct sockaddr_in6 sockaddrbuf;
+  socklen_t namelen=sizeof(sockaddrbuf);
+  if(getsockname(c->socket, (struct sockaddr *)&sockaddrbuf, &namelen)<0)
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"cannot get sockname for socket %d: %s",c->socket,strerror(errno));
     return NULL;
    }
-  strncpy(c->serverbuf,inet_ntoa(sinbuf.sin_addr),sizeof(c->serverbuf));
+  strncpy(c->serverbuf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(c->serverbuf));
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",c->serverbuf);
   return(c->serverbuf);
  }

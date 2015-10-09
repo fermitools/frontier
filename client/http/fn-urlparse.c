@@ -129,10 +129,10 @@ ok:
  
 void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
  {
-  if(fui->firstfai.addr)
+  if(fui->ai)
    {
     // this frees all addrinfo structures in the round-robin chain
-    freeaddrinfo(fui->firstfai.addr);
+    freeaddrinfo(fui->ai);
    }
   while(fui->firstfai.next)
    {
@@ -144,24 +144,28 @@ void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
   fui->fai=fui->lastfai=&fui->firstfai;
  }
  
-int frontier_resolv_host(FrontierUrlInfo *fui)
+int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
  {
   struct addrinfo hints;
   int ret;
-  struct addrinfo *addr;
+  struct addrinfo *ai;
   FrontierAddrInfo *fai;
+  sa_family_t preferaf = AF_UNSPEC;
   
-  if(fui->fai->addr)
+  if(fui->fai->ai)
     return FRONTIER_OK;
+
+  if (preferipfamily!=0)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"getting addr info for %s, prefer ipv%d",fui->host,preferipfamily);
 
   bzero(&hints,sizeof(struct addrinfo));
   
-  hints.ai_family=PF_INET;
+  hints.ai_family=PF_UNSPEC;
   hints.ai_socktype=SOCK_STREAM;
   hints.ai_protocol=0;
   
   frontier_FreeAddrInfo(fui);
-  ret=getaddrinfo(fui->host,NULL,&hints,&(fui->firstfai.addr));
+  ret=getaddrinfo(fui->host,NULL,&hints,&(fui->ai));
   if(ret)
    {
     if(ret==EAI_SYSTEM)
@@ -175,28 +179,55 @@ int frontier_resolv_host(FrontierUrlInfo *fui)
     return FRONTIER_ENETWORK;
    }
 
+  // for each ai after the first, allocate an fai
+  // (it's after the first because one fai is pre-allocated)
+  ai=fui->ai->ai_next;
   fai=&fui->firstfai;
-  addr=fai->addr;
-  do
+  while(ai)
    {
-    struct sockaddr_in *sin;
-    sin=(struct sockaddr_in*)(addr->ai_addr);
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found addr <%s>",fui->host,inet_ntoa(sin->sin_addr));
-    addr=addr->ai_next;
-    if(addr)
+    FrontierAddrInfo *nextfai=frontier_mem_alloc(sizeof(FrontierAddrInfo));
+    if(!fai)
      {
-      FrontierAddrInfo *nextfai=frontier_mem_alloc(sizeof(FrontierAddrInfo));
-      if(!fai)
-       {
-	FRONTIER_MSG(FRONTIER_EMEM);
-	return FRONTIER_EMEM;
-       }
-      bzero(nextfai,sizeof(FrontierAddrInfo));
-      nextfai->addr=addr;
-      fai->next=nextfai;
-      fai=nextfai;
+      FRONTIER_MSG(FRONTIER_EMEM);
+      return FRONTIER_EMEM;
      }
-   }while(addr);   
+    bzero(nextfai,sizeof(FrontierAddrInfo));
+    fai->next=nextfai;
+    fai=nextfai;
+    ai=ai->ai_next;
+   }
+
+  fai=&fui->firstfai;
+
+  // add preferred family addresses
+  if(preferipfamily==4)
+    preferaf=AF_INET;
+  else if(preferipfamily==6)
+    preferaf=AF_INET6;
+  ai=fui->ai;
+  while(ai)
+   {
+    if(ai->ai_family==preferaf)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found ipv%d addr <%s>",fui->host,preferipfamily,frontier_ipaddr(ai->ai_addr));
+      fai->ai=ai;
+      fai=fai->next;
+     }
+    ai=ai->ai_next;
+   }
+   
+  // add non-preferred family addresses
+  ai=fui->ai;
+  while(ai)
+   {
+    if(ai->ai_family!=preferaf)
+     {
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found addr <%s>",fui->host,frontier_ipaddr(ai->ai_addr));
+      fai->ai=ai;
+      fai=fai->next;
+     }
+    ai=ai->ai_next;
+   }
    
   return FRONTIER_OK; 
  }

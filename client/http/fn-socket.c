@@ -26,14 +26,27 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+// return ascii representation of ipv4 or ipv6 address, for log messages
+// it is stored in a static buffer, overwritten by later calls
+char *frontier_ipaddr(const struct sockaddr *serv_addr)
+ {
+  static char addrbuf[INET6_ADDRSTRLEN+1];
+  addrbuf[0]='\0';
+  if (serv_addr->sa_family == AF_INET6)
+    inet_ntop(AF_INET6,&(((struct sockaddr_in6*)serv_addr)->sin6_addr),addrbuf,INET6_ADDRSTRLEN);
+  else
+    inet_ntop(AF_INET,&(((struct sockaddr_in*)serv_addr)->sin_addr),addrbuf,INET_ADDRSTRLEN);
+  return addrbuf;
+ }
+
 //static int total_socket=0;
 
-int frontier_socket()
+int frontier_socket(sa_family_t family)
  {
   int s;
   int flags;
   
-  s=socket(PF_INET,SOCK_STREAM,0);
+  s=socket(family,SOCK_STREAM,0);
   if(s<0) goto err;
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"new socket s=%d",s);
   
@@ -72,7 +85,6 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
   struct pollfd pfd;
   int val;
   socklen_t s_len;
-  struct sockaddr_in *sin=(struct sockaddr_in*)(serv_addr);
   
   ret=connect(s,serv_addr,addrlen);
   if(ret==0) return FRONTIER_OK;
@@ -82,18 +94,18 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    {
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",inet_ntoa(sin->sin_addr),strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
       return FRONTIER_ENETWORK;
      }
     else
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
       return FRONTIER_ESYS;     
      }
    }
  
   /* non-blocking connect in progress here */
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d addr %s waiting for response",s,inet_ntoa(sin->sin_addr));
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d addr %s waiting for response",s,frontier_ipaddr(serv_addr));
   pfd.fd=s;
   pfd.events=POLLOUT;
   do
@@ -103,12 +115,12 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
    }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
   if(ret<0) 
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll when connecting to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll when connecting to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
     return FRONTIER_ESYS;
    }
   if(ret==0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",inet_ntoa(sin->sin_addr),timeoutsecs);
+    frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",frontier_ipaddr(serv_addr),timeoutsecs);
     return FRONTIER_ECONNECTTIMEOUT;
    }
 
@@ -125,12 +137,12 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
     errno=val;
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",inet_ntoa(sin->sin_addr),strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
       return FRONTIER_ENETWORK;
      }
     else
      {
-      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,inet_ntoa(sin->sin_addr),strerror(errno));
+      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
       return FRONTIER_ESYS;     
      }
    }
@@ -165,7 +177,7 @@ static int socket_write(int s,const char *buf, int len, int timeoutsecs,struct a
   if(ret==0)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"write to %s timed out after %d seconds",
-      inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
+      frontier_ipaddr(addr->ai_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
 
@@ -232,7 +244,7 @@ int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *a
   if(ret==0)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"read from %s timed out after %d seconds",
-      inet_ntoa(((struct sockaddr_in*)(addr->ai_addr))->sin_addr),timeoutsecs);
+      frontier_ipaddr(addr->ai_addr),timeoutsecs);
     return FRONTIER_ENETWORK;
    }
 
