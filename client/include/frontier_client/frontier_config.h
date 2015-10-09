@@ -59,6 +59,7 @@ struct s_FrontierConfig
   char *capath;
   int client_cache_max_result_size;
   int failover_to_server;
+  int prefer_ip_family;
  };
 typedef struct s_FrontierConfig FrontierConfig;
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode);
@@ -83,6 +84,8 @@ void frontierConfig_setWriteTimeoutSecs(FrontierConfig *cfg,int secs);
 int frontierConfig_getWriteTimeoutSecs(FrontierConfig *cfg);
 void frontierConfig_setMaxAgeSecs(FrontierConfig *cfg,int secs);
 int frontierConfig_getMaxAgeSecs(FrontierConfig *cfg);
+void frontierConfig_setPreferIpFamily(FrontierConfig *cfg,int ipfamily);
+int frontierConfig_getPreferIpFamily(FrontierConfig *cfg);
 void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload);
 const char *frontierConfig_getForceReload(FrontierConfig *cfg);
 void frontierConfig_setFreshkey(FrontierConfig *cfg,char *freshkey);

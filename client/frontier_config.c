@@ -36,6 +36,7 @@ static int default_connect_timeout_secs=-1;
 static int default_read_timeout_secs=-1;
 static int default_write_timeout_secs=-1;
 static int default_max_age_secs=-1;
+static int default_prefer_ip_family=4;
 static int default_secured=0;
 static char *default_capath="/etc/grid-security/certificates";
 static char *default_force_reload=0;
@@ -113,6 +114,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
 
   // No env variable for these
   frontierConfig_setMaxAgeSecs(cfg,default_max_age_secs);
+  frontierConfig_setPreferIpFamily(cfg,default_prefer_ip_family);
   frontierConfig_setSecured(cfg,default_secured);
   frontierConfig_setCAPath(cfg,default_capath);
 
@@ -305,6 +307,18 @@ void frontierConfig_setMaxAgeSecs(FrontierConfig *cfg,int secs)
 int frontierConfig_getMaxAgeSecs(FrontierConfig *cfg)
  {
   return cfg->max_age_secs;
+ }
+
+void frontierConfig_setPreferIpFamily(FrontierConfig *cfg,int ipfamily)
+ {
+  if((ipfamily!=4)&&(ipfamily!=6))
+    ipfamily=0;
+  cfg->prefer_ip_family=ipfamily;
+ }
+
+int frontierConfig_getPreferIpFamily(FrontierConfig *cfg)
+ {
+  return cfg->prefer_ip_family;
  }
 
 void frontierConfig_setForceReload(FrontierConfig *cfg,char *forcereload)
@@ -561,6 +575,8 @@ static int frontierConfig_parseComplexServerSpec(FrontierConfig *cfg,const char*
 	  frontierConfig_setForceReload(cfg,valp);
 	else if(strcmp(keyp,"maxagesecs")==0)
 	  frontierConfig_setMaxAgeSecs(cfg,atoi(valp));
+	else if(strcmp(keyp,"preferipfamily")==0)
+	  frontierConfig_setPreferIpFamily(cfg,atoi(valp));
 	else if(strcmp(keyp,"freshkey")==0)
 	  frontierConfig_setFreshkey(cfg,valp);
 	else if(strcmp(keyp,"failovertoserver")==0)
@@ -801,6 +817,8 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
       "error creating http client object",0);
     return FRONTIER_ECFG;
    }
+  frontierHttpClnt_setPreferIpFamily(clnt,
+  		frontierConfig_getPreferIpFamily(cfg));
   frontierHttpClnt_setConnectTimeoutSecs(clnt,
   		frontierConfig_getConnectTimeoutSecs(cfg));
   frontierHttpClnt_setReadTimeoutSecs(clnt,

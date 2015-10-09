@@ -541,6 +541,8 @@ static int get_cert(Channel *chn,const char *uri,int curserver)
   ret=prepare_channel(chn,curserver,0,0);
   if(ret) return ret;
 
+  frontierHttpClnt_setPreferIpFamily(chn->ht_clnt,
+  		frontierConfig_getPreferIpFamily(chn->cfg));
   force_reload=frontierConfig_getForceReload(chn->cfg);
   refresh=0;
   if((strstr(force_reload,"long")!=0)||(strstr(force_reload,"forever")!=0))
@@ -793,6 +795,8 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
    }
   frontierHttpClnt_setCacheRefreshFlag(chn->ht_clnt,refresh);
   frontierHttpClnt_setCacheMaxAgeSecs(chn->ht_clnt,maxage);
+  frontierHttpClnt_setPreferIpFamily(chn->ht_clnt,
+  		frontierConfig_getPreferIpFamily(chn->cfg));
   if(chn->ttl==1)
     url_suffix=chn->ttlshort_suffix;
   else if(chn->ttl==3)
