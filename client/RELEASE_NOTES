@@ -1,5 +1,14 @@
 $Id$
 
+v2_8_13 - 9 Oct 2015 (dwd)
+  - Support IPv6 addresses.
+  - Add new complex connection string option "preferipfamily" which
+    controls the ordering of IP addresses tried when both IPv4 and
+    IPv6 values are present in a DNS lookup.  When set to "6", prefers
+    IPv6.  When set to "4", prefers IPv4.  When set to "0", uses the
+    order set by the operating system.  Default is "4".  When attempts
+    fail, all values are tried as before; this only controls the order.
+
 v2_8_12 - 13 Jul 2015 (dwd)
   - Replace unhelpful "inconsistent result from poll" message that can
     happen in 2.8.11 on a connect failure with more helpful "Connection
