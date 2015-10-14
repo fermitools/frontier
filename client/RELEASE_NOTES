@@ -1,5 +1,10 @@
 $Id$
 
+v2_8_14 - 9 Oct 2015 (dwd)
+  - Fix bug introduced in v2_8_13 of using memory after it was freed.
+    The problem only showed up after running for 5 minutes, after
+    address info was freed in order to look up names in the DNS again.
+
 v2_8_13 - 9 Oct 2015 (dwd)
   - Support IPv6 addresses.
   - Add new complex connection string option "preferipfamily" which
