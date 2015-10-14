@@ -133,6 +133,7 @@ void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
    {
     // this frees all addrinfo structures in the round-robin chain
     freeaddrinfo(fui->ai);
+    fui->ai=0;
    }
   while(fui->firstfai.next)
    {
