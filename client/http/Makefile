@@ -14,7 +14,7 @@
 
 OBJ	=	fn-htclient.o fn-socket.o fn-urlparse.o
 HDR	=	fn-htclient.h ../include/frontier_client/frontier.h ../fn-internal.h
-INC	=	-I. -I.. -I../include
+INC	=	$(COMMON_INC) -I. -I.. -I../include
 
 all: $(OBJ)
 	rm -rf .libs

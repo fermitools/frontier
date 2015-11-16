@@ -66,7 +66,8 @@ LINK_SO         =       c++ $(CXXFLAGS) -shared -o libfrontier_client.so.$(FN_VE
 LINK_DYLIB	=	c++ $(CXXFLAGS) -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
-INC		=	${EXPAT_INC} ${OPENSSL_INC} ${PACPARSER_INC} ${ZLIB_INC} -I./include -I.
+COMMON_INC	=	${EXPAT_INC} ${OPENSSL_INC} ${PACPARSER_INC} ${ZLIB_INC}
+INC		=	${COMMON_INC} -I./include -I.
 LIBDIR		=
 # -ldl needed by Fedora 18
 LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto -L. ${ZLIB_LD_FLAGS} -lz -ldl
@@ -112,7 +113,7 @@ all-dist: clean src-dist dist
 
 # Source distribution.
 src-dist: clean $(tmpdir)
-	(cd http && make clean)
+	(cd http && $(MAKE) clean)
 	tar cvf $(src_distfile) $(src_files)
 	mkdir -p $(tmpdir)/$(src_distdir)
 	(cd $(tmpdir)/$(src_distdir) && tar xvf $(src_distfile))
@@ -158,7 +159,7 @@ endif
 #####################################################
 
 htclient:
-	(cd http && CC=$(CC) COPT="$(COPT)" make all)
+	(cd http && $(MAKE) CC="$(CC)" COPT="$(COPT)" COMMON_INC="$(COMMON_INC)" all)
 
 libfrontier_client.so: $(OBJ) http/.libs
 	rm -f libfrontier_client.so
@@ -300,7 +301,7 @@ fn-fileget: fn-fileget.o
 
 clean:
 	rm -f *.o *.core core libfrontier_client.* frontier main getcids request_each fn-any $(BINAPP) $(STATICBINAPP)
-	(cd http && make clean)
+	(cd http && $(MAKE) clean)
 	rm -rf .libs
 	rm -rf $(tmpdir)
 	rm -rf $(distdir)
