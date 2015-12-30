@@ -769,6 +769,7 @@ int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
       if ((fui->fai=fui->fai->next)==0)
 	fui->fai=&fui->firstfai;
      } while(fui->fai->haderror&&(fui->fai!=startfai));
+    fui->lastfai=fui->fai;
    }
   return c->cur_proxy;
  }
@@ -899,12 +900,12 @@ int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
    }
   if(curhaderror)
     fui->fai->haderror=1;
-  // advance the round-robin if there is any
+  // advance the round-robin if there is any other address
   if ((fui->fai=fui->fai->next)==0)
     fui->fai=&fui->firstfai;
   if(fui->lastfai==fui->fai)
    {
-    /*end of round-robin, cycle through proxy list*/
+    /*end of round-robin, advance through proxy list*/
     c->cur_proxy++;
     if(c->balance_num_proxies>0)
      {
@@ -959,12 +960,12 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
   // will just have ai=0 and next=0.
   if(curhaderror)
     fui->fai->haderror=1;
-  // advance the round-robin if there is any
+  // advance the round-robin if there is any other address
   if ((fui->fai=fui->fai->next)==0)
     fui->fai=&fui->firstfai;
   if(fui->lastfai==fui->fai)
    {
-    /*end of server round-robin, cycle through server list*/
+    /*end of server round-robin, advance through server list*/
     c->cur_server++;
     if(c->cur_server==c->total_server)
       /*wrap around in case doing load balancing*/
