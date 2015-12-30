@@ -1062,7 +1062,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
         have_reset_serverlist=0;
 	stay_in_proxygroup=0;
        }
-      if((ret!=FRONTIER_ECONNECTTIMEOUT)&&stay_in_proxygroup)
+      if((ret!=FRONTIER_ECONNECT)&&stay_in_proxygroup)
        {
 	// At the end of the proxy group, so if there's another server then
 	//   use it back at the beginning of the current proxy group.
@@ -1099,7 +1099,7 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
       else
        {
 	// select another proxy regardless of group
-	curproxy=frontierHttpClnt_nextproxy(clnt,(ret==FRONTIER_ECONNECTTIMEOUT));
+	curproxy=frontierHttpClnt_nextproxy(clnt,(ret==FRONTIER_ECONNECT));
 	if(curproxy>=0)
 	 {
 	  frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Trying next proxy %s with same server %s",
