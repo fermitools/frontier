@@ -62,12 +62,13 @@ void frontier_FreeAddrInfo(FrontierUrlInfo *fui);
 
 struct s_FrontierHostsInfo
  {
+  FrontierUrlInfo **hosts;
   int cur;
   int total;
   int num_balanced;
   int first;
   time_t whenreset;
-  char buf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
+  char debugbuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
  };
 typedef struct s_FrontierHostsInfo FrontierHostsInfo;
 
