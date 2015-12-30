@@ -187,7 +187,11 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
   if(*errorCode!=FRONTIER_OK)goto cleanup;
 
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d servers",cfg->server_num);
+  if (cfg->servers_balanced)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Servers load balanced");
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);
+  if (cfg->proxies_balanced)
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%d proxies load balanced",cfg->proxy_num-cfg->num_backupproxies);
     
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Retrieve zip level is %d",cfg->retrieve_zip_level);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Connect timeoutsecs is %d",cfg->connect_timeout_secs);
