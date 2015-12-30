@@ -58,24 +58,31 @@ int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 void frontier_FreeAddrInfo(FrontierUrlInfo *fui);
 
+#define FRONTIER_HTTP_DEBUG_BUF_SIZE 512
+
+struct s_FrontierHostsInfo
+ {
+  int cur;
+  int total;
+  int num_balanced;
+  int first;
+  time_t whenreset;
+  char buf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
+ };
+typedef struct s_FrontierHostsInfo FrontierHostsInfo;
+
 #define FRONTIER_RESETPROXY_SECS (60*5)
 #define FRONTIER_RESETSERVER_SECS (60*30)
 #define FRONTIER_HTTP_BUF_SIZE	(32*1024)
 #define FRONTIER_MAX_PERSIST_SIZE (16*1024)
-#define FRONTIER_HTTP_DEBUG_BUF_SIZE 512
 
 struct s_FrontierHttpClnt
  {
   FrontierUrlInfo *proxy[FRONTIER_MAX_PROXYN];
   FrontierUrlInfo *server[FRONTIER_MAX_SERVERN];
-  int cur_proxy;
-  int cur_server;
-  int total_proxy;
-  int total_server;
-  int balance_num_proxies;
-  int balance_servers;
-  int first_proxy;
-  int first_server;
+  FrontierHostsInfo proxyi;
+  FrontierHostsInfo serveri;
+
   unsigned rand_seed;
   int refresh_flag;
   int max_age;
@@ -86,8 +93,6 @@ struct s_FrontierHttpClnt
   int total_length;
   char *url_suffix;
   char *frontier_id;
-  time_t whenresetproxy;
-  time_t whenresetserver;
   
   int socket;
   int connect_timeout_secs;
@@ -99,8 +104,6 @@ struct s_FrontierHttpClnt
   int data_size;
   int data_pos;
   char buf[FRONTIER_HTTP_BUF_SIZE];
-  char proxybuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
-  char serverbuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
  }; 
 typedef struct s_FrontierHttpClnt FrontierHttpClnt;
 
