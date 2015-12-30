@@ -95,7 +95,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
       frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ENETWORK;
+      return FRONTIER_ECONNECT;
      }
     else
      {
@@ -121,7 +121,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
   if(ret==0)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"connect to %s timed out after %d seconds",frontier_ipaddr(serv_addr),timeoutsecs);
-    return FRONTIER_ECONNECTTIMEOUT;
+    return FRONTIER_ECONNECT;
    }
 
   s_len=sizeof(val);
@@ -138,7 +138,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
     if(errno==ECONNREFUSED || errno==ENETUNREACH)
      {
       frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ENETWORK;
+      return FRONTIER_ECONNECT;
      }
     else
      {
