@@ -891,120 +891,81 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
   return 1;
  }
 
+static int nexthost(FrontierHostsInfo *fhi,int curhaderror)
+ {
+  FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
+  // Note that if the host name has not been resolved because this is for
+  // a server and we're going through a proxy, fui->fai will still be a
+  // valid FrontierAddrInfo, it will just have ai=0 and next=0.
+  if(curhaderror)
+    fui->fai->haderror=1;
+  // advance the round-robin if there is any other address
+  if ((fui->fai=fui->fai->next)==0)
+    fui->fai=&fui->firstfai;
+  if(fui->lastfai==fui->fai)
+   {
+    /*end of round-robin, advance through host list*/
+    fhi->cur++;
+    if(fhi->num_balanced>0)
+     {
+      if(fhi->cur==fhi->num_balanced)
+        /*wrap around when reach the last balanced proxy*/
+        fhi->cur=0;
+      if(fhi->cur==fhi->first)
+        /*done with balancing, set to the non-balanced ones, if any*/
+        fhi->cur=fhi->num_balanced;
+     }
+   }
+  if(fhi->cur>=fhi->total)
+   {
+    /* Exhausted list.  For each host in which all addresses have had
+       errors, clear the errors for possible next try.  */
+    int i;
+    for(i=0;i<fhi->total;i++)
+     {
+      FrontierAddrInfo *fai;
+      int anygood=0;
+      for(fai=&fhi->hosts[i]->firstfai;fai!=0;fai=fai->next)
+       {
+	if(!fai->haderror)
+	  anygood=1;
+	if(i<fhi->num_balanced)
+	  break; // other round-robin addresses are ignored when balancing
+       }
+      if(!anygood)
+       {
+        for(fai=&fhi->hosts[i]->firstfai;fai!=0;fai=fai->next)
+	  fai->haderror=0;
+       }
+     }
+    return(-1);
+   }
+  if(((fui=fhi->hosts[fhi->cur])->fai!=0)&&fui->fai->haderror)
+    return(nexthost(fhi,0));
+  return(fhi->cur);
+ }
+
 int frontierHttpClnt_nextproxy(FrontierHttpClnt *c,int curhaderror)
  {
-  FrontierUrlInfo *fui=c->proxy[c->proxyi.cur];
   if(c->socket!=-1)
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection while choosing next proxy");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
-  if(curhaderror)
-    fui->fai->haderror=1;
-  // advance the round-robin if there is any other address
-  if ((fui->fai=fui->fai->next)==0)
-    fui->fai=&fui->firstfai;
-  if(fui->lastfai==fui->fai)
-   {
-    /*end of round-robin, advance through proxy list*/
-    c->proxyi.cur++;
-    if(c->proxyi.num_balanced>0)
-     {
-      if(c->proxyi.cur==c->proxyi.num_balanced)
-        /*wrap around when reach the last balanced proxy*/
-        c->proxyi.cur=0;
-      if(c->proxyi.cur==c->proxyi.first)
-        /*done with balancing, set to the non-balanced ones, if any*/
-        c->proxyi.cur=c->proxyi.num_balanced;
-     }
-   }
-  if(c->proxyi.cur>=c->proxyi.total)
-   {
-    /* Exhausted list.  For each proxy in which all addresses have had
-       errors, clear the errors for next try.  */
-    int i;
-    for(i=0;i<c->proxyi.total;i++)
-     {
-      FrontierAddrInfo *fai;
-      int anygood=0;
-      for(fai=&c->proxy[i]->firstfai;fai!=0;fai=fai->next)
-       {
-	if(!fai->haderror)
-	  anygood=1;
-	if(i<c->proxyi.num_balanced)
-	  break; // other round-robin addresses are ignored when balancing
-       }
-      if(!anygood)
-       {
-        for(fai=&c->proxy[i]->firstfai;fai!=0;fai=fai->next)
-	  fai->haderror=0;
-       }
-     }
-    return(-1);
-   }
-  if(c->proxy[c->proxyi.cur]->fai->haderror)
-    return(frontierHttpClnt_nextproxy(c,0));
-  return(c->proxyi.cur);
+  return(nexthost(&c->proxyi,curhaderror));
  }
 
 int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
  {
-  FrontierUrlInfo *fui=c->server[c->serveri.cur];
   if(!c->using_proxy&&(c->socket!=-1))
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"closing persistent connection while choosing next server");
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
-  // Note that if the host name has not been resolved because we're going
-  // through a proxy, fui->fai will still be a valid FrontierAddrInfo, it
-  // will just have ai=0 and next=0.
-  if(curhaderror)
-    fui->fai->haderror=1;
-  // advance the round-robin if there is any other address
-  if ((fui->fai=fui->fai->next)==0)
-    fui->fai=&fui->firstfai;
-  if(fui->lastfai==fui->fai)
-   {
-    /*end of server round-robin, advance through server list*/
-    c->serveri.cur++;
-    if(c->serveri.cur==c->serveri.total)
-      /*wrap around in case doing load balancing*/
-      c->serveri.cur=0;
-    if(c->serveri.cur==c->serveri.first)
-      /*set to total when done*/
-      c->serveri.cur=c->serveri.total;
-   }
-  if(c->serveri.cur>=c->serveri.total)
-   {
-    /* Exhausted list.  For each server in which all addresses have had
-       errors, clear the errors for possible next try.  */
-    int i;
-    for(i=0;i<c->serveri.total;i++)
-     {
-      FrontierAddrInfo *fai;
-      int anygood=0;
-      for(fai=&c->server[i]->firstfai;fai!=0;fai=fai->next)
-       {
-	if(!fai->haderror)
-	  anygood=1;
-	if(c->serveri.num_balanced>0)
-	  break; // other round-robin addresses are ignored when balancing
-       }
-      if(!anygood)
-       {
-        for(fai=&c->server[i]->firstfai;fai!=0;fai=fai->next)
-	  fai->haderror=0;
-       }
-     }
-    return(-1);
-   }
-  if(((fui=c->server[c->serveri.cur])->fai!=0)&&fui->fai->haderror)
-    return(frontierHttpClnt_nextserver(c,0));
-  return(c->serveri.cur);
+  return(nexthost(&c->serveri,curhaderror));
  }
-
 
 // return the current hostname for debug messages
 static char *curhostname(FrontierHostsInfo *fhi)
