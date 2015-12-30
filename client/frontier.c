@@ -255,6 +255,7 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
     return (void*)0;
    }
    
+  n=0;
   do
    {
     p=frontierConfig_getServerUrl(chn->cfg);
@@ -266,9 +267,10 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
       channel_delete(chn);    
       return (void*)0;
      }
+    n++;
    }while(frontierConfig_nextServer(chn->cfg)==0);
    
-  if(!chn->ht_clnt->total_server)
+  if(n==0)
    {
     *ec=FRONTIER_ECFG;
     frontier_setErrorMsg(__FILE__,__LINE__,"no server configured");
