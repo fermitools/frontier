@@ -151,7 +151,7 @@ int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
   int ret;
   struct addrinfo *ai;
   FrontierAddrInfo *fai;
-  sa_family_t preferaf = AF_UNSPEC;
+  sa_family_t preferaf;
   
   if(fui->fai->ai)
     return FRONTIER_OK;
@@ -201,11 +201,13 @@ int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
   fai=&fui->firstfai;
 
   // add preferred family addresses
+  ai=fui->ai;
   if(preferipfamily==4)
     preferaf=AF_INET;
   else if(preferipfamily==6)
     preferaf=AF_INET6;
-  ai=fui->ai;
+  else
+    preferaf=ai->ai_family; // prefer the family of the first one
   while(ai)
    {
     if(ai->ai_family==preferaf)
