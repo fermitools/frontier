@@ -46,6 +46,8 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
     return c;
    }
   bzero(c,sizeof(FrontierHttpClnt));
+  c->serveri.hosts=c->server;
+  c->proxyi.hosts=c->proxy;
   c->socket=-1;
   c->frontier_id=(char*)0;
   c->data_pos=0;
@@ -1004,8 +1006,20 @@ int frontierHttpClnt_nextserver(FrontierHttpClnt *c,int curhaderror)
  }
 
 
-static void gethostnameandaddr(FrontierUrlInfo *fui,char *buf,int len)
+// return the current hostname for debug messages
+static char *curhostname(FrontierHostsInfo *fhi)
  {
+  FrontierUrlInfo *fui;
+  char *buf;
+  int len;
+
+  if (fhi->cur>=fhi->total)
+    return "";
+
+  fui=fhi->hosts[fhi->cur];
+  buf=fhi->debugbuf;
+  len=sizeof(fhi->debugbuf);
+
   strncpy(buf,fui->host,len);
   if(fui->fai->ai!=0)
    {
@@ -1015,32 +1029,25 @@ static void gethostnameandaddr(FrontierUrlInfo *fui,char *buf,int len)
     snprintf(buf,len,"[%s]",frontier_ipaddr(fui->fai->ai->ai_addr));
     buf[len-1]='\0';
    }
+
+   return buf;
  }
 
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c)
  {
-  if (c->proxyi.cur<c->proxyi.total)
-   {
-    gethostnameandaddr(c->proxy[c->proxyi.cur],c->proxyi.buf,sizeof(c->proxyi.buf));
-    return(c->proxyi.buf);
-   }
-  return "";
+  return(curhostname(&c->proxyi));
  }
 
 char *frontierHttpClnt_curservername(FrontierHttpClnt *c)
  {
-  if (c->serveri.cur<c->serveri.total)
-   {
-    gethostnameandaddr(c->server[c->serveri.cur],c->serveri.buf,sizeof(c->serveri.buf));
-    return(c->serveri.buf);
-   }
-  return "";
+  return(curhostname(&c->serveri));
  }
 
 char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
  {
-  if (c->serveri.cur<c->serveri.total)
-    return c->server[c->serveri.cur]->path;
+  FrontierHostsInfo *fhi = &c->serveri;
+  if (fhi->cur<fhi->total)
+    return c->server[fhi->cur]->path;
   return "";
  }
 
@@ -1049,14 +1056,16 @@ char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
   // allocate a size big enough for ipv6, which will also work for ipv4
   struct sockaddr_in6 sockaddrbuf;
   socklen_t namelen=sizeof(sockaddrbuf);
+  // re-purpose the server debug buffer
+  char *buf=c->serveri.debugbuf;
   if(getsockname(c->socket, (struct sockaddr *)&sockaddrbuf, &namelen)<0)
    {
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"cannot get sockname for socket %d: %s",c->socket,strerror(errno));
     return NULL;
    }
-  strncpy(c->serveri.buf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(c->serveri.buf));
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",c->serveri.buf);
-  return(c->serveri.buf);
+  strncpy(buf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(buf));
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",buf);
+  return(buf);
  }
 
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
