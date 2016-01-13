@@ -817,10 +817,39 @@ int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c)
   return c->serveri.cur;
  }
 
-int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c)
+// defined below, but used in resethotgroup
+static int nexthost(FrontierHostsInfo *fhi,int curhaderror);
+
+static int resethostgroup(FrontierHostsInfo *fhi,int tobeginning)
  {
   FrontierUrlInfo *fui;
-  if(c->proxyi.total==0)
+  if(tobeginning)
+   {
+    // reset to the beginning of the host list
+    fhi->cur=fhi->first;
+    if(fhi->cur>=fhi->total)
+      return(-1);
+    fui=fhi->hosts[fhi->cur];
+   }
+  else
+   {
+    // reset to the first address in a round-robin
+    fui=fhi->hosts[fhi->cur];
+    fui->fai=fui->lastfai=&fui->firstfai;
+   }
+  if(fui->fai->haderror)
+   {
+    /*find one without an error*/
+    return(nexthost(fhi,0));
+   }
+  return(fhi->cur);
+ }
+
+int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c)
+ {
+  FrontierHostsInfo *fhi=&c->proxyi;
+  int tobeginning=0;
+  if(fhi->total==0)
    {
     /*not using any proxies*/
     return(-1);
@@ -831,56 +860,35 @@ int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c)
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
-  if((c->proxyi.num_balanced>0)&&(c->proxyi.cur<c->proxyi.num_balanced))
-   {
-    c->proxyi.cur=c->proxyi.first;
-    if(c->proxyi.cur>=c->proxyi.total)
-      return(-1);
-    fui=c->proxy[c->proxyi.cur];
-   }
-  else
-   {
-    fui=c->proxy[c->proxyi.cur];
-    fui->fai=fui->lastfai=&fui->firstfai;
-   }
-  if(fui->fai->haderror)
-   {
-    /*find one without an error*/
-    return(frontierHttpClnt_nextproxy(c,0));
-   }
-  return(c->proxyi.cur);
+  if((fhi->num_balanced>0)&&(fhi->cur<fhi->num_balanced))
+    tobeginning=1;
+  return(resethostgroup(fhi,tobeginning));
  }
 
 int frontierHttpClnt_resetserverlist(FrontierHttpClnt *c)
  {
+  FrontierHostsInfo *fhi=&c->serveri;
   if(c->socket!=-1)
    {
     /*close persisting connection*/
     frontier_socket_close(c->socket);
     c->socket=-1;
    }
-  c->serveri.cur=c->serveri.first;
-  if(c->serveri.cur>=c->serveri.total)
-    return(-1);
-  if(c->server[c->serveri.cur]->fai->haderror)
-   {
-    /*find one without an error*/
-    return(frontierHttpClnt_nextserver(c,0));
-   }
-  return(c->serveri.cur);
+  return(resethostgroup(fhi,1));
  }
 
 int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
  {
-  FrontierUrlInfo *fui=c->proxy[c->proxyi.cur];
+  FrontierHostsInfo *fhi=&c->proxyi;
+  FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
   FrontierAddrInfo *nextfai;
-  int nextproxy;
-  if((c->proxyi.num_balanced>0)&&(c->proxyi.cur<c->proxyi.num_balanced))
+  int nexthost;
+  if((fhi->num_balanced>0)&&(fhi->cur<fhi->num_balanced))
    {
-    nextproxy=c->proxyi.cur+1;
-    if(nextproxy==c->proxyi.num_balanced)
-      nextproxy=0;
-    if(nextproxy!=c->proxyi.first)
+    nexthost=fhi->cur+1;
+    if(nexthost==fhi->num_balanced)
+      nexthost=0;
+    if(nexthost!=fhi->first)
       return 0;
     return 1;
    }
@@ -1008,7 +1016,7 @@ char *frontierHttpClnt_curserverpath(FrontierHttpClnt *c)
  {
   FrontierHostsInfo *fhi = &c->serveri;
   if (fhi->cur<fhi->total)
-    return c->server[fhi->cur]->path;
+    return fhi->hosts[fhi->cur]->path;
   return "";
  }
 
