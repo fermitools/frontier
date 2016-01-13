@@ -78,6 +78,19 @@ void frontier_socket_close(int s)
   //printf("sc %d\n",total_socket);
  } 
  
+static int handle_connect_error(const struct sockaddr *serv_addr)
+ {
+  if(errno==ECONNREFUSED || errno==ENETUNREACH || errno==EHOSTUNREACH)
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
+    return FRONTIER_ECONNECT;
+   }
+  else
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
+    return FRONTIER_ESYS;     
+   }
+ }
 
 int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,int timeoutsecs)
  {
@@ -91,18 +104,7 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
 
   /* ret<0 below */  
   if(errno!=EINPROGRESS)
-   {
-    if(errno==ECONNREFUSED || errno==ENETUNREACH)
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ECONNECT;
-     }
-    else
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ESYS;     
-     }
-   }
+    return(handle_connect_error(serv_addr));
  
   /* non-blocking connect in progress here */
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"connect s=%d addr %s waiting for response",s,frontier_ipaddr(serv_addr));
@@ -129,22 +131,13 @@ int frontier_connect(int s,const struct sockaddr *serv_addr,socklen_t addrlen,in
   ret=getsockopt(s,SOL_SOCKET,SO_ERROR,&val,&s_len);
   if(ret<0)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));
+    frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on getsockopt when connecting to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
     return FRONTIER_ESYS;
    }
   if(val)
    {
     errno=val;
-    if(errno==ECONNREFUSED || errno==ENETUNREACH)
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"network error on connect to %s: %s",frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ECONNECT;
-     }
-    else
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on connect to %s: %s",errno,frontier_ipaddr(serv_addr),strerror(errno));
-      return FRONTIER_ESYS;     
-     }
+    return(handle_connect_error(serv_addr));
    }
 
   if(!(pfd.revents&POLLOUT))
