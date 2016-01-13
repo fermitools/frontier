@@ -48,6 +48,7 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   bzero(c,sizeof(FrontierHttpClnt));
   c->serveri.hosts=c->server;
   c->proxyi.hosts=c->proxy;
+  c->serveri.rand_seed=c->proxyi.rand_seed=getpid();
   c->socket=-1;
   c->frontier_id=(char*)0;
   c->data_pos=0;
@@ -55,7 +56,6 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   c->content_length=-1;
   c->age=-1;
   c->url_suffix="";
-  c->rand_seed=getpid();
   c->max_age=-1;
   
   *ec=FRONTIER_OK;
@@ -731,40 +731,39 @@ int frontierHttpClnt_getCacheAgeSecs(FrontierHttpClnt *c)
   return c->age;
  }
 
-int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
+static int shufflehostgroup(FrontierHostsInfo *fhi,int persisting)
  {
-  if((c->socket!=-1)||(c->proxyi.cur>=c->proxyi.total))
+  if(persisting||(fhi->cur>=fhi->total))
    {
-    /*don't shuffle if connection is persisting or not using a proxy*/
-    if(c->proxyi.cur>=c->proxyi.total)
+    /*don't shuffle if connection is persisting or there's no more hosts*/
+    if(fhi->cur>=fhi->total)
       return(-1);
-    return c->proxyi.cur;
+    return fhi->cur;
    }
-  if((c->proxyi.num_balanced>0)&&(c->proxyi.cur<c->proxyi.num_balanced))
+  if((fhi->num_balanced>0)&&(fhi->cur<fhi->num_balanced))
    {
-    // randomize start if balancing was selected
-    // ignore the possibility that the addresses may include round-robin
-    //   when balancing
+    // Randomize start if balancing was selected and at least two good hosts.
+    // Ignore the possibility that the addresses may include round-robin
+    //   when balancing.
     int i,numgood=0;
-    for(i=0;i<c->proxyi.num_balanced;i++)
-      if(!c->proxy[i]->fai->haderror)
+    for(i=0;i<fhi->num_balanced;i++)
+      if(!fhi->hosts[i]->fai->haderror)
 	numgood++;
-    if(numgood>0)
+    if(numgood>1)
      {
-      c->proxyi.first=rand_r(&c->rand_seed)%numgood;
+      fhi->first=rand_r(&fhi->rand_seed)%numgood;
       // skip the ones that had an error
-      for(i=0;i<=c->proxyi.first;i++)
-	if(c->proxy[i]->fai->haderror)
-	  c->proxyi.first++;
+      for(i=0;i<=fhi->first;i++)
+	if(fhi->hosts[i]->fai->haderror)
+	  fhi->first++;
+      fhi->cur=fhi->first;
      }
-    else c->proxyi.first=c->proxyi.num_balanced;
-    c->proxyi.cur=c->proxyi.first;
    }
   else
    {
     // not in client-balancing group
     // select next good round-robin address if any
-    FrontierUrlInfo *fui=c->proxy[c->proxyi.cur];
+    FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
     FrontierAddrInfo *startfai=fui->fai;
     do
      {
@@ -773,51 +772,20 @@ int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
      } while(fui->fai->haderror&&(fui->fai!=startfai));
     fui->lastfai=fui->fai;
    }
-  return c->proxyi.cur;
+  return fhi->cur;
+ }
+
+int frontierHttpClnt_shuffleproxygroup(FrontierHttpClnt *c)
+ {
+  return shufflehostgroup(&c->proxyi,c->socket!=-1);
  }
 
 int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c)
  {
-  if(c->socket!=-1)
-   {
-    /*don't shuffle anything if connection is persisting*/
-    return c->serveri.cur;
-   }
-  if(c->serveri.num_balanced>0)
-   {
-    // randomize start if balancing was selected
-    // ignore the possibility that these addresses may include round-robin
-    int i,numgood=0;
-    for(i=0;i<c->serveri.total;i++)
-      if(!c->server[i]->fai->haderror)
-	numgood++;
-    if(numgood>0)
-     {
-      c->serveri.first=rand_r(&c->rand_seed)%numgood;
-      // skip the ones that had an error
-      for(i=0;i<=c->serveri.first;i++)
-	if(c->server[i]->fai->haderror)
-	  c->serveri.first++;
-     }
-    c->serveri.cur=c->serveri.first;
-   }
-  else
-   {
-    // not doing client-balancing
-    // select next good round-robin address if any
-    FrontierUrlInfo *fui=c->server[c->serveri.cur];
-    FrontierAddrInfo *startfai=fui->fai;
-    do
-     {
-      if ((fui->fai=fui->fai->next)==0)
-	fui->fai=&fui->firstfai;
-     } while(fui->fai->haderror&&(fui->fai!=startfai));
-    fui->lastfai=fui->fai;
-   }
-  return c->serveri.cur;
+  return shufflehostgroup(&c->serveri,c->socket!=-1);
  }
 
-// defined below, but used in resethotgroup
+// defined below, but used in resethostgroup
 static int nexthost(FrontierHostsInfo *fhi,int curhaderror);
 
 static int resethostgroup(FrontierHostsInfo *fhi,int tobeginning)
