@@ -69,6 +69,7 @@ struct s_FrontierHostsInfo
   int first;
   time_t whenreset;
   char debugbuf[FRONTIER_HTTP_DEBUG_BUF_SIZE];
+  unsigned rand_seed;
  };
 typedef struct s_FrontierHostsInfo FrontierHostsInfo;
 
@@ -84,7 +85,6 @@ struct s_FrontierHttpClnt
   FrontierHostsInfo proxyi;
   FrontierHostsInfo serveri;
 
-  unsigned rand_seed;
   int refresh_flag;
   int max_age;
   int age;
