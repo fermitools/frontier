@@ -44,7 +44,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
   bzero(fui,sizeof(FrontierUrlInfo));
-  fui->fai=fui->lastfai=&fui->firstfai;
+  fui->fai=fui->lastfai=fui->firstfaiinfamily=&fui->firstfai;
   
   fui->url=frontier_str_copy(url);
   if(!fui->url)
@@ -142,7 +142,7 @@ void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
     fui->firstfai.next=fui->fai;
    }
   bzero(&fui->firstfai,sizeof(FrontierAddrInfo));
-  fui->fai=fui->lastfai=&fui->firstfai;
+  fui->fai=fui->lastfai=fui->firstfaiinfamily=&fui->firstfai;
  }
  
 int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)

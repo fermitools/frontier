@@ -48,6 +48,7 @@ struct s_FrontierUrlInfo
   char *path;
   struct addrinfo *ai;
   FrontierAddrInfo firstfai;
+  FrontierAddrInfo *firstfaiinfamily; // first in the current ip family
   FrontierAddrInfo *fai;
   FrontierAddrInfo *lastfai;
  };
