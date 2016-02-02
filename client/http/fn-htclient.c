@@ -416,6 +416,10 @@ static int read_connection(FrontierHttpClnt *c)
   int tot=0;
   char buf[FN_REQ_BUF];
   
+  // clear out values from previous query (if any)
+  c->content_length=-1;
+  c->age=-1;
+
   // Read status line
   ret=read_line(c,buf,FN_REQ_BUF);
   if(ret<=0) return ret;
