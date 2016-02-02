@@ -756,6 +756,11 @@ static int shufflehostgroup(FrontierHostsInfo *fhi,int persisting)
     // Randomize start if balancing was selected and at least two good hosts.
     // Ignore the possibility that the addresses may include round-robin
     //   when balancing.
+    // Note that the different hosts may be of different ip families,
+    //  and that's OK.  Since they are separate names, the hosts may even
+    //  contain different sets of families, eg. one ipv4 only and one
+    //  dual stack.  Each host will independently advance from their
+    //  preferred to non-preferred family on errors.
     int i,numgood=0;
     for(i=0;i<fhi->num_balanced;i++)
       if(!fhi->hosts[i]->fai->haderror)
@@ -774,12 +779,22 @@ static int shufflehostgroup(FrontierHostsInfo *fhi,int persisting)
    {
     // not in client-balancing group
     // select next good round-robin address if any
+    int curfamily=0;
     FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
     FrontierAddrInfo *startfai=fui->fai;
     do
      {
-      if ((fui->fai=fui->fai->next)==0)
-	fui->fai=&fui->firstfai;
+      // Shuffle only within the current ip family.  fui->fai->ai may be
+      //   unresolved here (that is, zero), but if fui->fai->next is non-zero
+      //   that means round-robin and then it must be resolved.  So don't need
+      //   to check for ai non-zero on next.
+      // A bad side effect of this is that if there's a machine in the list
+      //   that only has a non-preferred address working, it will not get
+      //   any traffic.
+      if (fui->fai->ai!=0)
+	curfamily=fui->fai->ai->ai_family;
+      if (((fui->fai=fui->fai->next)==0)||(curfamily!=fui->fai->ai->ai_family))
+	fui->fai=fui->firstfaiinfamily;
      } while(fui->fai->haderror&&(fui->fai!=startfai));
     fui->lastfai=fui->fai;
    }
@@ -812,9 +827,9 @@ static int resethostgroup(FrontierHostsInfo *fhi,int tobeginning)
    }
   else
    {
-    // reset to the first address in a round-robin
+    // reset to the first address in a round-robin in the same family
     fui=fhi->hosts[fhi->cur];
-    fui->fai=fui->lastfai=&fui->firstfai;
+    fui->fai=fui->lastfai=fui->firstfaiinfamily;
    }
   if(fui->fai->haderror)
    {
@@ -862,8 +877,10 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
   FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
   FrontierAddrInfo *nextfai;
   int nexthost;
+  int curfamily=0;
   if((fhi->num_balanced>0)&&(fhi->cur<fhi->num_balanced))
    {
+    // using client load balancing
     nexthost=fhi->cur+1;
     if(nexthost==fhi->num_balanced)
       nexthost=0;
@@ -871,7 +888,10 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
       return 0;
     return 1;
    }
-  if ((nextfai=fui->fai->next)==0)
+  // Treat addresses in a different ip family as being a different group.
+  // Since this function is only for proxies, fai->ai is always nonzero.
+  curfamily=fui->fai->ai->ai_family;
+  if (((nextfai=fui->fai->next)==0)||(curfamily!=nextfai->ai->ai_family))
     nextfai=&fui->firstfai;
   if(fui->lastfai!=nextfai)
     return 0;
@@ -881,26 +901,43 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
 static int nexthost(FrontierHostsInfo *fhi,int curhaderror)
  {
   FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
+  int curfamily=0;
   // Note that if the host name has not been resolved because this is for
   // a server and we're going through a proxy, fui->fai will still be a
   // valid FrontierAddrInfo, it will just have ai=0 and next=0.
   if(curhaderror)
     fui->fai->haderror=1;
-  // advance the round-robin if there is any other address
-  if ((fui->fai=fui->fai->next)==0)
-    fui->fai=&fui->firstfai;
+  // advance the round-robin if there is any other address in the same family
+  if (fui->fai->ai!=0)
+    curfamily=fui->fai->ai->ai_family;
+  if (((fui->fai=fui->fai->next)==0)||(curfamily!=fui->fai->ai->ai_family))
+    fui->fai=fui->firstfaiinfamily;
   if(fui->lastfai==fui->fai)
    {
-    /*end of round-robin, advance through host list*/
-    fhi->cur++;
-    if(fhi->num_balanced>0)
+    /*end of this family in the round-robin, see if there's another family*/
+    while(((fui->fai=fui->fai->next)!=0)&&(curfamily==fui->fai->ai->ai_family))
+      ;
+    if(fui->fai!=0)
      {
-      if(fhi->cur==fhi->num_balanced)
-        /*wrap around when reach the last balanced proxy*/
-        fhi->cur=0;
-      if(fhi->cur==fhi->first)
-        /*done with balancing, set to the non-balanced ones, if any*/
-        fhi->cur=fhi->num_balanced;
+       /*another family was found, advance to it*/
+       fui->lastfai=fui->firstfaiinfamily=fui->fai;
+     }
+    else
+     {
+      fui->fai=fui->lastfai;
+      /*end of round-robin, advance through host list*/
+      fhi->cur++;
+      if(fhi->num_balanced>0)
+       {
+	if(fhi->cur==fhi->num_balanced)
+	  /*wrap around when reach the last balanced proxy*/
+	  fhi->cur=0;
+	if(fhi->cur==fhi->first)
+	 {
+	  /*done with balancing, set to the non-balanced ones, if any*/
+	  fhi->cur=fhi->num_balanced;
+	 }
+       }
      }
    }
   if(fhi->cur>=fhi->total)
@@ -928,6 +965,7 @@ static int nexthost(FrontierHostsInfo *fhi,int curhaderror)
     return(-1);
    }
   if(((fui=fhi->hosts[fhi->cur])->fai!=0)&&fui->fai->haderror)
+    /*this one had an error, choose another*/
     return(nexthost(fhi,0));
   return(fhi->cur);
  }
