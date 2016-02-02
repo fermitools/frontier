@@ -425,15 +425,22 @@ static int read_connection(FrontierHttpClnt *c)
   if(ret<=0) return ret;
   tot=ret;
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"status line <%s>",buf);
-  if((strncmp(buf,"HTTP/1.0 5",10)==0)||(strncmp(buf,"HTTP/1.1 5",10)==0))
+  if((strncmp(buf,"HTTP/1.0 ",9)!=0)&&(strncmp(buf,"HTTP/1.1 ",9)!=0))
    {
-    /* 5xx HTTP error code indicates server error */
+    frontier_setErrorMsg(__FILE__,__LINE__,"bad HTTP response (%s) proxy=%s server=%s",
+	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
+    return FRONTIER_EPROTO;
+   }
+
+  if((buf[9]=='5')||strncmp(&buf[9],"404",3)==0)
+   {
+    /* 5xx or 404 HTTP error codes indicate server error */
     frontier_setErrorMsg(__FILE__,__LINE__,"server error (%s) proxy=%s server=%s",
 	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
     return FRONTIER_ESERVER;
    }
 
-  if((strncmp(buf,"HTTP/1.0 200 ",13)!=0)&&(strncmp(buf,"HTTP/1.1 200 ",13)!=0))
+  if(strncmp(&buf[9],"200",3)!=0)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"bad response (%s) proxy=%s server=%s",
 	buf,frontierHttpClnt_curproxyname(c),frontierHttpClnt_curservername(c));
