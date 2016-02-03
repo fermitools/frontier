@@ -1,5 +1,35 @@
 $Id$
 
+v2_8_15 - 2 Feb 2016 (dwd)
+  - Fix bug present since 2.8.6 that considered a whole proxy group
+    failed if the last one failed, even if not all of the proxies in
+    the group had failures.  That could happen after a round-robin
+    group had been "shuffled" for load balancing.
+  - Slightly change the retry strategy to treat connection refused and
+    network unreachable errors the same as connection timeouts.
+  - Refactor the http client code to do a lot more sharing of code 
+    between servers and proxies.
+  - Treat IPv4 and IPv6 addresses present in the same DNS name as two
+    separate groups; in other words, when load balancing between
+    different addresses in a round-robin DNS name, stay within one IP
+    family.  Start with the preferred IP family and only advance to
+    the other IP family when all the addresses in that family had
+    errors.  If preferipfamily=0, the preferred family is considered
+    to be the family of the first address returned by the operating
+    system.
+  - Fix bug present since 2.8.9 where if a query did not send an Age
+    header because it was a fresh query, but a previous query on the
+    same connection did have an old Age header, a max-age exceeded
+    condition could be erroneously triggered and cause undesired
+    soft and hard refreshes.
+  - Treat an http error code 404 as a server error just like 5XX errors,
+    rather than a protocol error.  That means the proxy will be assumed
+    to be good and the server will be advanced.
+  - Export the common includes in the Makefile to http/Makefile,
+    because http source files include fn-internal.h which includes
+    openssl files which may not be in the standard places.  Requested
+    by CMS.
+
 v2_8_14 - 14 Oct 2015 (dwd)
   - Fix bug introduced in v2_8_13 of using memory after it was freed.
     The problem only showed up after running for 5 minutes, after
