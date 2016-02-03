@@ -1,0 +1,7 @@
+*.so*
+*.o
+fn-fileget
+fn-req
+fn-req.static
+pacparser.h
+dist
