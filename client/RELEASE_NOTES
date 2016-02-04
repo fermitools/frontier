@@ -1,5 +1,10 @@
 $Id$
 
+v2_8_16 - 4 Feb 2016 (dwd)
+  - Initialize the client loadbalance feature with a random number from
+    OpenSSL instead of getpid(), because when using cgroups all of the
+    process ids can be the same.
+
 v2_8_15 - 2 Feb 2016 (dwd)
   - Fix bug present since 2.8.6 that considered a whole proxy group
     failed if the last one failed, even if not all of the proxies in

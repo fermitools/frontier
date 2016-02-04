@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <openssl/rand.h>
 
 #define MAX_NAME_LEN	256
 #define URL_FMT_SRV	"http://%127[^/]/%127s"
@@ -48,7 +49,6 @@ FrontierHttpClnt *frontierHttpClnt_create(int *ec)
   bzero(c,sizeof(FrontierHttpClnt));
   c->serveri.hosts=c->server;
   c->proxyi.hosts=c->proxy;
-  c->serveri.rand_seed=c->proxyi.rand_seed=getpid();
   c->socket=-1;
   c->frontier_id=(char*)0;
   c->data_pos=0;
@@ -742,6 +742,9 @@ int frontierHttpClnt_getCacheAgeSecs(FrontierHttpClnt *c)
   return c->age;
  }
 
+// Advance to the next host in the current host group.
+// Non-zero "persisting" means that the connection is persisting so no
+//   shuffling happens.
 static int shufflehostgroup(FrontierHostsInfo *fhi,int persisting)
  {
   if(persisting||(fhi->cur>=fhi->total))
@@ -765,6 +768,7 @@ static int shufflehostgroup(FrontierHostsInfo *fhi,int persisting)
     for(i=0;i<fhi->num_balanced;i++)
       if(!fhi->hosts[i]->fai->haderror)
 	numgood++;
+    // Only need to shuffle if there's more than one good one.
     if(numgood>1)
      {
       fhi->first=rand_r(&fhi->rand_seed)%numgood;
@@ -814,6 +818,13 @@ int frontierHttpClnt_shuffleservergroup(FrontierHttpClnt *c)
 // defined below, but used in resethostgroup
 static int nexthost(FrontierHostsInfo *fhi,int curhaderror);
 
+// Reset the current host group so it can be used again.
+// Non-zero "tobeginning" means to go to the very beginning of the list of
+//   multiple hosts; for proxies, that is when using loadbalance=proxies,
+//   and for servers, that is always (the latter because the retry strategy
+//   does not call for ever resetting to the beginning of an individual
+//   server group).  Zero "tobeginning" means to instead go the beginning
+//   of the current IP family in a round-robin proxy.
 static int resethostgroup(FrontierHostsInfo *fhi,int tobeginning)
  {
   FrontierUrlInfo *fui;
@@ -845,7 +856,7 @@ int frontierHttpClnt_resetproxygroup(FrontierHttpClnt *c)
   int tobeginning=0;
   if(fhi->total==0)
    {
-    /*not using any proxies*/
+    /*no proxies are defined*/
     return(-1);
    }
   if(c->socket!=-1)
@@ -898,6 +909,9 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
   return 1;
  }
 
+// Advance to the next host that has not been flagged as having had an error,
+//   whether in the current group or the next group.  Non-zero "curhaderror"
+//   means that the current host had an error, so flag it as such.
 static int nexthost(FrontierHostsInfo *fhi,int curhaderror)
  {
   FrontierUrlInfo *fui=fhi->hosts[fhi->cur];
@@ -1054,13 +1068,29 @@ char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
   return(buf);
  }
 
+void initrand(FrontierHttpClnt *c)
+ {
+  unsigned seed;
+  if(!RAND_bytes((unsigned char *)&seed,sizeof(seed)))
+   {
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"failure getting random number, using time");
+    seed=(unsigned)time(0);
+   }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"random seed: %u",seed);
+  c->proxyi.rand_seed=c->serveri.rand_seed=seed;
+ }
+
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
  {
   c->proxyi.num_balanced=num;
+  if(c->proxyi.rand_seed==0)
+    initrand(c);
  }
 
 void frontierHttpClnt_setBalancedServers(FrontierHttpClnt *c)
  {
   c->serveri.num_balanced=c->serveri.total;
+  if(c->serveri.rand_seed==0)
+    initrand(c);
  }
 
