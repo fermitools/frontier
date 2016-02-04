@@ -26,16 +26,31 @@ Update client version and date in ../README and then do
 (frontier.cern.ch should be set up in ~/.ssh/config with a 'Port 2222' option
 to make sure it goes only to the master server.)
 <li>
-Commit all your changes to CVS
+Commit all your changes to git, push them to your origin branch, 
+create pull requests, and merge them into the upstream
+<a href=https://github.com/fermitools/frontier>github master repo</a>.
+Also push the changes to the 
+<a href=ssh://p-frontier@cdcvs.fnal.gov/cvs/projects/frontier>redmine repo</a>.
 <li>
-Set the cvs tag in client source directory in the format <tt>v2_7_0</tt>
+Set a client tag in the following format and push to all 3 repositories:
+<br>
+<tt>CLIENTVERSION=2_8_16</tt>
+<br>
+<tt>git tag v$CLIENTVERSION</tt>
+<br>
+<tt>git push --tags</tt>
+<br>
+<tt>git push upstream --tags</a>
+<br>
+<tt>git push redmine --tags</a>
 <li>
-In a scratch directory, and with CVSROOT set to
-cvsuser@cdcvs.fnal.gov:/cvs/cd do
+In a scratch directory download the source code from github with
 <br>
-<tt>cvs co -r v2_7_0 frontier/client</tt>
+<tt>wget https://github.com/fermitools/frontier/archive/v$CLIENTVERSION.tar.gz</tt>
 <br>
-<tt>cd frontier/client</tt>
+<tt>tar xzvf v$CLIENTVERSION.tar.gz frontier-$CLIENTVERSION/client</tt>
+<br>
+<tt>cd frontier-$CLIENTVERSION/client</tt>
 <li>
 <tt>make PACPARSER_DIR=$HOME/devFRONTIER/FRONTIER all-dist # or wherever pacparser is installed </tt>
 <li>
@@ -89,25 +104,29 @@ Update servlet version and date in README and then do
 <br>
 <tt>scp README dbfrontier@frontier.cern.ch:dist/frontiersourcereadme.txt</tt>
 <li>
-Commit all your changes to CVS
+Commit all your changes to git.
 <li>
 Set an environment variable SERVLETVERSION=3_NN where NN is the current number.
 <li>
-Set a cvs tag at the top level (above src and client) in the format
-<tt>servlet_$SERVLETVERSION</tt>.  This will unnecessarily add tags in the client
-directory, which can optionally be removed with cvs tag -d in the
-client directory.
-<li>
-In a scratch directory, and with CVSROOT set to
-cvsuser@cdcvs.fnal.gov:/cvs/cd do
+Set a servlet tag in the following format and push to all 3 repositories:
 <br>
-<tt>cvs co -r servlet_$SERVLETVERSION frontier</tt>
+<tt>git tag servlet_$SERVLETVERSION</tt>
+<br>
+<tt>git push --tags</tt>
+<br>
+<tt>git push upstream --tags</a>
+<br>
+<tt>git push redmine --tags</a>
+<li>
+In a scratch directory download the source code from github with
+<br>
+<tt>wget https://github.com/fermitools/frontier/archive/servlet_$SERVLETVERSION.tar.gz</tt>
+<br>
+<tt>tar xzvf servlet_$SERVLETVERSION.tar.gz --exclude client frontier-servlet_$SERVLETVERSION</tt>
 <li>
 Prepare and release the sources:
 <br>
-<tt>mkdir Frontier_$SERVLETVERSION</tt>
-<br>
-<tt>rsync -a --cvs-exclude --exclude /client frontier/ Frontier_$SERVLETVERSION</tt>
+<tt>mv frontier-servlet_$SERVLETVERSION Frontier_$SERVLETVERSION</tt>
 <br>
 <tt>tar zcf Frontier_servlet__`echo $SERVLETVERSION|tr _ .`__src.tar.gz Frontier_$SERVLETVERSION</tt>
 <br>
