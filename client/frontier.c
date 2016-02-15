@@ -449,6 +449,15 @@ static void channel_delete(Channel *chn)
  }
 
 
+// This function is called by gcc when unloading the shared library
+__attribute__ ((destructor)) 
+static void frontier_fini()
+ {
+  EVP_cleanup();
+  CRYPTO_cleanup_all_ex_data();
+ }
+
+
 FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec)
  {
   Channel *chn=channel_create(srv,proxy,ec);
