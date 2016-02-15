@@ -1,5 +1,3 @@
-$Id$
-
 v2_8_17 - 15 Feb 2016 (dwd)
   - Move SSL cleanup function calls from when a frontier channel is 
     deleted to the library finalizer, which is called by gcc when a
