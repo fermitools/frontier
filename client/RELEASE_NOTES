@@ -1,5 +1,9 @@
 $Id$
 
+v2_8_17 - 15 Feb 2016 (dwd)
+  - Remove calls to SSL cleanup functions when a frontier channel is 
+    deleted.  They were interfering with other uses of SSL in ATLAS.
+
 v2_8_16 - 4 Feb 2016 (dwd)
   - Initialize the client loadbalance feature with a random number from
     OpenSSL instead of getpid(), because when using cgroups all of the
