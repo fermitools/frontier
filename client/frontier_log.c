@@ -81,7 +81,7 @@ void frontier_vlog(int level,const char *file,int line,const char *fmt,va_list a
   
   if(!frontier_log_file||(frontier_log_dup&&(level>=FRONTIER_LOGLEVEL_WARNING)))
    {
-    write(1,log_msg,ret+1);
+    (void)write(1,log_msg,ret+1);
     fsync(1);
     if(!frontier_log_file) return;
    }
@@ -90,7 +90,7 @@ void frontier_vlog(int level,const char *file,int line,const char *fmt,va_list a
     (void)frontier_log_init();
     if(log_fd<0) return;
    }
-  write(log_fd,log_msg,ret+1);
+  (void)write(log_fd,log_msg,ret+1);
  }
 
 void frontier_log(int level,const char *file,int line,const char *fmt,...)
