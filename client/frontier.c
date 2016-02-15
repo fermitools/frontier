@@ -443,8 +443,6 @@ static void channel_delete(Channel *chn)
   for(i=0;i<FRONTIER_MAX_SERVERN;i++)
     if(chn->serverrsakey[i])
       RSA_free((RSA *)chn->serverrsakey[i]);
-  EVP_cleanup();
-  CRYPTO_cleanup_all_ex_data();
   frontier_mem_free(chn);
   fn_gzip_cleanup();
   frontier_log_close();
