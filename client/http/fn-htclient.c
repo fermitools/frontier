@@ -1063,7 +1063,7 @@ char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"cannot get sockname for socket %d: %s",c->socket,strerror(errno));
     return NULL;
    }
-  strncpy(buf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(buf));
+  strncpy(buf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(c->serveri.debugbuf));
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",buf);
   return(buf);
  }
