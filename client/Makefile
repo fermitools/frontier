@@ -13,7 +13,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	8.17
+FN_VER_MINOR	=	8.18
 COMPILER_TAG    =       $(CC)_$(shell $(CC) -dumpversion)
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src
@@ -62,7 +62,7 @@ CXX		=	c++
 CXXOPT_LIB	=	-Wall $(CXXFLAGS) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 CXXOPT_APP	=	-Wall $(CXXFLAGS) -DFRONTIER_DEBUG -DFNTR_USE_NAMESPACE -DFNTR_USE_EXCEPTIONS -fPIC -DPIC
 COPT		=	-Wall $(CFLAGS) -DFRONTIER_DEBUG -fPIC -DPIC
-LINK_SO         =       c++ $(CXXFLAGS) -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR) $(LIBS)
+LINK_SO         =       c++ $(CXXFLAGS) -shared -o libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) -Wl,-soname,libfrontier_client.so.$(FN_VER_MAJOR)
 LINK_DYLIB	=	c++ $(CXXFLAGS) -dynamiclib -undefined dynamic_lookup  -compatibility_version $(FN_VER_MAJOR) -current_version $(FN_VER_MAJOR).$(FN_VER_MINOR) -o libfrontier_client.$(FN_VER_MAJOR).$(FN_VER_MINOR).dylib -single_module $(LIBS)
 LINK		=	ar cr libfrontier_client.a
 
@@ -169,7 +169,7 @@ libfrontier_client.so: $(OBJ) http/.libs
 	mkdir .libs
 	cp ./http/.libs/*.o .libs
 	cp $(OBJ) .libs
-	$(LINK_SO) .libs/*.o
+	$(LINK_SO) .libs/*.o $(LIBS)
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so.$(FN_VER_MAJOR)
 	ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so
 
