@@ -1,3 +1,7 @@
+v2_8_18 - 16 Feb 2016 (dwd)
+  - Change the ordering of the linking options on the frontier client
+    shared library, to get it to build properly on Ubuntu 12.04.
+
 v2_8_17 - 15 Feb 2016 (dwd)
   - Move SSL cleanup function calls from when a frontier channel is 
     deleted to the library finalizer, which is called by gcc when a
