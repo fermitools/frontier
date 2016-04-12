@@ -1030,7 +1030,7 @@ static char *curhostname(FrontierHostsInfo *fhi)
     buf[len-1]='\0';
    }
 
-   return buf;
+   return fhi->debugbuf;
  }
 
 char *frontierHttpClnt_curproxyname(FrontierHttpClnt *c)
