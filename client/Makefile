@@ -13,7 +13,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	8.18
+FN_VER_MINOR	=	8.19
 COMPILER_TAG    =       $(CC)_$(shell $(CC) -dumpversion)
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src

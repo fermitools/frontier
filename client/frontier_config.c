@@ -38,7 +38,7 @@ static int default_write_timeout_secs=-1;
 static int default_max_age_secs=-1;
 static int default_prefer_ip_family=4;
 static int default_secured=0;
-static char *default_capath="/etc/grid-security/certificates";
+static char *default_capath=0;
 static char *default_force_reload=0;
 static char *default_freshkey=0;
 static int default_retrieve_zip_level=-1;
@@ -112,11 +112,19 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
    }
   frontierConfig_setWriteTimeoutSecs(cfg,default_write_timeout_secs);
 
+  if(default_capath==0)
+   {
+    if((env=getenv("X509_CERT_DIR"))==0)
+      default_capath="/etc/grid-security/certificates";
+    else
+      default_capath=env;
+   }
+  frontierConfig_setCAPath(cfg,default_capath);
+
   // No env variable for these
   frontierConfig_setMaxAgeSecs(cfg,default_max_age_secs);
   frontierConfig_setPreferIpFamily(cfg,default_prefer_ip_family);
   frontierConfig_setSecured(cfg,default_secured);
-  frontierConfig_setCAPath(cfg,default_capath);
 
   if(default_force_reload==0)
    {
