@@ -1,3 +1,16 @@
+v2_8_19 - 12 Apr 2016 (dwd)
+  - Fix bug in the function that gets the name & IP address of servers
+    and proxies as a string.  This bug was introduced in v2_8_15.  The
+    function is supposed to return the host name followed by the IP
+    address in square brackets, however for proxies and for direct-
+    connect servers it was returning only the IP address in square
+    brackets.  This mostly affects warning & debug messages, but also
+    causes the digital signature checking option (security=sig) to
+    fail on direct-connect servers.
+  - Add support for $X509_CERT_DIR. If it is set and the capath option
+    is not set, it will be used as the directory containing CA certs
+    and CRLs instead of the default /etc/grid-security/certificates.
+
 v2_8_18 - 16 Feb 2016 (dwd)
   - Change the ordering of the linking options on the frontier client
     shared library, to get it to build properly on Ubuntu 12.04.
