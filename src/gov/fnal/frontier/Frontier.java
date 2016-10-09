@@ -51,6 +51,7 @@ public final class Frontier
   //  6-1/3rd minutes for DataSource.getConnection() to return
   public static int max_db_acquire_seconds=300;
   public static int max_db_execute_seconds=10;
+  public static boolean expire_empty_queries_like_errors=false;
   public static byte[] cert_bytes;
   public static byte[] key_bytes;
   public static PrivateKey private_key;
@@ -240,6 +241,13 @@ public final class Frontier
       if(last_modified_table_name==null)
         throw new Exception("LastModifiedTableName (required by ValidateLastModifiedSeconds) is missing in FrontierConfig");
       Frontier.Log("last-modified table name: "+last_modified_table_name);
+     }
+
+    str=getPropertyString(prb,"ExpireEmptyQueriesLikeErrors");
+    if(str!=null)
+     {
+      expire_empty_queries_like_errors=Boolean.parseBoolean(str);
+      Frontier.Log("expire empty queries like errors: "+expire_empty_queries_like_errors);
      }
 
     conf_cache_expire_hourofday[LONGCACHE]=getPropertyString(prb,"LongCacheExpireHourOfDay");
