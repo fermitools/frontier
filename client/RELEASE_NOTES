@@ -1,3 +1,12 @@
+v2_8_20 - 3 Nov 2016 (dwd)
+  - Fix bug introduced in v2_8_15 that caused a segmentation fault
+    when a DNS name lookup of proxies fail.  The fault happened in
+    the function frontierHttpClnt_usinglastproxyingroup().
+  - When both proxyconfigurl and proxyurl options are used, change the
+    priority so that proxies returned from proxyconfigurl are used
+    before proxyurls.  It used to be the opposite order.
+  - When proxyconfigurl options are used, ignore loadbalance=proxies.
+
 v2_8_19 - 12 Apr 2016 (dwd)
   - Fix bug in the function that gets the name & IP address of servers
     and proxies as a string.  This bug was introduced in v2_8_15.  The
