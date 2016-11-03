@@ -105,10 +105,10 @@ client's IP address for use inside of the PAC file in the
 myIpAddress() function (using a DNS lookup on the hostname as opposed
 to finding the outgoing IP address used to connect to the http
 server).  If proxyurl keywords are also specified, they will be
-considered higher priority than the proxies returned from
-proxyconfigurl, so to be backward compatible with older clients that
-did not support proxyconfigurl, list proxies with backupproxyurl
-instead of proxyurl; those are always used after proxyconfigurl proxies.
+considered lower priority than the proxies returned from proxyconfigurl;
+however, client versions older than version 2.8.20 made proxyurls higher
+priority, so to be backward compatible with older clients, it is
+safest to list proxies with backupproxyurl instead of proxyurl.
 PAC URLs may also be semicolon-separated in a
 FRONTIER_PROXYCONFIGS environment variable. 
 <li>
@@ -158,7 +158,8 @@ from environment variable FRONTIER_FRESHKEY.  Default is no extra key.
 loadbalance - value of 'proxies' or 'servers' (both may be listed
 with loadbalance=proxies and loadbalance=servers) to cause frontier
 client to do its own loadbalancing between the listed proxies and
-or servers.
+or servers.  If proxyconfigurl is also used, then loadbalance=proxies
+is ignored.
 <li>
 clientcachemaxresultsize - maximum result size (in bytes) that will
 be cached in a local cache inside the frontier client.  Default 0.
