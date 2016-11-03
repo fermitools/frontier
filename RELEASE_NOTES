@@ -1,5 +1,16 @@
 $Id$
 
+3.35 2016/10/09 (dwd)
+    - Add new servlet option ExpireEmptyQueriesLikeErrors, default false,
+      which when true causes empty queries to be expired at the same shorter
+      age as errors (default 5 minutes).  Previously this was always true.
+    - When ExpireEmptyQueriesLikeErrors is true, mark the returned payload
+      with the shorter max_age so if a cached item age exceeds the time,
+      the client will repeat the request with the shorter max age.  This
+      can happen because a later refresh with If-Modified-Since when the
+      Last-Modified time hasn't changed, the regular long expiration time
+      will be returned because the query is not repeated.
+
 3.34 2014/10/29 (dwd)
     - Support host private keys (for digital signatures) that start with
       'BEGIN PRIVATE KEY' in addition to 'BEGIN RSA PRIVATE KEY'.  That

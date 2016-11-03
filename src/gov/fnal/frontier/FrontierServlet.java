@@ -21,7 +21,7 @@ import com.jcraft.jzlib.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.34";
+  private static final String frontierVersion="3.35";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
@@ -311,19 +311,37 @@ public final class FrontierServlet extends HttpServlet
 	      p.send(out);
 
 	      long max_age=0;
-	      if(p.rec_num==0)
+	      if((p.rec_num==0)&&frontier.expire_empty_queries_like_errors)
 	       {
-		// empty responses can be an error as well so make sure they're
-		//  cached only a short time
 		if(response.isCommitted())
 		 {
-		  max_age=frontier.error_max_age;
+		  // Empty responses can be an error as well, so make sure
+		  //  they're cached only a short time by telling the client
+		  //  to limit the age.
+	          max_age=frontier.error_max_age;
 		  Frontier.Log("empty response, setting payload max age to "+max_age);
 		 }
 		else
 		 {
+		  if(last_modified>0)
+		   {
+		    // Also tell the client to limit the age, because
+		    //   otherwise a later query with an unchanged
+		    //   If-Modified-Since time would not get the short
+		    //   error_max_age, it would get the regular long max_age.
+		    //   This was noticed because the increase in the
+		    //   Cache-control max-age triggered a bug in squid-3.5.21
+		    //   which caused downstream squids to pass all queries
+		    //   through to an upstream squid.  There's no way in
+		    //   HttpServletResponse to remove a Last-Modified header
+		    //   completely; it can be blanked, which squid seems to
+		    //   be able to handle, but it breaks the standard so
+		    //   this alternative is used instead.
+	            max_age=frontier.error_max_age;
+		   }
 		  setAgeExpires(request,response,frontier.error_max_age);
-		  Frontier.Log("empty response, setting max age to "+frontier.error_max_age);
+		  Frontier.Log("empty response, setting max age and payload max age to "+
+				frontier.error_max_age);
 		 }
 	       }
 

@@ -900,7 +900,10 @@ int frontierHttpClnt_usinglastproxyingroup(FrontierHttpClnt *c)
     return 1;
    }
   // Treat addresses in a different ip family as being a different group.
-  // Since this function is only for proxies, fai->ai is always nonzero.
+  // Since this function is only for proxies, fai->ai is normally always
+  //   nonzero, but it might be zero if the DNS lookup failed.
+  if(fui->fai->ai==0)
+    return 1;
   curfamily=fui->fai->ai->ai_family;
   if (((nextfai=fui->fai->next)==0)||(curfamily!=nextfai->ai->ai_family))
     nextfai=&fui->firstfai;

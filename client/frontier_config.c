@@ -52,6 +52,11 @@ void (*frontier_mem_free)(void *ptr);
 
 int frontier_pacparser_init(void);
 
+static int getNumNonBackupProxies(FrontierConfig *cfg)
+ {
+  return cfg->proxy_num-cfg->num_backupproxies;
+ }
+
 FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,int *errorCode)
  {
   FrontierConfig *cfg;
@@ -199,7 +204,7 @@ FrontierConfig *frontierConfig_get(const char *server_url,const char *proxy_url,
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Servers load balanced");
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Total %d proxies",cfg->proxy_num);
   if (cfg->proxies_balanced)
-    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%d proxies load balanced",cfg->proxy_num-cfg->num_backupproxies);
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%d proxies load balanced",getNumNonBackupProxies(cfg));
     
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Retrieve zip level is %d",cfg->retrieve_zip_level);
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"Connect timeoutsecs is %d",cfg->connect_timeout_secs);
@@ -1083,6 +1088,20 @@ trynext:
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
     "FindProxyForURL(\"%s\",\"%s\") returned \"%s\"",cfg->server[0],fui->host,proxylist);
 
+  if(getNumNonBackupProxies(cfg)>0)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+      "Turning %d proxies into backup proxies so they will be after proxyconfig proxies",getNumNonBackupProxies(cfg));
+    cfg->num_backupproxies=cfg->proxy_num;
+   }
+
+  if(cfg->proxies_balanced)
+   {
+    frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
+      "Disabling loadbalance=proxies because of proxyconfigurl");
+    cfg->proxies_balanced=0;
+   }
+
   // Now parse the returned proxy list
   p=proxylist;
   endc=*p;
@@ -1162,7 +1181,7 @@ int frontierConfig_getNumBalancedProxies(FrontierConfig *cfg)
  {
   if(!cfg->proxies_balanced)
     return 0;
-  return cfg->proxy_num-cfg->num_backupproxies;
+  return getNumNonBackupProxies(cfg);
  }
 
 void frontierConfig_setBalancedServers(FrontierConfig *cfg)
