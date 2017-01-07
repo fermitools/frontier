@@ -1065,7 +1065,7 @@ trynext:
   if(cfg->server_num<1)
    {
     frontier_setErrorMsg(__FILE__,__LINE__,
-       "config error: cannot process proxyconfigurl without a serverurl%s");
+       "config error: cannot process proxyconfigurl without a serverurl");
     ret=FRONTIER_ECFG;
     goto cleanup;
    }
