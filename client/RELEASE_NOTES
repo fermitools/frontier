@@ -1,3 +1,9 @@
+v2_8_21
+  - Extend fn-fileget to read multiple chunks of data instead of one
+    big chunk.
+  - Fix a crash during pring the fatal error message when someone
+    specifies a proxyconfigurl without a serverurl.
+
 v2_8_20 - 3 Nov 2016 (dwd)
   - Fix bug introduced in v2_8_15 that caused a segmentation fault
     when a DNS name lookup of proxies fail.  The fault happened in
