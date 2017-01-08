@@ -1,5 +1,10 @@
 $Id$
 
+3.36
+    - Support HTTP 1.1 chunked encoding to backend FilePlugin http servers.
+      The protocol to the client can now send multiple byte arrays per
+      request instead of just one.
+
 3.35 2016/10/09 (dwd)
     - Add new servlet option ExpireEmptyQueriesLikeErrors, default false,
       which when true causes empty queries to be expired at the same shorter

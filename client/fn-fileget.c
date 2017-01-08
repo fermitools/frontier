@@ -22,6 +22,9 @@
 #include <ctype.h>
 #include "frontier_client/frontier.h"
 
+#define RESULT_TYPE_ARRAY 6
+#define RESULT_TYPE_EOR 7
+
 void usage()
  {
   fprintf(stderr,"Usage: fn-fileget [-c connect_string] [-r|-R] filepath ...\n");
@@ -146,6 +149,7 @@ int main(int argc, char **argv)
     char *uribuf;
     FrontierRSBlob *frsb;
     int fd;
+    int bytes;
     int n;
     char *p;
     char *localname;
@@ -168,25 +172,6 @@ int main(int argc, char **argv)
       fprintf(stderr,"Error opening result blob for %s: %s\n",argv[i],frontier_getErrorMsg());
       break;
      }
-    // ignore the result type, will always be an array
-    (void)frontierRSBlob_getByte(frsb,&ec);
-    if(ec!=FRONTIER_OK)
-     {
-      fprintf(stderr,"Error getting result type for %s: %s\n",argv[i],frontier_getErrorMsg());
-      break;
-     }
-    n=frontierRSBlob_getInt(frsb,&ec);
-    if(ec!=FRONTIER_OK)
-     {
-      fprintf(stderr,"Error getting result size for %s: %s\n",argv[i],frontier_getErrorMsg());
-      break;
-     }
-    p=frontierRSBlob_getByteArray(frsb,n,&ec);
-    if(ec!=FRONTIER_OK)
-     {
-      fprintf(stderr,"Error getting result data for %s: %s\n",argv[i],frontier_getErrorMsg());
-      break;
-     }
     localname=strrchr(argv[i],'/');
     if(localname==NULL)
       localname=argv[i];
@@ -196,19 +181,51 @@ int main(int argc, char **argv)
     if(fd==-1)
      {
       fprintf(stderr,"Error creating %s: %s\n",localname,strerror(errno));
-      ec=-1;
+      ec=!FRONTIER_OK;
       break;
      }
-    if(write(fd,p,n)<0)
+    bytes=0;
+    while(1)
      {
-      fprintf(stderr,"Error writing to %s: %s\n",localname,strerror(errno));
-      ec=-1;
-      close(fd);
-      break;
+      char resulttype=frontierRSBlob_getByte(frsb,&ec);
+      if(ec!=FRONTIER_OK)
+       {
+	fprintf(stderr,"Error getting result type for %s: %s\n",argv[i],frontier_getErrorMsg());
+	break;
+       }
+      if(resulttype==RESULT_TYPE_EOR)
+        break;
+      if(resulttype!=RESULT_TYPE_ARRAY)
+       {
+	fprintf(stderr,"Unexpected result type for %s: %d\n",argv[i],resulttype);
+	ec=!FRONTIER_OK;
+	break;
+       }
+      n=frontierRSBlob_getInt(frsb,&ec);
+      if(ec!=FRONTIER_OK)
+       {
+	fprintf(stderr,"Error getting result size for %s: %s\n",argv[i],frontier_getErrorMsg());
+	break;
+       }
+      p=frontierRSBlob_getByteArray(frsb,n,&ec);
+      if(ec!=FRONTIER_OK)
+       {
+	fprintf(stderr,"Error getting result data for %s: %s\n",argv[i],frontier_getErrorMsg());
+	break;
+       }
+      if(write(fd,p,n)<0)
+       {
+	fprintf(stderr,"Error writing to %s: %s\n",localname,strerror(errno));
+	ec=!FRONTIER_OK;
+	break;
+       }
+      bytes+=n;
      }
     close(fd);
-    printf("%d bytes written to %s\n",n,localname);
     frontierRSBlob_close(frsb,&ec);
+    if(ec!=FRONTIER_OK)
+      break;
+    printf("%d bytes written to %s\n",bytes,localname);
    }
 
   frontier_closeChannel(channel);

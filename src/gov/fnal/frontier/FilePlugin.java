@@ -28,9 +28,10 @@ import java.util.concurrent.Semaphore;
 public class FilePlugin implements FrontierPlugin
  {
   private String param;
-  private InputStream instream;
+  private BufferedInputStream instream;
   private File file;
   private int length;
+  private boolean chunked;
   private boolean acquired;
 
   private static Semaphore semaphore;
@@ -182,15 +183,15 @@ public class FilePlugin implements FrontierPlugin
         long timestamp=(new Date()).getTime();
 	PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
 
-	out.println("GET "+getStr+" HTTP/1.0\r");
+	out.println("GET "+getStr+" HTTP/1.1\r");
 	out.println("User-Agent: frontier\r");
 	out.println("Host: "+host+"\r");
 	if(if_modified_since>0)
 	  out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
 	out.println("\r");
 
-	BufferedInputStream in=new BufferedInputStream(sock.getInputStream());
-	String line=readHeaderLine(in);
+	BufferedInputStream instream=new BufferedInputStream(sock.getInputStream());
+	String line=readHeaderLine(instream);
 	if(line==null)
 	  throw new Exception("empty response from "+url);
 	if(!line.substring(0,7).equals("HTTP/1."))
@@ -206,7 +207,8 @@ public class FilePlugin implements FrontierPlugin
 	  throw new Exception("bad response code "+line+" from "+url);
         if(Frontier.getHighVerbosity())Frontier.Log("OK");
 
-	while((line=readHeaderLine(in))!=null)
+	chunked=false;
+	while((line=readHeaderLine(instream))!=null)
 	 {
 	  // look at each header line
 	  if(line.equals(""))
@@ -222,6 +224,14 @@ public class FilePlugin implements FrontierPlugin
 	    length=Integer.parseInt(val);
 	    Frontier.Log("Content-Length: "+length);
 	   }
+	  else if(key.equals("transfer-encoding"))
+	   {
+	    if(val.equals("chunked"))
+	     {
+	      chunked=true;
+	      if(Frontier.getHighVerbosity())Frontier.Log("Transfer-Encoding: chunked");
+	     }
+	   }
 	  else if(key.equals("last-modified"))
 	   {
 	    if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
@@ -229,23 +239,6 @@ public class FilePlugin implements FrontierPlugin
 	   }
 	 }
 
-	if(length==0)
-	 {
-	  // This could be delayed to fp_get() but it is more convenient here.
-	  // Need to read everything in to a buffer in order to find the length.
-	  ByteArrayOutputStream bout=new ByteArrayOutputStream();
-	  int len;
-	  byte[] buf=new byte[8192];
-	  while((len=in.read(buf,0,8192))>0)
-	   {
-	    bout.write(buf,0,len);
-	    length+=len;
-	   }
-	  instream=new ByteArrayInputStream(bout.toByteArray());
-	  sock.close();
-	 }
-	else
-	  instream=in; // when this is closed the socket will be closed
         Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
        }
       catch(Exception e)
@@ -259,7 +252,7 @@ public class FilePlugin implements FrontierPlugin
      {
       Frontier.Log("Reading "+length+"-byte file ["+param+"]");
       
-      instream=new FileInputStream(file);
+      instream=new BufferedInputStream(new FileInputStream(file));
 
       // don't need lastModified here, returned it earlier
      }
@@ -290,7 +283,71 @@ public class FilePlugin implements FrontierPlugin
     
     try
      {
-      enc.writeStream(instream,length); 
+      if(chunked)
+       {
+	while(true)
+	 {
+	  String line=readHeaderLine(instream);
+	  if(line==null)
+	    throw new Exception("premature end to chunked encoding");
+	  int semicolon=line.indexOf(";");
+	  if (semicolon!=-1)
+	    line=line.substring(0,semicolon);
+	  if(line.length()==0)
+	    throw new Exception("premature blank line in chunked encoding");
+	  int size=Integer.parseInt(line,16);
+	  if(size==0)
+	   {
+	    // No more chunks to come.  There may be trailers, ignore them.
+	    // Tead until a blank line.
+	    while(true)
+	     {
+	      line=readHeaderLine(instream);
+	      if(line==null)
+	       {
+		if(Frontier.getHighVerbosity())Frontier.Log("no terminating blank line, ignoring");
+		break;
+	       }
+	      if(line.length()==0)
+		// normal terminator
+		break;
+	      if(Frontier.getHighVerbosity())Frontier.Log("ignoring trailer "+line);
+	     }
+	    break;
+	   }
+	  if(Frontier.getHighVerbosity())Frontier.Log("read chunk of "+size+" bytes");
+	  enc.writeStream(instream,size); 
+
+	  line=readHeaderLine(instream);
+	  if(line==null)
+	    throw new Exception("non-empty chunk had nothing following it");
+	  if(line.length()!=0)
+	   {
+	    if(Frontier.getHighVerbosity())Frontier.Log("chunk followed by line of len "+line.length()+": \""+line +"\"");
+	    throw new Exception("chunk not followed by empty line");
+	   }
+	 }
+       }
+      else if(length==0)
+       {
+	// No length known, and chunked encoding not available.
+	// Read a buffer's worth at a time, because the frontier protocol
+	//   requires a length at the beginning of each section.
+	int len;
+	byte[] buf=new byte[65536];
+	InputStream bais=new ByteArrayInputStream(buf);
+	while((len=instream.read(buf,0,65536))>0)
+	 {
+	  if(Frontier.getHighVerbosity())Frontier.Log("read "+len+" bytes");
+	  enc.writeStream(bais,len); 
+	  bais.reset();
+	 }
+       }
+      else
+       {
+	// Read the full content-length
+        enc.writeStream(instream,length); 
+       }
       enc.writeEOR();
      }
     finally
