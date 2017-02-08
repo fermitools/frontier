@@ -223,15 +223,7 @@
 -->
 
     <!-- Include all elements that Tomcat exposes to applications -->
-    <pathelement location="${catalina.home}/common/classes"/>
-    <fileset dir="${catalina.home}/common/endorsed">
-      <include name="*.jar"/>
-    </fileset>
-    <fileset dir="${catalina.home}/common/lib">
-      <include name="*.jar"/>
-    </fileset>
-    <pathelement location="${catalina.home}/shared/classes"/>
-    <fileset dir="${catalina.home}/shared/lib">
+    <fileset dir="${catalina.home}/lib">
       <include name="*.jar"/>
     </fileset>
 
