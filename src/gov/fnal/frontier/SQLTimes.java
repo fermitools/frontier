@@ -20,19 +20,26 @@ import java.util.Iterator;
 
 class SQLTimes
  {
-  // need separate SimpleDateFormat object for each SQLTimes to simplify
-  //  synchronization; it isn't thread safe on its own
-  private SimpleDateFormat date_fmt=new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
   private long last_modified;
   private long last_validated;
 
   private HashSet<String> queryTableNames;
 
-  private static final String timestamp_sql1="select to_char(change_time,'mm/dd/yyyy hh24:mi:ss') from ";
-  private static final String timestamp_sql1_max="select max(to_char(change_time,'mm/dd/yyyy hh24:mi:ss')) from ";
-  private static final String tableAndOwner=" UPPER(table_owner)=? and UPPER(table_name)=?";
-  private static final String timestamp_sql2=" where "+tableAndOwner;
-  private static final String timestamp_sql2_or=" or ("+tableAndOwner+")";
+  // oracle timestamp query parts
+  private static final String odate_fmt="MM/dd/yyyy HH:mm:ss";
+  private static final String timestamp_osql1="select to_char(change_time,'mm/dd/yyyy hh24:mi:ss') from ";
+  private static final String timestamp_osql1_max="select max(to_char(change_time,'mm/dd/yyyy hh24:mi:ss')) from ";
+  private static final String oTableAndOwner=" UPPER(table_owner)=? and UPPER(table_name)=?";
+  private static final String timestamp_osql2=" where "+oTableAndOwner;
+  private static final String timestamp_osql2_or=" or ("+oTableAndOwner+")";
+
+  // mysql timestamp query parts
+  private static final String mdate_fmt="yyyy-MM-dd HH:mm:ss";
+  private static final String timestamp_msql1="select update_time from information_schema.tables";
+  private static final String timestamp_msql1_max="select max(update_time) from information_schema.tables";
+  private static final String mTableAndOwner=" table_schema=? and table_name=?";
+  private static final String timestamp_msql2=" where "+mTableAndOwner;
+  private static final String timestamp_msql2_or=" or ("+mTableAndOwner+")";
 
   public SQLTimes(HashSet<String> qTableNames)
    {
@@ -84,20 +91,41 @@ class SQLTimes
     return last_modified;
    }
 
-  private PreparedStatement prepareStatement(java.sql.Connection con) throws Exception
+  private PreparedStatement prepareStatement(java.sql.Connection con,String dbtype) throws Exception
    {
     PreparedStatement stmt=null;
     String timequery="";
-    String sql1=timestamp_sql1_max;
-    if (queryTableNames.size()==1) 
-      sql1=timestamp_sql1;
-    timequery=sql1+Frontier.last_modified_table_name+timestamp_sql2;
-    Iterator it=queryTableNames.iterator();
-    it.next(); // To prevent referring twice to the first table
-    while (it.hasNext()) 
+    Iterator it;
+    if (dbtype=="MySQL")
      {
-      String tableName=(String)it.next();
-      timequery=timequery+timestamp_sql2_or;
+      String sql1=timestamp_msql1_max;
+      if (queryTableNames.size()==1) 
+	sql1=timestamp_msql1;
+      timequery=sql1+' '+timestamp_msql2;
+      it=queryTableNames.iterator();
+      it.next(); // To prevent referring twice to the first table
+      while (it.hasNext()) 
+       {
+	it.next();
+	timequery=timequery+timestamp_msql2_or;
+       }
+     }
+    else
+     {
+      // assume oracle
+      String sql1=timestamp_osql1_max;
+      if (queryTableNames.size()==1) 
+	sql1=timestamp_osql1;
+      if (Frontier.last_modified_table_name==null)
+        throw new Exception("LastModifiedTableName (required by ValidateLastModifiedSeconds) is missing in FrontierConfig");
+      timequery=sql1+Frontier.last_modified_table_name+timestamp_osql2;
+      it=queryTableNames.iterator();
+      it.next(); // To prevent referring twice to the first table
+      while (it.hasNext()) 
+       {
+	it.next();
+	timequery=timequery+timestamp_osql2_or;
+       }
      }
     if(Frontier.getHighVerbosity())Frontier.Log("timequery: "+timequery); 
 
@@ -136,7 +164,9 @@ class SQLTimes
     // can't pass the table name as bind variable, splice it in
     try
      {
-      stmt=prepareStatement(con);
+      String dbtype = con.getMetaData().getDatabaseProductName();
+      if(Frontier.getHighVerbosity())Frontier.Log("dbtype: "+dbtype); 
+      stmt=prepareStatement(con,dbtype);
       try
        {
         rs=stmt.executeQuery();
@@ -154,6 +184,13 @@ class SQLTimes
       else
        {
         stamp=rs.getString(1);
+        // need separate SimpleDateFormat object for each SQLTimes to simplify
+        //  synchronization; it isn't thread safe on its own
+	SimpleDateFormat date_fmt;
+	if(dbtype=="MySQL")
+	  date_fmt=new SimpleDateFormat(mdate_fmt);
+	else
+	  date_fmt=new SimpleDateFormat(odate_fmt);
         last_modified=date_fmt.parse(stamp).getTime(); 
        }
      }

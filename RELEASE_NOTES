@@ -1,9 +1,16 @@
 $Id$
 
-3.36
+3.36 2017/02/08 (dwd)
     - Support HTTP 1.1 chunked encoding to backend FilePlugin http servers.
-      The protocol to the client can now send multiple byte arrays per
-      request instead of just one.
+      Note that the protocol to the client can now send multiple byte
+      arrays per request instead of just one.  An implication is that
+      fn-fileget from frontier-client versions older than 2.8.21 will not
+      always retrieve all of the data when the backend is an http server
+      (although it will when reading directly from files).
+    - Support MySQL as a database backend in the SQLPlugin. This required
+      changing the Last-Modified handling to use the MySQL table that
+      always keeps track of modification times on all tables (it does not
+      require an add-on function like oracle does).
 
 3.35 2016/10/09 (dwd)
     - Add new servlet option ExpireEmptyQueriesLikeErrors, default false,

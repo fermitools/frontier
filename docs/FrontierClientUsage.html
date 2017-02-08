@@ -344,7 +344,7 @@ frontier::AnyData ad;
 std::string stringBuf;
 std::string *vs = &stringBuf;
 while(session.next()) {
-  for(int k=0;k<field_num;k++) {
+  for(int k=0;k&lt;field_num;k++) {
     session.getAnyData(&ad);
     switch(ad.type()) {
       case frontier::BLOB_TYPE_INT4:
@@ -365,20 +365,20 @@ while(session.next()) {
         break;
       case frontier::BLOB_TYPE_TIME:
         long long vl=ad.getLongLong();
-        std::cout<<vl;
+        std::cout << vl;
         break;
       case frontier::BLOB_TYPE_ARRAY_BYTE:
         ad.assignString(vs);
-        if(vs->size() != 0) {
-          std::cout<<"NULL";
+        if(vs-&gt;size() != 0) {
+          std::cout << "NULL";
         }
         else {
           str_escape_quota(vs);
-          std::cout << '\'' << (*vs) <<'\'';
+          std::cout << '\'' << (*vs) << '\'';
         }
         break;
       default:
-        std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n";
+        std::cout << "Error: unknown typeId " << ((int)(ad.type())) << "\n";
         exit(1);
     }
   }
@@ -478,7 +478,7 @@ Records:
 <hr>
 <address><a href="mailto:dwd@fnal.gov">Dave Dykstra</a></address>
 <!-- hhmts star -->
-Last modified: 27 May 2008
+Last modified: 8 Feb 2017
 <!-- hhmts end -->
   </body>
 </html>
