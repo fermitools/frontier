@@ -365,20 +365,20 @@ while(session.next()) {
         break;
       case frontier::BLOB_TYPE_TIME:
         long long vl=ad.getLongLong();
-        std::cout<<vl;
+        std::cout << vl;
         break;
       case frontier::BLOB_TYPE_ARRAY_BYTE:
         ad.assignString(vs);
         if(vs-&gt;size() != 0) {
-          std::cout<<"NULL";
+          std::cout << "NULL";
         }
         else {
           str_escape_quota(vs);
-          std::cout << '\'' << (*vs) <<'\'';
+          std::cout << '\'' << (*vs) << '\'';
         }
         break;
       default:
-        std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n";
+        std::cout << "Error: unknown typeId " << ((int)(ad.type())) << "\n";
         exit(1);
     }
   }
