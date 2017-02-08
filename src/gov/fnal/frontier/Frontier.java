@@ -238,9 +238,8 @@ public final class Frontier
       validate_last_modified_seconds=Integer.parseInt(str);
       Frontier.Log("validate last-modified secs: "+validate_last_modified_seconds);
       last_modified_table_name=getPropertyString(prb,"LastModifiedTableName");
-      if(last_modified_table_name==null)
-        throw new Exception("LastModifiedTableName (required by ValidateLastModifiedSeconds) is missing in FrontierConfig");
-      Frontier.Log("last-modified table name: "+last_modified_table_name);
+      if(last_modified_table_name!=null)
+        Frontier.Log("last-modified table name: "+last_modified_table_name);
      }
 
     str=getPropertyString(prb,"ExpireEmptyQueriesLikeErrors");
