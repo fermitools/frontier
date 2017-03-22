@@ -190,7 +190,7 @@ public class FilePlugin implements FrontierPlugin
 	  out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
 	out.println("\r");
 
-	BufferedInputStream instream=new BufferedInputStream(sock.getInputStream());
+	instream=new BufferedInputStream(sock.getInputStream());
 	String line=readHeaderLine(instream);
 	if(line==null)
 	  throw new Exception("empty response from "+url);
