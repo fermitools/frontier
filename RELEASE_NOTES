@@ -1,5 +1,9 @@
 $Id$
 
+3.38 2017/05/24 (dwd)
+    - Add log message after DB data transferred including the msecs
+      it took to transfer the data.
+
 3.37 2017/03/22 (dwd)
     - Fix bug introduced in 3.36 that caused a null pointer exception in
       in the FilePlugin.

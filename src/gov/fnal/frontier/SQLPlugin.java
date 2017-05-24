@@ -164,7 +164,9 @@ public class SQLPlugin implements FrontierPlugin
       long timestamp=(new Date()).getTime();
       rs=stmt.executeQuery();
       mgr.cancelKeepAlive();
-      Frontier.Log("DB query finished msecs="+((new Date()).getTime()-timestamp));
+      long timestamp2=(new Date()).getTime();
+      Frontier.Log("DB query finished msecs="+(timestamp2-timestamp));
+      timestamp=timestamp2;
 
       ResultSetMetaData rsmd=rs.getMetaData();
       int cnum=rsmd.getColumnCount();
@@ -210,6 +212,9 @@ public class SQLPlugin implements FrontierPlugin
          }
         enc.writeEOR();
        }
+
+      timestamp2=(new Date()).getTime();
+      Frontier.Log("DB data transferred msecs="+(timestamp2-timestamp));
      }
     catch(Exception e)
      {
