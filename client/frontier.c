@@ -444,10 +444,6 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
   frontierHttpClnt_setWriteTimeoutSecs(chn->ht_clnt,
   		frontierConfig_getWriteTimeoutSecs(chn->cfg));
 
-  // initialize and save a gunzip stream for this thread
-  fn_gunzip_init();
-  chn->zsave=fn_zsave();
-
   chn->ttl=2; // default time-to-live is "long"
   *ec=FRONTIER_OK; 
   frontier_unlock();
@@ -485,8 +481,6 @@ static void channel_delete(Channel *chn)
       RSA_free((RSA *)chn->serverrsakey[i]);
   if(chn->seqnum==chan_seqnum)
     frontier_statistics_stop_debug();
-  fn_zrestore(chn->zsave);
-  fn_gzip_cleanup();
   frontier_mem_free(chn);
   frontier_log_close();
  }
@@ -876,11 +870,7 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
   chn->query_bytes=0;
   while(1)
    {
-    // frontierHttpClnt_read() can allow other threads to come in, so
-    //   save & restore the unzip state around it.
-    chn->zsave=fn_zsave();
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
-    fn_zrestore(chn->zsave);
     if(ret<0) goto end;
     if(ret==0) break;
 #if 0
@@ -982,7 +972,6 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   char nowbuf[26];
 
   frontier_lock();
-  fn_zrestore(chn->zsave);
   if((pid=getpid())!=frontier_pid)
    {
      pid_t oldpid;
@@ -1007,7 +996,6 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
   if(!chn) 
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"wrong channel");
-    chn->zsave=fn_zsave();
     frontier_unlock();
     return FRONTIER_EIARG;
    }
@@ -1020,7 +1008,6 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
       ret=prepare_channel(chn,-1,0,0);
       if (!ret)
         ret=write_data(chn->resp,hashval->data,hashval->len);
-      chn->zsave=fn_zsave();
       frontier_unlock();
       return ret;
      }
@@ -1226,7 +1213,6 @@ trydirectconnect:
    
   if(ret!=FRONTIER_OK) frontierHttpClnt_clear(clnt);
 
-  chn->zsave=fn_zsave();
   frontier_unlock();
   return ret;
  }

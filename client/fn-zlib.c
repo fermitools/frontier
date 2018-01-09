@@ -19,25 +19,6 @@
 #include "zlib.h"
 
 static z_stream *dezstream=0;
-static z_stream *inzstream=0;
-
-// Since inflates happen across multiple operations, for multithread
-//   support use fn_save to save the inflate stream when exiting the
-//   protected section and use fn_zrestore to restore it when entering
-//   the protected section.  Initialize the value by calling
-//   fn_gunzip_init followed by fn_zsave.
-
-void *fn_zsave()
- {
-   void *savep = (void *)inzstream;
-   inzstream=0;
-   return savep;
- }
-
-void fn_zrestore(void *savep)
- {
-   inzstream=(z_stream *)savep;
- }
 
 static void *fn_zalloc(void *opaque,uInt items,uInt size)
  {
@@ -49,7 +30,7 @@ static void fn_zfree(void *opaque,void *address)
   frontier_mem_free(address);
  }
 
-static void fn_decleanup()
+void fn_gzip_cleanup()
  {
   if(dezstream!=0)
    {
@@ -59,22 +40,16 @@ static void fn_decleanup()
    }
  }
 
-static void fn_incleanup()
+void fn_gunzip_cleanup(void **inzstreamp)
  {
-  if(inzstream!=0)
+  if((inzstreamp != 0) && (*inzstreamp!=0))
    {
-    inflateEnd(inzstream);
-    frontier_mem_free(inzstream);
-    inzstream=0;
+    inflateEnd((z_stream *)(*inzstreamp));
+    frontier_mem_free(*inzstreamp);
+    *inzstreamp=0;
    }
  }
 
-void fn_gzip_cleanup()
- {
-  fn_decleanup();
-  fn_incleanup();
- }
- 
 long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
  {
   int ret;
@@ -92,7 +67,7 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
     ret=deflateInit(dezstream,9);
     if(ret!=Z_OK)
      {
-      fn_decleanup();
+      fn_gzip_cleanup();
       if(ret==Z_MEM_ERROR)
 	return FN_ZLIB_E_NOMEM;
       return FN_ZLIB_E_OTHER;
@@ -104,7 +79,7 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
     ret=deflateReset(dezstream);
     if(ret!=Z_OK)
      {
-      fn_decleanup();
+      fn_gzip_cleanup();
       return FN_ZLIB_E_OTHER;
      }
    }
@@ -120,7 +95,7 @@ long fn_gzip_str(const char *src,long src_size,char *dest,long dest_size)
     return dest_size-(long)dezstream->avail_out;
    }
 
-  fn_decleanup();
+  fn_gzip_cleanup();
   if(ret==Z_BUF_ERROR)
     return FN_ZLIB_E_SMALLBUF;
   return FN_ZLIB_E_OTHER;
@@ -171,12 +146,16 @@ end:
   return ret;
  }
 
-int fn_gunzip_init()
+int fn_gunzip_init(void **inzstreamp)
  {
   int ret=Z_OK;
 
-  if(inzstream==0)
+  if(inzstreamp==0)
+    return Z_MEM_ERROR;
+
+  if(*inzstreamp==0)
    {
+    z_stream *inzstream;
     // open a stream and leave it open just like with deflate above
     inzstream=frontier_mem_alloc(sizeof(*inzstream));
     if(inzstream==0)
@@ -189,17 +168,18 @@ int fn_gunzip_init()
     ret=inflateInit(inzstream);
     if(ret!=Z_OK)
      {
-      fn_incleanup();
+      fn_gunzip_cleanup((void **)&inzstream);
       return ret;
      }
+    *inzstreamp=inzstream;
    }
   else
    {
     // reuse existing stream
-    ret=inflateReset(inzstream);
+    ret=inflateReset((z_stream *)(*inzstreamp));
     if(ret!=Z_OK)
      {
-      fn_incleanup();
+      fn_gunzip_cleanup(inzstreamp);
       return ret;
      }
    }
@@ -207,9 +187,15 @@ int fn_gunzip_init()
   return ret;
 }
 
-int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,int *dest_size,int final)
+int fn_gunzip_update(void **inzstreamp,unsigned char *src,int *src_size,const unsigned char *dest,int *dest_size,int final)
  {
   int ret;
+  z_stream *inzstream;
+
+  if(inzstreamp==0)
+    return Z_MEM_ERROR;
+  inzstream=*inzstreamp;
+
   inzstream->next_in=(Bytef *)src;
   inzstream->avail_in=(uLongf)*src_size;
   inzstream->next_out=(Bytef *)dest;
@@ -231,7 +217,7 @@ int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,
      }
     // unsuccessful finish, clean up stream
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"final inflate error message: %s",inzstream->msg);
-    fn_incleanup();
+    fn_gunzip_cleanup(inzstreamp);
    }
   else if(ret==Z_STREAM_END)
    {

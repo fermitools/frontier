@@ -118,7 +118,8 @@ FrontierMemData *frontierMemData_create(int zipped,int secured,const char *param
   md->zipped_total=0;
   md->binzipped=zipped;
   md->zipbuflen=0;
-  fn_gunzip_init();
+  md->zstate=0;
+  fn_gunzip_init(&md->zstate);
   return md;
 err:
   frontier_mem_free(md);
@@ -141,6 +142,7 @@ void frontierMemData_delete(FrontierMemData *md)
     mb=nextmb;
    }
 
+  fn_gunzip_cleanup(&md->zstate);
   frontier_mem_free(md);
  }
 
@@ -215,7 +217,7 @@ static int frontierMemData_append(FrontierMemData *md,
 	int ret;
 	sizeused=size2;
 	spaceused=spaceleft2;
-        ret=fn_gunzip_update(p,&size2,p2,&spaceleft2,final);
+        ret=fn_gunzip_update(&md->zstate,p,&size2,p2,&spaceleft2,final);
 	switch(ret)
 	 {
 	  case Z_OK:
