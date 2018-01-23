@@ -122,9 +122,13 @@ public final class FrontierServlet extends HttpServlet
      {
       // tell proxies to cache the error for a short time
       setAgeExpires(request,response,error_max_age);
-      // this leaves an empty header but it doesn't hurt and
-      //  there doesn't appear to be any way to delete a header
-      response.setHeader("Last-Modified","");
+      // There doesn't appear to be any way to delete a header, so set
+      //  the Last-Modified time to the oldest possible time, so any
+      //  newer response will override it. Both squid and this servlet
+      //  treat a zero datestamp as if Last-Modified never matches, so
+      //  even if an error condition persists but the message changes,
+      //  the message will get updated.
+      response.setHeader("Last-Modified",dateHeader(0));
      }
     ResponseFormat.payload_end(out,1,descript,max_age,check,-1,0);
     return msg;
