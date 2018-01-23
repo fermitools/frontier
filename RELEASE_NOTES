@@ -1,5 +1,14 @@
 $Id$
 
+3.39 2018/01/23 (dwd)
+    - When responding with an error condition before headers are sent,
+      instead of setting a Last-Modified header to be blank, set it
+      to the oldest possible time of midnight on January 1, 1970. 
+      With the old behavior, Squid-3 does not clear the cache even
+      though Squid-2 does.  With the new behavior, squid-3 always
+      clears the cache even with another error sends the same
+      Last-Modified time.
+
 3.38 2017/05/24 (dwd)
     - Add log message after DB data transferred including the msecs
       it took to transfer the data.
