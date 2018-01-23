@@ -6,7 +6,7 @@ $Id$
       to the oldest possible time of midnight on January 1, 1970. 
       With the old behavior, Squid-3 does not clear the cache even
       though Squid-2 does.  With the new behavior, squid-3 always
-      clears the cache even with another error sends the same
+      clears the cache even when another error sends the same
       Last-Modified time.
 
 3.38 2017/05/24 (dwd)
