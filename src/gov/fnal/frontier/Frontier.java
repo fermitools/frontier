@@ -15,6 +15,7 @@ import gov.fnal.frontier.codec.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import java.util.*;
+import java.util.regex.*;
 import java.text.SimpleDateFormat;
 import java.io.*;
 import java.security.*;
@@ -97,8 +98,19 @@ public final class Frontier
 
     // First convert PEM into DER, the equivalent of
     //  openssl pkcs8 -topk8 -outform DER -in key.pem -out key.der -nocrypt
-    String b64key=new Scanner(pem).useDelimiter("-----(BEGIN|END) (RSA |)PRIVATE KEY-----\n").next();
-    b64key=b64key.replace("\n","");
+    Pattern delim=Pattern.compile("-----(BEGIN|END) (RSA |)PRIVATE KEY-----\n");
+    Matcher matcher=delim.matcher(pem);
+    if (!matcher.find())
+	throw new Exception("no recognized begin to private key");
+    Boolean isRSA;
+    if (matcher.group().startsWith("-----BEGIN RSA "))
+	isRSA=true;
+    else
+	isRSA=false;
+    int keystart=matcher.end();
+    if (!matcher.find())
+	throw new Exception("no recognized end to private key");
+    String b64key=pem.substring(keystart,matcher.start()).replace("\n","");
     byte [] derdata;
     try
      {
@@ -110,7 +122,7 @@ public final class Frontier
      }
 
     PKCS8EncodedKeySpec keySpec;
-    if (pem.startsWith("-----BEGIN RSA "))
+    if (isRSA)
      {
       // these bytes were copied from openssl conversion output
       byte [] derhead={(byte)0x30,(byte)0x82,(byte)0x00,(byte)0x00,
