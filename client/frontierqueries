@@ -19,28 +19,56 @@
 #  time-to-live query that is sent out, a plus (+) if it is a "forever"
 #  time-to-live query, or a blank if it is a "long" time-to-live query.
 # The -sort option sorts the output by full size.  Implies -sizefirst.
+# The -secsfirst option prints the elapsed seconds first.  Otherwise the
+#  elapsed seconds always follows the size
 # Written by Dave Dykstra
 # $Id$
 #  
 SORT=cat
 if [ "$1" = "-sizefirst" ]; then
-    PRINTORDER="size, mark, query"
+    PRINTORDER="size, elapsedseconds, mark, query"
     shift
 elif [ "$1" = "-sort" ]; then
-    PRINTORDER="size, mark, query"
+    # sort by size
+    PRINTORDER="size, elapsedseconds, mark, query"
     SORT="sort -t( -k 2 -n"
     shift
+elif [ "$1" = "-secsfirst" ]; then
+    PRINTORDER="elapsedseconds, size, mark, query"
+    shift
 else
-    PRINTORDER="mark, query, size"
+    PRINTORDER="mark, query, size, elapsedseconds"
 fi
 if [ $# != 1 ]; then
-	echo "Usage: $0 [-sizefirst|-sort] frontier_client.log" >&2
+	echo "Usage: $0 [-sizefirst|-sort|-secsfirst] frontier_client.log" >&2
 	exit 1
 fi
 awk '
 BEGIN{
     inquery=0
     query=""
+}
+function parsetime(mon,day,hhmmss,year) {
+    split(hhmmss,times,":")
+    if (mon == "Jan") {month="01"}
+    else if (mon == "Feb") {month="02"}
+    else if (mon == "Mar") {month="03"}
+    else if (mon == "Apr") {month="04"}
+    else if (mon == "May") {month="05"}
+    else if (mon == "Jun") {month="06"}
+    else if (mon == "Jul") {month="07"}
+    else if (mon == "Aug") {month="08"}
+    else if (mon == "Sep") {month="09"}
+    else if (mon == "Oct") {month="10"}
+    else if (mon == "Nov") {month="11"}
+    else if (mon == "Dec") {month="12"}
+    return mktime(year " " month " " day " " times[1] " " times[2] " " times[3])
+}
+/querying on chan/{
+    starttime=parsetime($9,$10,$11,$12)
+}
+/chan .* response .* finished at/{
+    elapsedseconds=parsetime($10,$11,$12,$13)-starttime
 }
 /encoding request/{
     if (query != "") {
