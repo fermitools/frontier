@@ -364,7 +364,7 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   len+=ret;
 
   // Cache-control: max-age=0 allows If-Modified-Since to re-validate cache,
-  //  which can be much less stress on servers than Pragma: no-cache.
+  //  which can be much less stress on servers than no-cache.
   if(c->refresh_flag==1)
     ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=0\r\n");
   else if((c->refresh_flag==0)&&(c->max_age>=0))
