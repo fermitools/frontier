@@ -313,6 +313,14 @@ static int open_connection(FrontierHttpClnt *c)
 
 #define FN_REQ_BUF 8192
 
+#define FN_RET_LEN(RET,LEN) \
+  if(RET>=FN_REQ_BUF-LEN) \
+   { \
+    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF); \
+    return FRONTIER_EIARG; \
+   }; \
+  LEN+=RET
+
 static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
 {
   int ret;
@@ -327,19 +335,16 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
 
   bzero(buf,FN_REQ_BUF);
   
+  len=0;
   if(c->using_proxy)
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s %s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,*url?"/":"",url,c->url_suffix,fui_server->host);
+    ret=snprintf(buf,FN_REQ_BUF,"%s %s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->url,*url?"/":"",url,c->url_suffix,fui_server->host);
    }
   else
    {
-    len=snprintf(buf,FN_REQ_BUF,"%s /%s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,*url?"/":"",url,c->url_suffix,fui_server->host);
+    ret=snprintf(buf,FN_REQ_BUF,"%s /%s%s%s%s HTTP/1.0\r\nHost: %s\r\n",http_method,fui_server->path,*url?"/":"",url,c->url_suffix,fui_server->host);
    }
-  if(len>=FN_REQ_BUF)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
-    return FRONTIER_EIARG;
-   }
+  FN_RET_LEN(ret,len);
   
   // Would use 'Cache-Control: max-stale=0' but squid 2.6 series (at least
   //  2.6STABLE13 and 2.6STABLE18, but not 2.7STABLE4) then sends just 
@@ -356,51 +361,35 @@ static int get_url(FrontierHttpClnt *c,const char *url,int is_post)
   // Leave \r\n off because we'll be adding it below
   ret=snprintf(buf+len,FN_REQ_BUF-len,
   	"X-Frontier-Id: %s\r\nCache-Control: max-stale=1",c->frontier_id);
-  if(ret>=FN_REQ_BUF-len)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
-    return FRONTIER_EIARG;
-   }
-  len+=ret;
+  FN_RET_LEN(ret,len);
 
-  // Cache-control: max-age=0 allows If-Modified-Since to re-validate cache,
-  //  which can be much less stress on servers than no-cache.
-  if(c->refresh_flag==1)
-    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=0\r\n");
-  else if((c->refresh_flag==0)&&(c->max_age>=0))
-    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=%d\r\n",c->max_age);
-  else
-    ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
-  if(ret>=FN_REQ_BUF-len)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
-    return FRONTIER_EIARG;
-   }
-  len+=ret;
-   
   // POST is always no-cache
   if(is_post||(c->refresh_flag==2))
    {
-    ret=snprintf(buf+len,FN_REQ_BUF-len,"Pragma: no-cache\r\n");
-    if(ret>=FN_REQ_BUF-len)
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
-      return FRONTIER_EIARG;
-     }
-    len+=ret;
+    ret=snprintf(buf+len,FN_REQ_BUF-len,",no-cache\r\n");
    }
+  else if(c->refresh_flag==1)
+   {
+    // Cache-control: max-age=0 allows If-Modified-Since to re-validate cache,
+    //  which can be much less stress on servers than no-cache.
+    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=0\r\n");
+   }
+  else if((c->refresh_flag==0)&&(c->max_age>=0))
+   {
+    ret=snprintf(buf+len,FN_REQ_BUF-len,",max-age=%d\r\n",c->max_age);
+   }
+  else
+   {
+    ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
+   }
+  FN_RET_LEN(ret,len);
 
 #ifdef PERSISTCONNECTION
   ret=snprintf(buf+len,FN_REQ_BUF-len,"Connection: keep-alive\r\n\r\n");
 #else
   ret=snprintf(buf+len,FN_REQ_BUF-len,"\r\n");
 #endif
-  if(ret>=FN_REQ_BUF-len)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"request is bigger than %d bytes",FN_REQ_BUF);
-    return FRONTIER_EIARG;
-   }
-  len+=ret;
+  FN_RET_LEN(ret,len);
    
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"request <%s>",buf);
    
