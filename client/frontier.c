@@ -523,8 +523,14 @@ static char *vcb_curservername;
 static int cert_verify_callback(int ok,X509_STORE_CTX *ctx)
  {
   if (!ok)
-    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,X509_verify_cert_error_string(ctx->error));
-  return ok;
+#if OPENSSL_VERSION_NUMBER >= 0x10100005L
+    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,
+			                    X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
+#else
+    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,
+			                    X509_verify_cert_error_string(ctx->error));
+#endif
+    return ok;
  }
  
 static int get_cert(Channel *chn,const char *uri,int curserver)
