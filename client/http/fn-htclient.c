@@ -516,7 +516,7 @@ int frontierHttpClnt_post(FrontierHttpClnt *c,const char *url,const char *body)
       /*System error 104 Connection reset by peer has been seen on*/
       /*heavily-loaded localhost squids (on a node with 8 cores).*/
       /*Close, reopen, and retry.*/
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Retrying after system error");
+      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"Retrying after system error: %s",frontier_getErrorMsg());
       frontierHttpClnt_close(c);
       if(frontierHttpClnt_open(c)==FRONTIER_OK)continue;
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"re-connect failed");
