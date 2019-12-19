@@ -27,15 +27,37 @@
 #include <arpa/inet.h>
 
 // return ascii representation of ipv4 or ipv6 address, for log messages
+// also add colon and port number if port number is not zero
 // it is stored in a static buffer, overwritten by later calls
 char *frontier_ipaddr(const struct sockaddr *serv_addr)
  {
-  static char addrbuf[INET6_ADDRSTRLEN+1];
-  addrbuf[0]='\0';
+  // addrbuf may contain extra brackets, colon, port number, and
+  //   null terminator.  16 will more than cover it.
+  static char addrbuf[INET6_ADDRSTRLEN+16];
+  in_port_t port;
+  char *p;
   if (serv_addr->sa_family == AF_INET6)
-    inet_ntop(AF_INET6,&(((struct sockaddr_in6*)serv_addr)->sin6_addr),addrbuf,INET6_ADDRSTRLEN);
+   {
+    addrbuf[0]='[';
+    addrbuf[1]='\0';
+    inet_ntop(AF_INET6,&(((struct sockaddr_in6*)serv_addr)->sin6_addr),&addrbuf[1],INET6_ADDRSTRLEN);
+    p=strchr(addrbuf,'\0');
+    *p++=']';
+    *p='\0';
+    port=ntohs(((struct sockaddr_in6*)serv_addr)->sin6_port);
+   }
   else
+   {
+    addrbuf[0]='\0';
     inet_ntop(AF_INET,&(((struct sockaddr_in*)serv_addr)->sin_addr),addrbuf,INET_ADDRSTRLEN);
+    p=strchr(addrbuf,'\0');
+    port=ntohs(((struct sockaddr_in*)serv_addr)->sin_port);
+   }
+  if(port!=0)
+   {
+    snprintf(p,&addrbuf[sizeof(addrbuf)-1]-p,":%d",(int)port);
+    addrbuf[sizeof(addrbuf)-1]='\0'; // in case of overflow
+   }
   return addrbuf;
  }
 
