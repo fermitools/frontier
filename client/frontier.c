@@ -523,7 +523,7 @@ static char *vcb_curservername;
 static int cert_verify_callback(int ok,X509_STORE_CTX *ctx)
  {
   if (!ok)
-    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,X509_verify_cert_error_string(ctx->error));
+    frontier_setErrorMsg(__FILE__,__LINE__, "error verifying server %s cert: %s",vcb_curservername,X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
   return ok;
  }
  
