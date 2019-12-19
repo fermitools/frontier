@@ -101,24 +101,23 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
    
-  if(*p!='/')
+  if(*p)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
-    *ec=FRONTIER_ECFG;
-    goto err;
+    if (*p!='/')
+     {
+      frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+      *ec=FRONTIER_ECFG;
+      goto err;
+     }
+    fui->path=frontier_str_copy(p);
    }
-  
-  fui->path=frontier_str_copy(p);
 
-  goto ok;
+  *ec=FRONTIER_OK;
+  return fui;
   
 err:
   frontier_DeleteUrlInfo(fui);
   return NULL;
-  
-ok:  
-  *ec=FRONTIER_OK;
-  return fui;
  }
  
 void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
