@@ -54,14 +54,16 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
   
-  if(strncmp(url,"http://",7))
+  p=url;
+  if(strncmp(url,"http://",7)==0)
+    p+=7;
+  else if(strstr(url, "://")!=NULL)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: unsupported proto in url %s",url);
     *ec=FRONTIER_ECFG;
     goto err;
    }
   fui->proto=frontier_str_copy("http"); // No other protocols yet
-  p=url+7;
   bzero(buf,PARSE_BUF_SIZE);
   i=0;
   
