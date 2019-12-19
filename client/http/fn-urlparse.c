@@ -25,16 +25,15 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define PARSE_BUF_SIZE	256
+#define HOST_BUF_SIZE	256
 
 
 FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
  {
   FrontierUrlInfo *fui;
   const char *p;
-  char *tmp;
   int i;
-  char buf[PARSE_BUF_SIZE];
+  char hostbuf[HOST_BUF_SIZE+1];
   
   fui=frontier_mem_alloc(sizeof(FrontierUrlInfo));
   if(!fui)
@@ -64,59 +63,52 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
     goto err;
    }
   fui->proto=frontier_str_copy("http"); // No other protocols yet
-  bzero(buf,PARSE_BUF_SIZE);
   i=0;
   
-  while(*p && (*p!='/')) {buf[i]=*p; ++i; ++p;}
-  
-  if(!i)
+  if (*p=='[')
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
-    *ec=FRONTIER_ECFG;
-    goto err;
+    // Square brackets around IPv6 IP address
+    p++;
+    while(*p && (*p!=']') && (i<HOST_BUF_SIZE)) hostbuf[i++]=*p++;
+    if(*p) ++p; // skip past the close bracket
    }
-  
-  tmp=strchr(buf,':');
-  if(tmp==buf)
-   {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
-    *ec=FRONTIER_ECFG;
-    goto err;
-   }
-  
-  if(tmp)
-   {
-    if(tmp!=strrchr(buf,':') || !(*(tmp+1)))
-     {
-      frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
-      *ec=FRONTIER_ECFG;
-      goto err;
-     }
-    fui->port=atoi(tmp+1);
-    *tmp=0;
-    fui->host=frontier_str_copy(buf);
-   }   
   else
+   while(*p && (*p!='/') && (*p!=':') && (i<HOST_BUF_SIZE)) hostbuf[i++]=*p++;
+
+  if(!i || (i>=HOST_BUF_SIZE))
    {
-    fui->host=frontier_str_copy(buf);
-    fui->port=80;
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad host name in url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
    }
-   
+
+  hostbuf[i]='\0';
+  fui->host=frontier_str_copy(hostbuf);
+  
+  if(*p==':')
+   {
+    ++p;
+    fui->port=atoi(p);
+    while(*p && (*p>='0') && (*p<='9')) ++p;
+   }
+  else
+   fui->port=80;
+  
   if(fui->port<=0 || fui->port>=65534)
    {
-    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad port number in the url %s",url);
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad port number in url %s",url);
     *ec=FRONTIER_ECFG;
     goto err;
    }
    
-  if(*p) while(*p && *p=='/') ++p;
+  if(*p!='/')
+   {
+    frontier_setErrorMsg(__FILE__,__LINE__,"config error: bad url %s",url);
+    *ec=FRONTIER_ECFG;
+    goto err;
+   }
   
-  if(!*p) return fui;
-  
-  bzero(buf,PARSE_BUF_SIZE);
-  i=0;  
-  while(*p) {buf[i]=*p; ++i; ++p;}
-  if(i) fui->path=frontier_str_copy(buf);
+  fui->path=frontier_str_copy(p);
 
   goto ok;
   
