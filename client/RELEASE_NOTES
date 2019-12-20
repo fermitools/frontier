@@ -1,8 +1,28 @@
-v2_8_21
+v2_8_21 - 20 Dec 2019 (dwd)
+  - Fix a crash during print of the fatal error message when someone
+    specifies a proxyconfigurl without a serverurl.
+  - Use "Cache-Control: no-cache" instead of "Pragma: no-cache" when a
+    cache entry needs a hard refresh.  This change is needed for the
+    default configuration of squid-3 (and later) which ignores Pragma
+    when there is a Cache-Control header (and frontier-client always
+    sends one).
+  - Randomize the starting addresses used from round-robin DNS lookups.
+  - Fix compilation on centos8.
+  - Allow "http://" to be missing from URLs.  This change is to support
+    the proxy auto config standard which allows http:// to be missing
+    in the return PROXY.
+  - Allow square brackets to surround the host name in URLs, in order
+    to be able to parse IPv6 IP addresses without confusing the colons
+    in them with the beginning of a port number.
+  - In debug, warning, and error messages that include IP addresses,
+    put IPv6 addresses in square brackets and add colon and port
+    number when it is known.
+  - Add lower level details in the warning message about retrying after
+    a system error.
   - Extend fn-fileget to read multiple chunks of data instead of one
     big chunk.
-  - Fix a crash during pring the fatal error message when someone
-    specifies a proxyconfigurl without a serverurl.
+  - Add elapsed seconds to the frontierqueries output and the -secsfirst
+    option to order it first.
 
 v2_8_20 - 3 Nov 2016 (dwd)
   - Fix bug introduced in v2_8_15 that caused a segmentation fault
