@@ -55,7 +55,7 @@ struct s_FrontierUrlInfo
 typedef struct s_FrontierUrlInfo FrontierUrlInfo;
 
 FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec);
-int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily);
+int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily,unsigned *rand_seedp);
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui);
 void frontier_FreeAddrInfo(FrontierUrlInfo *fui);
 

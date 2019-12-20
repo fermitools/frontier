@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <openssl/rand.h>
 
 #define HOST_BUF_SIZE	256
 
@@ -138,13 +139,17 @@ void frontier_FreeAddrInfo(FrontierUrlInfo *fui)
   fui->fai=fui->lastfai=fui->firstfaiinfamily=&fui->firstfai;
  }
  
-int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
+int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily,unsigned *rand_seedp)
  {
   struct addrinfo hints;
   int ret;
   struct addrinfo *ai;
   FrontierAddrInfo *fai;
-  sa_family_t preferaf;
+  sa_family_t family;
+  int ipfamily;
+  int didpreferred,scanagain;
+  int numipv4,numipv6,numaddrs;
+  int i,starti;
   
   if(fui->fai->ai)
     return FRONTIER_OK;
@@ -175,10 +180,26 @@ int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
 
   // for each ai after the first, allocate an fai
   // (it's after the first because one fai is pre-allocated)
-  ai=fui->ai->ai_next;
   fai=&fui->firstfai;
+  ai=fui->ai;
+  numipv4=0;
+  numipv6=0;
+  numaddrs=0;
   while(ai)
    {
+    if(ai->ai_family==AF_INET)
+      numipv4++;
+    else if(ai->ai_family==AF_INET6)
+      numipv6++;
+    else
+     {
+      // shouldn't happen, but just in case
+      ai=ai->ai_next;
+      continue;
+     }
+    ai=ai->ai_next;
+    if(numaddrs++==0)
+      continue; // skip allocating for preallocated one
     FrontierAddrInfo *nextfai=frontier_mem_alloc(sizeof(FrontierAddrInfo));
     if(!fai)
      {
@@ -188,47 +209,89 @@ int frontier_resolv_host(FrontierUrlInfo *fui,int preferipfamily)
     bzero(nextfai,sizeof(FrontierAddrInfo));
     fai->next=nextfai;
     fai=nextfai;
-    ai=ai->ai_next;
    }
 
   fai=&fui->firstfai;
 
-  // add preferred family addresses
+  // assign an ai to each fai, preferred family first
+
   ai=fui->ai;
   if(preferipfamily==4)
-    preferaf=AF_INET;
+    family=AF_INET;
   else if(preferipfamily==6)
-    preferaf=AF_INET6;
+    family=AF_INET6;
   else
-    preferaf=ai->ai_family; // prefer the family of the first one
-  while(ai)
+    family=ai->ai_family; // prefer the family of the first one
+
+  didpreferred=0;
+  while(1)  // do once for each family
    {
-    if(ai->ai_family==preferaf)
+    if(family==AF_INET)
      {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found ipv%d addr <%s>",fui->host,preferipfamily,frontier_ipaddr(ai->ai_addr));
-      fai->ai=ai;
-      fai=fai->next;
+      numaddrs=numipv4;
+      ipfamily=4;
      }
-    ai=ai->ai_next;
-   }
-   
-  // add non-preferred family addresses
-  ai=fui->ai;
-  while(ai)
-   {
-    if(ai->ai_family!=preferaf)
+    else if(family==AF_INET6)
      {
-      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found addr <%s>",fui->host,frontier_ipaddr(ai->ai_addr));
-      fai->ai=ai;
-      fai=fai->next;
+      numaddrs=numipv6;
+      ipfamily=6;
      }
-    ai=ai->ai_next;
+    else
+     {
+      numaddrs=0;
+      ipfamily=0;
+     }
+
+    scanagain=0;
+    i=0;
+    starti=0;
+    if(numaddrs>1)
+     {
+      // Randomize the starting address for this family
+      starti=rand_r(rand_seedp)%numaddrs;
+      if(starti>0)
+       {
+        while(i<starti)
+	 {
+	  if(ai->ai_family==family)
+	   i++;
+	  ai=ai->ai_next;
+	 }
+	scanagain=1;
+       }
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: ipv%d random start address %d of %d",fui->host,ipfamily,starti+1,numaddrs);
+     }
+    while(1) // scan twice if starti was greater than 0
+     {
+      while(ai&&(scanagain||(starti==0)||(i<starti)))
+       {
+	if(ai->ai_family==family)
+	 {
+	  i++;
+	  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"%s: found ipv%d addr <%s>",fui->host,ipfamily,frontier_ipaddr(ai->ai_addr));
+	  fai->ai=ai;
+	  fai=fai->next;
+	 }
+	ai=ai->ai_next;
+       }
+      if(!scanagain)
+        break;
+      scanagain=0;
+      i=0;
+      ai=fui->ai;
+     }
+    if(didpreferred)
+      break;
+    didpreferred=1;
+    if(family==AF_INET)
+      family=AF_INET6;
+    else
+      family=AF_INET;
+    ai=fui->ai;
    }
    
   return FRONTIER_OK; 
  }
- 
- 
  
 void frontier_DeleteUrlInfo(FrontierUrlInfo *fui)
  {
