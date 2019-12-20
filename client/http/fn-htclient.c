@@ -245,14 +245,28 @@ static int read_line(FrontierHttpClnt *c,char *buf,int buf_len)
   buf[i]=0;
   return i;
  }
-   
-  
+
+
+void initrand(FrontierHttpClnt *c)
+ {
+  unsigned seed;
+  if(!RAND_bytes((unsigned char *)&seed,sizeof(seed)))
+   {
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"failure getting random number, using time");
+    seed=(unsigned)time(0);
+   }
+  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"random seed: %u",seed);
+  c->proxyi.rand_seed=c->serveri.rand_seed=seed;
+ }
+
+
 static int open_connection(FrontierHttpClnt *c)
  {
   int ret;
   struct addrinfo *ai;
   FrontierUrlInfo *fui_proxy,*fui_server,*fui;
   in_port_t port;
+  unsigned *rand_seedp;
   
   if(c->socket!=-1)
    {
@@ -284,7 +298,10 @@ static int open_connection(FrontierHttpClnt *c)
     c->using_proxy=0;
    }
      
-  ret=frontier_resolv_host(fui,c->prefer_ip_family);
+  rand_seedp=&c->serveri.rand_seed;
+  if(*rand_seedp==0)
+    initrand(c);
+  ret=frontier_resolv_host(fui,c->prefer_ip_family,rand_seedp);
   if(ret) return ret;
   ai=fui->fai->ai;
 
@@ -1058,18 +1075,6 @@ char *frontierHttpClnt_myipaddr(FrontierHttpClnt *c)
   strncpy(buf,frontier_ipaddr((struct sockaddr *)&sockaddrbuf),sizeof(c->serveri.debugbuf));
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"my ip addr: %s",buf);
   return(buf);
- }
-
-void initrand(FrontierHttpClnt *c)
- {
-  unsigned seed;
-  if(!RAND_bytes((unsigned char *)&seed,sizeof(seed)))
-   {
-    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"failure getting random number, using time");
-    seed=(unsigned)time(0);
-   }
-  frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"random seed: %u",seed);
-  c->proxyi.rand_seed=c->serveri.rand_seed=seed;
  }
 
 void frontierHttpClnt_setNumBalancedProxies(FrontierHttpClnt *c,int num)
