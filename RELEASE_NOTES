@@ -1,5 +1,10 @@
 $Id$
 
+3.41 2019/12/31 (dwd)
+    - When a "X-Frontier-Opts: DontCacheErrors" request header is set, 
+      abort error responses before they send the zero-length http/1.1
+      last chunk.  This prevents proxies from caching the response.
+
 3.40 2018/08/20 (dwd)
     - Ignore any text before the BEGIN line in the private key file.
       This appears to have been done in 3.33 but lost in 3.34.

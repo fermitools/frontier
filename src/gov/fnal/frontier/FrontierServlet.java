@@ -21,7 +21,7 @@ import com.jcraft.jzlib.*;
 
 public final class FrontierServlet extends HttpServlet 
  {
-  private static final String frontierVersion="3.40";
+  private static final String frontierVersion="3.41";
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
@@ -168,7 +168,7 @@ public final class FrontierServlet extends HttpServlet
         Frontier.Log("Error initializing Frontier object:",e);
 	setAgeExpires(request,response,Frontier.errorDefaultMaxAge());
         ResponseFormat.begin(out,frontierVersion,xmlVersion);
-        ResponseFormat.putGlobalError(out,"Error: "+throwableDescript(e));
+	globalErrorMsg="Error: "+throwableDescript(e);
 	frontier=null;
         return; // this and all other returns here will drop down to "finally"
        }
@@ -457,6 +457,20 @@ public final class FrontierServlet extends HttpServlet
 	catch(Exception e)
 	 {
 	  Frontier.Log("Ignoring error with touch:",e);
+	 }
+       }
+
+      if(!globalErrorMsg.equals("") )
+       {
+	String opts=request.getHeader("X-Frontier-Opts");
+	if((opts!=null)&&(opts.contains("DontCacheErrors")))
+	 {
+	  // Throwing an exception prevents sending the last (zero length)
+	  //  chunk of HTTP/1.1 transfer encoding, which prevents proxies
+	  //  from caching the response.  This is needed for proxies that
+	  //  ignore client cache flush requests (such as Cloudflare).
+	  Frontier.Log("closing immediately");
+	  throw new ServletException("close now");
 	 }
        }
      }
