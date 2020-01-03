@@ -26,7 +26,6 @@
 typedef unsigned long FrontierChannel;
 typedef void FrontierRSBlob;
 
-
 /*frontierRSBlob_get is deprecated, use frontierRSBlob_open instead*/
 FrontierRSBlob *frontierRSBlob_get(FrontierChannel u_channel,int n,int *ec);
 FrontierRSBlob *frontierRSBlob_open(FrontierChannel u_channel,FrontierRSBlob *oldrs,int n,int *ec);
@@ -78,6 +77,31 @@ void frontier_free(void *ptr);
 // GZip and base64URL encode
 int fn_gzip_str2urlenc(const char *str,int size,char **out);
 
+// NOTE: The contents of this struct may not change or binary compatibility
+//   will break.
+struct s_FrontierStatisticsNum
+ {
+  unsigned int min;
+  unsigned int max;
+  unsigned int avg;
+ };
+typedef struct s_FrontierStatisticsNum FrontierStatisticsNum;
+
+// NOTE: for binary compatibility, variables should never be removed
+//   from this structure, and new ones should only be added to the end.
+struct s_FrontierStatistics
+ {
+  int num_queries;
+  int num_errors; // num with no response bytes; not included in other stats
+  FrontierStatisticsNum bytes_per_query;
+  FrontierStatisticsNum msecs_per_query;
+ };
+typedef struct s_FrontierStatistics FrontierStatistics;
+void frontier_statistics_start();
+// return is status as defined in frontier_error.h
+int frontier_statistics_get_bytes(FrontierStatistics *stats,int maxbytes);
+#define frontier_statistics_get(STATS) frontier_statistics_get_bytes(STATS, sizeof(*(STATS)))
+void frontier_statistics_stop();
 
 #endif /*__HEADER_H_FRONTIER_H*/
 

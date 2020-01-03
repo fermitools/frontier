@@ -230,6 +230,8 @@ static Channel *channel_create2(FrontierConfig *config, int *ec)
    }
   bzero(chn,sizeof(Channel));
 
+  frontier_statistics_start_debug();
+
   chn->seqnum=++chan_seqnum;
   chn->pid=frontier_pid;
   chn->cfg=config;
@@ -443,6 +445,8 @@ static void channel_delete(Channel *chn)
   for(i=0;i<FRONTIER_MAX_SERVERN;i++)
     if(chn->serverrsakey[i])
       RSA_free((RSA *)chn->serverrsakey[i]);
+  if(chn->seqnum==chan_seqnum)
+    frontier_statistics_stop_debug();
   frontier_mem_free(chn);
   fn_gzip_cleanup();
   frontier_log_close();
@@ -828,6 +832,7 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
   if(body)client_cache_bufsize=-1;
   else client_cache_bufsize=0;
 
+  chn->query_bytes=0;
   while(1)
    {
     ret=frontierHttpClnt_read(chn->ht_clnt,buf,8192);
@@ -836,6 +841,7 @@ static int get_data(Channel *chn,const char *uri,const char *body,int curserver)
 #if 0
     frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"read %d bytes from server",ret);
 #endif
+    chn->query_bytes+=ret;
     if((chn->client_cache_maxsize>0)&&(client_cache_bufsize>=0))
      {
       if(ret+client_cache_bufsize<=chn->client_cache_maxsize)
@@ -991,13 +997,18 @@ int frontier_postRawData(FrontierChannel u_channel,const char *uri,const char *b
     if(ret==FRONTIER_OK)
      {
       frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"querying on chan %d at %s",chn->seqnum,frontier_str_now(nowbuf));
+      frontier_statistics_start_query(&chn->query_stat);
       ret=get_data(chn,uri,body,curserver);    
       if(ret==FRONTIER_OK) 
        {
 	ret=frontierResponse_finalize(chn->resp);
 	frontier_turnErrorsIntoDebugs(0);
-	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",chn->seqnum,chn->resp->seqnum,frontier_str_now(nowbuf));
+	frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"chan %d response %d finished at %s",
+	  chn->seqnum,chn->resp->seqnum,frontier_str_now(nowbuf));
+	frontier_statistics_stop_query(&chn->query_stat,chn->query_bytes);
        }
+      else
+	frontier_statistics_stop_query(&chn->query_stat,0);
      }
 
     if(ret!=FRONTIER_OK)

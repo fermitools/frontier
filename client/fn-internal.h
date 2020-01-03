@@ -26,6 +26,7 @@
 #include "fn-base64.h"
 #include "openssl/md5.h"
 #include "openssl/sha.h"
+#include <time.h>
 
 struct s_FrontierMemBuf
  {
@@ -111,13 +112,19 @@ int frontierResponse_finalize(FrontierResponse *fr);
 #define FRONTIER_ENV_LOG_FILE	"FRONTIER_LOG_FILE"
 
 struct s_fn_hashtable;
-struct s_fn_client_cache_list {
-    struct s_fn_client_cache_list *next;
-    struct s_fn_hashtable *table;
-    char *servlet;
-};
+struct s_fn_client_cache_list
+ {
+  struct s_fn_client_cache_list *next;
+  struct s_fn_hashtable *table;
+  char *servlet;
+ };
 typedef struct s_fn_client_cache_list fn_client_cache_list;
 
+struct s_fn_query_stat
+ {
+  struct timespec starttime;
+ };
+typedef struct s_fn_query_stat fn_query_stat;
 
 struct s_Channel
  {
@@ -138,6 +145,8 @@ struct s_Channel
   char *ttlforever_suffix;
   int client_cache_maxsize;
   void *serverrsakey[FRONTIER_MAX_SERVERN];
+  fn_query_stat query_stat;
+  int query_bytes;
  };
 typedef struct s_Channel Channel;
 
@@ -165,6 +174,11 @@ extern pid_t frontier_pid;
 extern void *(*frontier_mem_alloc)(size_t size);
 extern void (*frontier_mem_free)(void *p);
 extern void (*frontier_mem_free)(void *ptr);
+
+void frontier_statistics_start_debug();
+void frontier_statistics_stop_debug();
+void frontier_statistics_start_query(fn_query_stat *query_stat);
+void frontier_statistics_stop_query(fn_query_stat *query_stat,int response_bytes);
 
 #endif /*__HEADER_H_FN_INTERNAL_H*/
 

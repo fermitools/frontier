@@ -70,9 +70,9 @@ COMMON_INC	=	${EXPAT_INC} ${OPENSSL_INC} ${PACPARSER_INC} ${ZLIB_INC}
 INC		=	${COMMON_INC} -I./include -I.
 LIBDIR		=
 # -ldl needed by Fedora 18
-LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto -L. ${ZLIB_LD_FLAGS} -lz -ldl
+LIBS		= 	${EXPAT_LD_FLAGS} -lexpat ${OPENSSL_LD_FLAGS} -lssl -lcrypto -L. ${ZLIB_LD_FLAGS} -lz -ldl -lrt
 
-OBJ		=	fn-base64.o fn-hash.o fn-zlib.o frontier.o response.o payload.o rs-bin.o memdata.o \
+OBJ		=	fn-base64.o fn-hash.o fn-zlib.o frontier.o response.o payload.o rs-bin.o statistics.o memdata.o \
                         frontier_log.o frontier_error.o frontier_config.o fn-mem.o pacparser-dlopen.o anydata.o frontier-cpp.o FrontierExceptionMapper.o
 HDR		=	include/frontier_client/frontier.h fn-internal.h http/fn-htclient.h include/frontier_client/frontier_error.h include/frontier_client/frontier_log.h
 HDRXX		=	include/frontier_client/frontier-cpp.h include/frontier_client/FrontierException.hpp include/frontier_client/FrontierExceptionMapper.hpp
@@ -212,6 +212,9 @@ response.o: response.c $(HDR)
 
 rs-bin.o: rs-bin.c $(HDR)
 	$(CC) $(COPT) $(INC) -c rs-bin.c
+
+statistics.o: statistics.c $(HDR)
+	$(CC) $(COPT) $(INC) -c statistics.c
 
 memdata.o: memdata.c $(HDR) fn-zlib.h
 	$(CC) $(COPT) $(INC) -c memdata.c
