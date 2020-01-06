@@ -100,7 +100,7 @@ void frontier_statistics_start_query(fn_query_stat *query_stat)
    query_stat->starttime.tv_sec=0;
  }
 
-static void calcnumstats(FrontierStatisticsNum *num,int val)
+static void calcnumstats(FrontierStatisticsNum *num,unsigned int val)
  {
   double dqueries;
   if((num->min==0)||(val<num->min))
@@ -111,14 +111,14 @@ static void calcnumstats(FrontierStatisticsNum *num,int val)
   num->avg=round((dqueries*num->avg+val)/(statistics->num_queries+1));
  }
 
-void frontier_statistics_stop_query(fn_query_stat *query_stat,int numbytes)
+void frontier_statistics_stop_query(fn_query_stat *query_stat,unsigned int numbytes)
  {
-  int msec;
+  unsigned int msec;
   struct timespec now;
 
   if((statistics==NULL)||(query_stat==NULL)||(query_stat->starttime.tv_sec==0))
     return;
-  if(numbytes<=0)
+  if(numbytes==0)
    {
     statistics->num_errors++;
     query_stat->starttime.tv_sec=0;
@@ -135,7 +135,7 @@ void frontier_statistics_stop_query(fn_query_stat *query_stat,int numbytes)
   msec+=(now.tv_sec-query_stat->starttime.tv_sec)*1000;
 
   frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,
-      "query took %d milliseconds and read %d bytes",msec,numbytes);
+      "query took %u milliseconds and read %u bytes",msec,numbytes);
 
   calcnumstats(&statistics->msecs_per_query,msec);
   calcnumstats(&statistics->bytes_per_query,numbytes);

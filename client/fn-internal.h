@@ -146,7 +146,7 @@ struct s_Channel
   int client_cache_maxsize;
   void *serverrsakey[FRONTIER_MAX_SERVERN];
   fn_query_stat query_stat;
-  int query_bytes;
+  unsigned int query_bytes;
  };
 typedef struct s_Channel Channel;
 
@@ -178,7 +178,7 @@ extern void (*frontier_mem_free)(void *ptr);
 void frontier_statistics_start_debug();
 void frontier_statistics_stop_debug();
 void frontier_statistics_start_query(fn_query_stat *query_stat);
-void frontier_statistics_stop_query(fn_query_stat *query_stat,int response_bytes);
+void frontier_statistics_stop_query(fn_query_stat *query_stat,unsigned int response_bytes);
 
 #endif /*__HEADER_H_FN_INTERNAL_H*/
 
