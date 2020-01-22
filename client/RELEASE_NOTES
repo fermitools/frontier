@@ -1,3 +1,12 @@
+v2_9_0 - 22 Jan 2020 (dwd)
+  - Add the frontier_statistics C API.  Collects the number of queries,
+    the number of errors in fetches, and the min, max, and average of
+    both the number of bytes and elapsed milliseconds of queries.
+    When debug log level is enabled, the statistics are printed at the
+    end of the log.
+  - Update fn-req to use the statistics API by reporting the kilobytes
+    per second of the transfer.
+
 v2_8_21 - 20 Dec 2019 (dwd)
   - Fix a crash during print of the fatal error message when someone
     specifies a proxyconfigurl without a serverurl.
