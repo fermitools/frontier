@@ -17,6 +17,7 @@
 
 #include <unistd.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <stdexcept>
 #include <cstdlib>
@@ -82,10 +83,12 @@ int do_main(int argc, char **argv)
   int fork_count=0;
   int idx;
   std::string sql("");
+  FrontierStatistics fstats;
   
   try
    {
     frontier::init();
+    frontier_statistics_start();
     
     arg_ind=1;
     while(arg_ind<argc)
@@ -237,7 +240,7 @@ int do_main(int argc, char **argv)
 	      break;	  
 	    default: 
 	      std::cout<<"Error: unknown typeId "<<((int)(ad.type()))<<"\n"; 
-	      exit(1);
+	      goto errexit;
 	  }
 	  if(k+1<field_num) {
 	    std::cout<<" ";
@@ -249,30 +252,43 @@ int do_main(int argc, char **argv)
       }
       if(!ses.isEOF()) {
 	std::cout<<"Error: must be EOF here\n";
-	exit(1);
+	goto errexit;
       }
     }
   }
   catch(const frontier::ConfigurationError& e) {
     std::cout << "Frontier configuration error caught: " << e.what() << std::endl;
-    exit(1);
+    goto errexit;
   }
   catch(const frontier::FrontierException& e) {
     std::cout << "Frontier exception caught: " << e.what() << std::endl;
-    exit(1);
+    goto errexit;
   }
   catch(std::exception& e)
    {
     std::cout << "Error: " << e.what() << "\n";
-    exit(1);
+    goto errexit;
    }
   catch(...)
    {
     std::cout << "Unknown exception\n";
-    exit(1);
+    goto errexit;
    }
 
+  frontier_statistics_get(&fstats);
+  if(fstats.msecs_per_query.avg > 0)
+   {
+    std::cout << std::endl << "Read rate: " << std::endl << std::setprecision(4)
+      << fstats.bytes_per_query.avg / (float) fstats.msecs_per_query.avg <<
+	" kbytes/sec" << std::endl;
+   }
+  frontier_statistics_stop();
+
   return 0;
+
+errexit:
+  frontier_statistics_stop();
+  return 1;
  }
 
 
