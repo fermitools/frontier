@@ -110,7 +110,7 @@ FrontierUrlInfo *frontier_CreateUrlInfo(const char *url,int *ec)
       *ec=FRONTIER_ECFG;
       goto err;
      }
-    fui->path=frontier_str_copy(p);
+    fui->path=frontier_str_copy(p+1);
    }
 
   *ec=FRONTIER_OK;
