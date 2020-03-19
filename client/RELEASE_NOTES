@@ -1,3 +1,4 @@
+v2_9_1 - 19 Mar 2020 (dwd)
   - Remove extra slash at the beginning of all http queries, introduced
     in 2.8.21 (with the ipv6 square brackets feature).
   - Make "Name or service not known" warning messages for proxyconfigurls
