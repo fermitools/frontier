@@ -821,6 +821,7 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
   char *ipaddr,*proxylist;
   char *p,*endp,endc;
   int gotdirect=0;
+  int trynextloglevel;
 
   if(cfg->proxyconfig_num<=0)
     return FRONTIER_OK;
@@ -938,11 +939,14 @@ int frontierConfig_doProxyConfig(FrontierConfig *cfg)
      }
 
     frontier_turnErrorsIntoDebugs(1);
+    trynextloglevel=FRONTIER_LOGLEVEL_WARNING;
 
     ret=frontierHttpClnt_open(clnt);
     if(ret!=FRONTIER_OK)
      {
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+      if (strstr(frontier_getErrorMsg(),"Name or service not known")!=0)
+        trynextloglevel=FRONTIER_LOGLEVEL_DEBUG;
+      frontier_log(trynextloglevel,__FILE__,__LINE__,
 	 "unable to connect to proxyconfig server %s: %s",
 		frontierHttpClnt_curservername(clnt), frontier_getErrorMsg());
       goto trynext;
@@ -1002,7 +1006,7 @@ trynext:
 	    (strncmp(cfg->proxyconfig[curproxyconfig],"file://",7)==0))
        {
         // there is a file:// URL still to try
-        frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+        frontier_log(trynextloglevel,__FILE__,__LINE__,
           "Trying next proxyconfig url %s", cfg->proxyconfig[curproxyconfig]);
        }
       else
@@ -1016,7 +1020,7 @@ trynext:
     else
      {
       curproxyconfig=nextproxyconfig;
-      frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,
+      frontier_log(trynextloglevel,__FILE__,__LINE__,
         "Trying next proxyconfig server %s",
 	 	frontierHttpClnt_curservername(clnt));
      }
