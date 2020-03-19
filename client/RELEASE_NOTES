@@ -1,5 +1,8 @@
   - Remove extra slash at the beginning of all http queries, introduced
     in 2.8.21 (with the ipv6 square brackets feature).
+  - Make "Name or service not known" warning messages for proxyconfigurls
+    into debug messages, since it is recommended to try grid-wpad and wpad
+    even though in most cases the names do not exist.
 
 v2_9_0 - 22 Jan 2020 (dwd)
   - Add the frontier_statistics C API.  Collects the number of queries,
