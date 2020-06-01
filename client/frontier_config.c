@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #include "pacparser.h"
+#include "fn-internal.h"
 #include <http/fn-htclient.h>
 #include "frontier_client/frontier_config.h"
 #include "frontier_client/frontier_log.h"
@@ -46,9 +47,6 @@ static char *default_logical_server=0;
 static char *default_physical_servers=0;
 
 #define ENV_BUF_SIZE	1024
-
-void *(*frontier_mem_alloc)(size_t size);
-void (*frontier_mem_free)(void *ptr);
 
 int frontier_pacparser_init(void);
 
