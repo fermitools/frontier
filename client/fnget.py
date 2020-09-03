@@ -37,7 +37,7 @@ except ImportError:  # python < 3
   import httplib as http_client
   import urllib2 as urllib_request
 
-frontierId = "fnget.py 1.8"
+frontierId = "fnget.py 1.9"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
