@@ -1,0 +1,30 @@
+#!/bin/bash
+export PATH=/usr/bin:$PATH
+dodecode()
+{
+python -c '
+import sys, string
+import base64
+import zlib
+for line in sys.stdin.readlines():
+    words=string.split(line)
+    url=words[6]
+    urlparts=url.split("&p1=",1)
+    encparts=urlparts[1].split("&",1)
+    if len(encparts) > 1:
+	ttlpart="&"+encparts[1]
+    else:
+	ttlpart=""
+    encQuery=encparts[0].replace(".","+").replace("-","/").replace("_","=")
+    decQuery=zlib.decompress(base64.binascii.a2b_base64(encQuery)).strip()
+    print " ".join(words[0:5]),urlparts[0]+"&p1=["+decQuery+"]"+ttlpart," ".join(words[7:])
+'
+}
+
+if [ $# = 0 ]; then
+    dodecode
+else
+    for F in $*; do
+	dodecode <$F
+    done
+fi
