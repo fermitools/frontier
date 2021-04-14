@@ -20,8 +20,8 @@
 #   --sql="select name,version from frontier_descriptors"
 #
 #
+from __future__ import print_function
 import sys
-import urllib2
 from xml.dom.minidom import parseString
 import base64
 import zlib 
@@ -30,14 +30,21 @@ import curses.ascii
 import time
 import os.path
 
-frontierId = "fnget.py 1.8"
+try:
+  from http import client as http_client
+  from urllib import request as urllib_request
+except ImportError:  # python < 3
+  import httplib as http_client
+  import urllib2 as urllib_request
+
+frontierId = "fnget.py 1.9"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
-  print "Usage:"
-  print "  %s --url=<frontier url> --sql=<sql query> [--no-decode]" % progName
-  print "     [--refresh-cache] [--retrieve-ziplevel=N] [--sign]"
-  print " "
+  print("Usage:")
+  print("  %s --url=<frontier url> --sql=<sql query> [--no-decode]" % progName)
+  print("     [--refresh-cache] [--retrieve-ziplevel=N] [--sign]")
+  print(" ")
 
 frontierUrl = None
 frontierQuery = None
@@ -47,17 +54,17 @@ statsFlag = False
 retrieveZiplevel = "zip"
 signParam=""
 for a in sys.argv[1:]:
-  arg = string.split(a, "=")
+  arg = a.split("=")
   if arg[0] == "--url":
     frontierUrl = arg[1]
   elif arg[0] == "--sql":
-    frontierQuery = string.join(arg[1:], "=")
+    frontierQuery = "=".join(arg[1:])
   elif arg[0] == "--no-decode":
     decodeFlag = False
   elif arg[0] == "--refresh-cache":
     refreshFlag = True
   elif arg[0] == "--retrieve-ziplevel":
-    level = string.join(arg[1:], "=")
+    level = "=".join(arg[1:])
     retrieveZiplevel="zip%s" % (level)
     if level == "0":
       retrieveZiplevel = ""
@@ -66,7 +73,7 @@ for a in sys.argv[1:]:
   elif arg[0] == "--stats-only":
     statsFlag = True
   else:
-    print "Ignoring unrecognized argument: %s" % a
+    print("Ignoring unrecognized argument: %s" % a)
 
 if frontierUrl is None or frontierQuery is None:
   usage()
@@ -75,23 +82,23 @@ if frontierUrl is None or frontierQuery is None:
 if statsFlag:
   pass
 else:
-  print "Using Frontier URL: ", frontierUrl
-  print "Query: ", frontierQuery
-  print "Decode results: ", decodeFlag
-  print "Refresh cache: ", refreshFlag
+  print("Using Frontier URL: ", frontierUrl)
+  print("Query: ", frontierQuery)
+  print("Decode results: ", decodeFlag)
+  print("Refresh cache: ", refreshFlag)
 
 # encode query
-encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery,9)).replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
+encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery.encode('utf-8'),9)).decode('utf-8').replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
 
 # frontier request
 frontierRequest="%s/type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s%s" % (frontierUrl, retrieveZiplevel, encQuery, signParam)
 if statsFlag:
   pass
 else:
-  print "\nFrontier Request:\n", frontierRequest 
+  print("\nFrontier Request:\n", frontierRequest)
 
 # add refresh header if needed
-request = urllib2.Request(frontierRequest)
+request = urllib_request.Request(frontierRequest)
 if refreshFlag:
   request.add_header("pragma", "no-cache")
 
@@ -102,7 +109,7 @@ queryStart = time.localtime()
 if statsFlag:
   pass
 else:
-  print "\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart)
+  print("\nQuery started: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryStart))
 
 def _under_24():
   import sys
@@ -114,9 +121,7 @@ def _under_24():
 #---------------- define timeout on urllib2 socket ops -------------#
 #  Adapted from http://code.google.com/p/timeout-urllib2/
 
-from httplib import HTTPConnection as _HC
 import socket
-from urllib2 import HTTPHandler as _H
 
 def sethttptimeout(timeout):
   """Use TimeoutHTTPHandler and set the timeout value.
@@ -125,8 +130,8 @@ def sethttptimeout(timeout):
     timeout: the socket connection timeout value.
   """
   if _under_26():
-    opener = urllib2.build_opener(TimeoutHTTPHandler(timeout))
-    urllib2.install_opener(opener)
+    opener = urllib_request.build_opener(TimeoutHTTPHandler(timeout))
+    urllib_request.install_opener(opener)
   else:
     raise Error("This python version has timeout builtin")
 
@@ -145,7 +150,7 @@ class Error(Exception): pass
 
 class HTTPConnectionTimeoutError(Error): pass
 
-class TimeoutHTTPConnection(_HC):
+class TimeoutHTTPConnection(http_client.HTTPConnection):
   """A timeout control enabled HTTPConnection.
   
   Inherit httplib.HTTPConnection class and provide the socket timeout
@@ -162,7 +167,7 @@ class TimeoutHTTPConnection(_HC):
       strict: strict connection.
       timeout: socket connection timeout value.
     """
-    _HC.__init__(self, host, port, strict)
+    http_client.HTTPConnection.__init__(self, host, port, strict)
     self._timeout = timeout or TimeoutHTTPConnection._timeout
     if self._timeout: self._timeout = float(self._timeout)
 
@@ -187,27 +192,27 @@ class TimeoutHTTPConnection(_HC):
           self.sock = socket.socket(af, socktype, proto)
           if self._timeout: self.sock.settimeout(self._timeout)
           if self.debuglevel > 0:
-            print "connect: (%s, %s)" % (self.host, self.port)
+            print("connect: (%s, %s)" % (self.host, self.port))
           self.sock.connect(sa)
-        except socket.timeout, msg:
+        except socket.timeout as msg:
           err = socket.timeout
           if self.debuglevel > 0:
-            print 'connect timeout:', (self.host, self.port)
+            print('connect timeout:', (self.host, self.port))
           self.sock = _clear(self.sock)
           continue
         break
-      except socket.error, msg:
+      except socket.error as msg:
         if self.debuglevel > 0:
-          print 'general connect fail:', (self.host, self.port)
+          print('general connect fail:', (self.host, self.port))
         self.sock = _clear(self.sock)
         continue
       break
     if not self.sock:
       if err == socket.timeout:
-        raise HTTPConnectionTimeoutError, msg
-      raise err, msg
+        raise HTTPConnectionTimeoutError(msg)
+      raise err(msg)
 
-class TimeoutHTTPHandler(_H):
+class TimeoutHTTPHandler(urllib_request.HTTPHandler):
   """A timeout enabled HTTPHandler for urllib2."""
   def __init__(self, timeout=None, debuglevel=0):
     """Initialize the object.
@@ -216,7 +221,7 @@ class TimeoutHTTPHandler(_H):
       timeout: the socket connect timeout value.
       debuglevel: the debuglevel level.
     """
-    _H.__init__(self, debuglevel)
+    urllib_request.HTTPHandler.__init__(self, debuglevel)
     TimeoutHTTPConnection._timeout = timeout
 
   def http_open(self, req):
@@ -227,25 +232,25 @@ class TimeoutHTTPHandler(_H):
 
 t1 = time.time()
 if _under_24():
-  print >> sys.stderr, "*WARNING:* no timeout available in python older than 2.4"
-  result = urllib2.urlopen(request).read()
+  print("*WARNING:* no timeout available in python older than 2.4", file=sys.stderr)
+  result = urllib_request.urlopen(request).read()
 elif _under_26():
   sethttptimeout(10)
-  result = urllib2.urlopen(request).read()
+  result = urllib_request.urlopen(request).read()
 else:
-  result = urllib2.urlopen(request,None,10).read()
+  result = urllib_request.urlopen(request,None,10).read()
 t2 = time.time()
 queryEnd = time.localtime()
 if statsFlag:
   duration=(t2-t1)
   size=len(result)
-  print duration,size,size/duration
+  print(duration,size,size/duration)
 else:
-  print "Query ended: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryEnd)
-  print "Query time: %s [seconds]\n" % (t2-t1)
+  print("Query ended: ", time.strftime("%m/%d/%y %H:%M:%S %Z", queryEnd))
+  print("Query time: %s [seconds]\n" % (t2-t1))
 
 if decodeFlag:
-  print "Query result:\n", result
+  print("Query result:\n", result.decode('utf-8'))
   dom = parseString(result)
   dataList = dom.getElementsByTagName("data")
   keepalives = 0
@@ -256,30 +261,30 @@ if decodeFlag:
       # <keepalive /> elements may be present, combined with whitespace text
       if node.nodeName == "keepalive":
 	# this is of type Element
-	keepalives += 1
+        keepalives += 1
         continue
       # else assume of type Text
       if node.data.strip() == "":
         continue
       if keepalives > 0:
-	print keepalives, "keepalives received\n"
-	keepalives = 0
+        print(keepalives, "keepalives received\n")
+        keepalives = 0
 
-      row = base64.decodestring(node.data)
+      row = base64.decodestring(node.data.encode('utf-8'))
       if retrieveZiplevel != "":
-        row = zlib.decompress(row)
+        row = zlib.decompress(row).decode('utf-8')
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
         row = row.replace(c, ' ')
 
-      print "\nFields: "
+      print("\nFields: ")
       endFirstRow = row.find('\x07')
       firstRow = row[:endFirstRow]
       for c in firstRow:
         if curses.ascii.isctrl(c):
           firstRow = firstRow.replace(c, '\n')
-      print firstRow
+      print(firstRow)
 
-      print "\nRecords:"
+      print("\nRecords:")
       pos = endFirstRow + 1
       while True:
         newrow = row[pos:]
@@ -289,4 +294,4 @@ if decodeFlag:
         fixedRow = newrow[:endRow]
         pos = pos + endRow + 1
         fixedRow = fixedRow.replace('\n', '')
-        print fixedRow
+        print(fixedRow)

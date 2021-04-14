@@ -1,3 +1,5 @@
+  - Fix to compile with gcc 10.1's new default -f-no-common option
+
 v2_9_1 - 19 Mar 2020 (dwd)
   - Remove extra slash at the beginning of all http queries, introduced
     in 2.8.21 (with the ipv6 square brackets feature).
