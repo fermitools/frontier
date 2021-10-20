@@ -161,6 +161,10 @@ static FrontierMemBuf *frontierMemData_allocbuffer(FrontierMemData *md)
 // append new base64-encoded data: decode it, calculate the message digest
 //  of the decoded data, and unzip it if it was zipped.  Put the result in 
 //  membufs.  If it is a final update, finalize the message digest & unzipping.
+// This is the most cpu-intensive function in the frontier client so
+//  allow threading by cautiously releasing the lock. Be careful not to
+//  call anything that is thread-unsafe, including functions that can
+//  print or set an error message, while unlocked.
 static int frontierMemData_append(FrontierMemData *md,
 			const unsigned char *buf,int size,int final)
  {
@@ -170,6 +174,7 @@ static int frontierMemData_append(FrontierMemData *md,
   int sizeused,spaceused;
   unsigned char *p2=0;
   int size2,spaceleft2;
+  int lockret; // gets set to zero if the the lock was set, else -1
 
   if(md->error!=FRONTIER_OK)
    {
@@ -186,6 +191,7 @@ static int frontierMemData_append(FrontierMemData *md,
     spaceleft=sizeof(md->zipbuf)-md->zipbuflen;
    }
 
+  lockret=frontier_unlock();
   while(1)
    {
     sizeused=size;
@@ -201,6 +207,7 @@ static int frontierMemData_append(FrontierMemData *md,
       if((size==0)&&(!final))
        {
 	// all the incoming buffer was copied to the zipbuf
+	if(lockret==0) frontier_lock();
         return FRONTIER_OK;
        }
       // else finished filling the zipbuf, update message digest
@@ -227,14 +234,17 @@ static int frontierMemData_append(FrontierMemData *md,
 	    //  so allocate another buffer and try again
 	    break;
 	  case Z_MEM_ERROR:
+	    if(lockret==0) frontier_lock();
 	    frontier_setErrorMsg(__FILE__,__LINE__,"unzip memory error");
 	    md->error=FRONTIER_EMEM;
 	    return md->error;
 	  case Z_DATA_ERROR:
+	    if(lockret==0) frontier_lock();
 	    frontier_setErrorMsg(__FILE__,__LINE__,"unzip data error");
 	    md->error=FRONTIER_EPROTO;
 	    return md->error;
 	  default:
+	    if(lockret==0) frontier_lock();
 	    frontier_setErrorMsg(__FILE__,__LINE__,"unzip unknown error");
 	    md->error=FRONTIER_EUNKNOWN;
 	    return md->error;
@@ -265,6 +275,7 @@ static int frontierMemData_append(FrontierMemData *md,
         mb=frontierMemData_allocbuffer(md);
         if(!mb)
 	 {
+	  if(lockret==0) frontier_lock();
 	  FRONTIER_MSG(FRONTIER_EMEM);
 	  return FRONTIER_EMEM;
 	 }
@@ -277,7 +288,10 @@ static int frontierMemData_append(FrontierMemData *md,
       mb->len+=spaceused;
       md->total+=spaceused;
       if((size==0)&&!final)
+       {
+	if(lockret==0) frontier_lock();
         return FRONTIER_OK;
+       }
       //else finished with this membuf, update message digest
       if(md->secured)
         (void)SHA256_Update(&md->sha256_ctx,((unsigned char *)mb)+sizeof(*mb),mb->len);
@@ -289,9 +303,10 @@ static int frontierMemData_append(FrontierMemData *md,
 	mb=frontierMemData_allocbuffer(md);
 	if(!mb)
 	 {
-	 md->error=FRONTIER_EMEM;
-	 FRONTIER_MSG(md->error);
-	 return md->error;
+	  if(lockret==0) frontier_lock();
+	  md->error=FRONTIER_EMEM;
+	  FRONTIER_MSG(md->error);
+	  return md->error;
 	 }
 	p=((unsigned char *)mb)+sizeof(*mb);
 	spaceleft=MEMBUF_SIZE;
@@ -303,6 +318,7 @@ static int frontierMemData_append(FrontierMemData *md,
         (void)SHA256_Final(md->sha256,&md->sha256_ctx);
       else
         (void)MD5_Final(md->md5,&md->md5_ctx);
+      if(lockret==0) frontier_lock();
       return FRONTIER_OK;
      }
    }

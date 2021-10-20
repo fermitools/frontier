@@ -278,7 +278,9 @@ int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *a
     return FRONTIER_EUNKNOWN;
    }
    
+  lockret=frontier_unlock();
   ret=recv(s,buf,size,0);
+  if(lockret==0)frontier_lock();
   if(ret>=0) return ret;
   
   frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));

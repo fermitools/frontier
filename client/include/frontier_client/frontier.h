@@ -19,7 +19,8 @@
  *   the configuration option threadsafe=yes is set on any channel or
  *   the function frontier_setThreadSafe() is called.  From then on all
  *   functions should be safe.  Parallelism is limited however, and is
- *   primarily only allowed while waiting for input.
+ *   primarily only allowed while waiting for input and while doing
+ *   the cpu-intensive unpacking of data.
  * With multiple threads, frontier_getErrorMsg() is not reliable outside
  *   of the client and may return a value from a different thread.
  */
