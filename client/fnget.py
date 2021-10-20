@@ -238,6 +238,10 @@ elif _under_26():
   sethttptimeout(10)
   result = urllib_request.urlopen(request).read()
 else:
+  # to enable http debug do these 3 instead
+  # httphandler = urllib_request.HTTPHandler(debuglevel=1)
+  # opener = urllib_request.build_opener(httphandler)
+  # result = opener.open(request,None,10).read()
   result = urllib_request.urlopen(request,None,10).read()
 t2 = time.time()
 queryEnd = time.localtime()
