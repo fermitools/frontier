@@ -21,6 +21,24 @@
 static z_stream *dezstream=0;
 static z_stream *inzstream=0;
 
+// Since inflates happen across multiple operations, for multithread
+//   support use fn_save to save the inflate stream when exiting the
+//   protected section and use fn_zrestore to restore it when entering
+//   the protected section.  Initialize the value by calling
+//   fn_gunzip_init followed by fn_zsave.
+
+void *fn_zsave()
+ {
+   void *savep = (void *)inzstream;
+   inzstream=0;
+   return savep;
+ }
+
+void fn_zrestore(void *savep)
+ {
+   inzstream=(z_stream *)savep;
+ }
+
 static void *fn_zalloc(void *opaque,uInt items,uInt size)
  {
   return frontier_mem_alloc(items*size);
@@ -118,6 +136,8 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   unsigned char *abuf=0;
   
   if(size>MAX_STR2URL_SIZE) return FN_ZLIB_E_TOOBIG;
+
+  frontier_init_lock();
   if(str[size-1]=='\n')
     size--;  // don't include trailing newline
 
@@ -125,7 +145,11 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
   
   zsize=(int)(((double)size)*1.001+12);
   zbuf=frontier_mem_alloc(zsize);
-  if(!zbuf) return FN_ZLIB_E_NOMEM;
+  if(!zbuf)
+   {
+    frontier_init_unlock();
+    return FN_ZLIB_E_NOMEM;
+   }
   
   zret=fn_gzip_str(str,size,(char *)zbuf,zsize);
   if(zret<0) {ret=zret; goto end;}
@@ -143,6 +167,7 @@ int fn_gzip_str2urlenc(const char *str,int size,char **out)
 end:
   if(abuf) frontier_mem_free(abuf);
   if(zbuf) frontier_mem_free(zbuf);
+  frontier_init_unlock();
   return ret;
  }
 

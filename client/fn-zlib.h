@@ -27,5 +27,7 @@ void fn_gzip_cleanup();
 int fn_gunzip_init();
 int fn_gunzip_update(unsigned char *src,int *src_size,const unsigned char *dest,int *dest_size,int final);
 
+void *fn_zsave();
+void fn_zrestore(void *savep);
 
 #endif //__H__FN_ZLIB_H
