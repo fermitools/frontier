@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -53,11 +54,22 @@ static void channel_delete(Channel *chn);
 static fn_client_cache_list *client_cache_list=0;
 
 // See comments in frontier.h about thread safety
-static pthread_mutex_t mutex_lock = PTHREAD_MUTEX_INITIALIZER;
-static int threadsafe = 0;
+static pthread_mutex_t mutex_lock;
+static pthread_once_t mutex_init_control=PTHREAD_ONCE_INIT;
+static pthread_mutexattr_t mutex_attr;
+static int threadsafe=0;
+static int thread_debug=0;
+
+static void init_mutex()
+ {
+  pthread_mutexattr_init(&mutex_attr);
+  pthread_mutexattr_settype(&mutex_attr,PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutex_init(&mutex_lock,&mutex_attr);
+ }
 
 void frontier_init_lock()
  {
+  pthread_once(&mutex_init_control,init_mutex);
   pthread_mutex_lock(&mutex_lock);
  }
 
@@ -68,13 +80,31 @@ void frontier_init_unlock()
 
 void frontier_lock()
  {
-  if(threadsafe) pthread_mutex_lock(&mutex_lock);
+  if(!threadsafe)
+    return;
+  int lockret=pthread_mutex_lock(&mutex_lock);
+  if(lockret==0)
+   {
+    if(thread_debug)
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"thread %d acquired lock",syscall(SYS_gettid));
+   }
+  else
+    frontier_log(FRONTIER_LOGLEVEL_WARNING,__FILE__,__LINE__,"thread %d failed to acquire thread lock, error %d",syscall(SYS_gettid),lockret);
  }
 
 int frontier_unlock()
  {
-  if(threadsafe) return(pthread_mutex_unlock(&mutex_lock));
-  return 0;
+  if(!threadsafe)
+    return 0;
+  int unlockret=pthread_mutex_unlock(&mutex_lock);
+  if(thread_debug)
+   {
+    if(unlockret==0)
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"thread %d released lock",syscall(SYS_gettid));
+    else
+      frontier_log(FRONTIER_LOGLEVEL_DEBUG,__FILE__,__LINE__,"thread %d failed to release thread lock, error %d",syscall(SYS_gettid),unlockret);
+   }
+  return unlockret;
  }
 
 void frontier_setThreadSafe()
@@ -211,7 +241,12 @@ int frontier_initdebug(void *(*f_mem_alloc)(size_t size),void (*f_mem_free)(void
     if(strcasecmp(loglevel,"warning")==0 || strcasecmp(loglevel,"info")==0) frontier_log_level=FRONTIER_LOGLEVEL_WARNING;
     else if(strcasecmp(loglevel,"error")==0) frontier_log_level=FRONTIER_LOGLEVEL_ERROR;
     else if(strcasecmp(loglevel,"nolog")==0) frontier_log_level=FRONTIER_LOGLEVEL_NOLOG;
-    else frontier_log_level=FRONTIER_LOGLEVEL_DEBUG;
+    else
+     {
+      frontier_log_level=FRONTIER_LOGLEVEL_DEBUG;
+      if(strcasecmp(loglevel,"thread")==0)
+       thread_debug=1;
+     }
     
     if(!logfilename)
      {
