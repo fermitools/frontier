@@ -1,4 +1,5 @@
-  - Fix to compile with gcc 10.1's new default -f-no-common option
+  - Fix to compile with gcc 10.1's new default -f-no-common option.
+  - Update fnget.py to its version 1.10, to work with the python3 on EL9.
 
 v2_9_1 - 19 Mar 2020 (dwd)
   - Remove extra slash at the beginning of all http queries, introduced
