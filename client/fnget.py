@@ -254,7 +254,7 @@ else:
   print("Query time: %s [seconds]\n" % (t2-t1))
 
 if decodeFlag:
-  print("Query result:\n", result.decode('utf-8'))
+  print("Query result:\n", result.decode('utf-8',errors='ignore'))
   dom = parseString(result)
   dataList = dom.getElementsByTagName("data")
   keepalives = 0
@@ -276,7 +276,7 @@ if decodeFlag:
 
       row = base64.decodestring(node.data.encode('utf-8'))
       if retrieveZiplevel != "":
-        row = zlib.decompress(row).decode('utf-8')
+        row = zlib.decompress(row).decode('utf-8',errors='ignore')
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
         row = row.replace(c, ' ')
 
