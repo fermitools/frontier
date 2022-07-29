@@ -23,7 +23,6 @@
 from __future__ import print_function
 import sys
 from xml.dom.minidom import parseString
-import base64
 import zlib 
 import string
 import curses.ascii
@@ -37,7 +36,13 @@ except ImportError:  # python < 3
   import httplib as http_client
   import urllib2 as urllib_request
 
-frontierId = "fnget.py 1.9"
+try:
+  from base64 import decodebytes as base64_decode
+except ImportError:  # python < 3
+  from base64 import decodestring as base64_decode
+from base64 import binascii as base64_binascii
+
+frontierId = "fnget.py 1.10"
 
 def usage():
   progName = os.path.basename(sys.argv[0])
@@ -88,7 +93,7 @@ else:
   print("Refresh cache: ", refreshFlag)
 
 # encode query
-encQuery = base64.binascii.b2a_base64(zlib.compress(frontierQuery.encode('utf-8'),9)).decode('utf-8').replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
+encQuery = base64_binascii.b2a_base64(zlib.compress(frontierQuery.encode('utf-8'),9)).decode('utf-8').replace("+", ".").replace("\n","").replace("/","-").replace("=","_")
 
 # frontier request
 frontierRequest="%s/type=frontier_request:1:DEFAULT&encoding=BLOB%s&p1=%s%s" % (frontierUrl, retrieveZiplevel, encQuery, signParam)
@@ -274,7 +279,7 @@ if decodeFlag:
         print(keepalives, "keepalives received\n")
         keepalives = 0
 
-      row = base64.decodestring(node.data.encode('utf-8'))
+      row = base64_decode(node.data.encode('utf-8'))
       if retrieveZiplevel != "":
         row = zlib.decompress(row).decode('utf-8',errors='ignore')
       for c in [ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x1b', '\x17'  ]:
