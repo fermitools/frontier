@@ -13,7 +13,7 @@
 #
 
 FN_VER_MAJOR	=	2
-FN_VER_MINOR	=	9.1
+FN_VER_MINOR	=	10.1
 COMPILER_TAG    =       $(CC)_$(shell $(CC) -dumpversion)
 PACKAGE_TAG     =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__$(COMPILER_TAG)
 SRC_PACKAGE_TAG =       $(FN_VER_MAJOR).$(FN_VER_MINOR)__src
@@ -100,7 +100,7 @@ package := frontier_client
 tmpdir := $(shell pwd)/tmp
 installdir := $(shell pwd)/dist
 distdir := $(installdir)
-files := ./RELEASE_NOTES ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.*
+files := ./RELEASE_NOTES ./bin/* ./lib/*.$(DYLIBTYPE)* ./include/frontier_client/*.* ./python/*/*
 src_files = `sh -c "find . \\( \\( -name CVS -o -name SCCS -o -name tmp \\) -prune \\) -o \\( -type d -links 2 -print -prune \\) -o \\! -type d ! -name '.manifest*' ! \\( -name core -type f \\)  -print 2>/dev/null | sort"`
 distfile := $(tmpdir)/$(package)__$(PACKAGE_TAG).tar
 distfile_gz := $(distfile).gz
@@ -149,6 +149,7 @@ else
 	(cd $(distdir)/lib/ && ln -s libfrontier_client.so.$(FN_VER_MAJOR).$(FN_VER_MINOR) libfrontier_client.so )
 endif
 	cp -r include $(distdir)
+	cp -r python $(distdir)
 	cp $(BINAPP) $(distdir)/bin
 	chmod 755 $(BINSCRIPTS)
 	cp $(BINSCRIPTS) $(distdir)/bin

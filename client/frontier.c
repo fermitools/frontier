@@ -465,13 +465,14 @@ static void frontier_fini()
 FrontierChannel frontier_createChannel(const char *srv,const char *proxy,int *ec)
  {
   Channel *chn=channel_create(srv,proxy,ec);
-  return (unsigned long)chn;
+  return (FrontierChannel)chn;
  }
 
-FrontierChannel frontier_createChannel2(FrontierConfig* config, int *ec) {
+FrontierChannel frontier_createChannel2(FrontierConfig* config, int *ec)
+ {
   Channel *chn = channel_create2(config, ec);
-  return (unsigned long)chn;
-}
+  return (FrontierChannel)chn;
+ }
 
 
 void frontier_closeChannel(FrontierChannel fchn)

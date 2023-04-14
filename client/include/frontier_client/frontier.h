@@ -16,6 +16,7 @@
 #ifndef __HEADER_H_FRONTIER_H
 #define __HEADER_H_FRONTIER_H
 
+#include <inttypes.h>
 #include <sys/types.h>
 #include "frontier_config.h"
 #include "frontier_log.h"
@@ -23,7 +24,7 @@
 
 #define FRONTIER_MAX_PAYLOADNUM	32
 
-typedef unsigned long FrontierChannel;
+typedef uintptr_t FrontierChannel;
 typedef void FrontierRSBlob;
 
 /*frontierRSBlob_get is deprecated, use frontierRSBlob_open instead*/
