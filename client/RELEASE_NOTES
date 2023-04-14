@@ -1,6 +1,5 @@
-v2_9_2 - 7 Apr 2023 (cvuosalo)
+v2_10_1 - 7 Apr 2023 (cvuosalo)
   - Add Python bindings and related patch that CMS has been using.
-
   - Fix to compile with gcc 10.1's new default -f-no-common option.
   - Update fnget.py to its version 1.10, to work with the python3 on EL9.
 
