@@ -20,7 +20,7 @@
 static void *pp_dlhandle;
 static int (*pp_init)(void);
 static void (*pp_set_error_printer)(pacparser_error_printer);
-static void (*pp_setmyip)(const char *);
+static int (*pp_setmyip)(const char *);
 static int (*pp_parse_pac_string)(const char *);
 static char *(*pp_find_proxy)(const char *,const char *);
 static void (*pp_cleanup)(void);
@@ -91,11 +91,11 @@ void pacparser_set_error_printer(pacparser_error_printer func)
   return;
  }
 
-void pacparser_setmyip(const char *ip)
+int pacparser_setmyip(const char *ip)
  {
   if(!pp_dlhandle)
-    return;
-  (*pp_setmyip)(ip);
+    return 0;
+  return (*pp_setmyip)(ip);
  }
 
 int pacparser_parse_pac_string(const char *string)
