@@ -1,3 +1,10 @@
+v2_10_2 - 13 Jun 2023 (cvuosalo)
+  - Update to be compatible with pacparser v1.4.2, which has a security
+    fix that prevents injection of arbitrary code for execution. With some
+    versions of some compilers, such as gcc 4.8.5, the following line must
+    be added to the pacparser v1.4.2 Makefile:
+    CFLAGS = -std=gnu99
+
 v2_10_1 - 7 Apr 2023 (cvuosalo)
   - Add Python bindings and related patch that CMS has been using.
   - Fix to compile with gcc 10.1's new default -f-no-common option.
