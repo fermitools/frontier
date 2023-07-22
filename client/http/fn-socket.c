@@ -14,6 +14,7 @@
  */
  
 #include <fn-htclient.h>
+#include "../fn-internal.h"
  
 #include <unistd.h>
 #include <fcntl.h>
@@ -242,15 +243,23 @@ int frontier_write(int s,const char *buf, int len, int timeoutsecs,struct addrin
 int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *addr)
  {
   int ret;
+  int lockret,saveerrno;
   struct pollfd pfd;
 
   pfd.fd=s;
   pfd.events=POLLIN;
+  lockret=frontier_unlock();
   do
    {
     pfd.revents=0;
     ret=poll(&pfd,1,timeoutsecs*1000);
    }while((ret<0)&&(errno==EINTR));  /*this loop is to support profiling*/
+  if(lockret==0)
+   {
+    saveerrno=errno;
+    frontier_lock();
+    errno=saveerrno;
+   }
   if(ret<0) 
    {
     frontier_setErrorMsg(__FILE__,__LINE__,"system error %d on poll: %s",errno,strerror(errno));
@@ -269,7 +278,9 @@ int frontier_read(int s, char *buf, int size, int timeoutsecs,struct addrinfo *a
     return FRONTIER_EUNKNOWN;
    }
    
+  lockret=frontier_unlock();
   ret=recv(s,buf,size,0);
+  if(lockret==0)frontier_lock();
   if(ret>=0) return ret;
   
   frontier_setErrorMsg(__FILE__,__LINE__,"system error %d: %s",errno,strerror(errno));

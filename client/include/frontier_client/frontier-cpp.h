@@ -74,6 +74,8 @@ int init();
 // each level includes all messages at lower levels
 int init(const std::string& logfilename, const std::string& loglevel);
 
+void setThreadSafe();
+
 // Enum sucks
 typedef unsigned char BLOB_TYPE;
 const BLOB_TYPE BLOB_BIT_NULL=(1<<7);

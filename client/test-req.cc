@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <cstring>
+#include <pthread.h>
 
 int do_main(int argc, char **argv);
 static std::string escape_list="\\\'";
@@ -64,27 +65,34 @@ static void print_usage(char **argv)
   std::cout<<"  -n: do not print data\n";
   std::cout<<"  -c N: repeat the query N count times\n";
   std::cout<<"  -F N: fork after Nth repetition\n";
+  std::cout<<"  -t N: do the same query(ies) in N threads\n";
  }
+
+static struct {
+  int ttl;
+  int do_print;
+  int repeat_count;
+  int fork_count;
+  int num_threads;
+  std::string sql;
+} opts;
+
+static void *do_queries(void *param);
  
 int do_main(int argc, char **argv)
  {
-  //char vc;
-  int vi;
-  long long vl;
-  float vf;
-  double vd;
-  std::string *vs=0;
-  frontier::AnyData ad;
   char *file_name=0;
   int arg_ind;
-  int ttl=2;
-  int do_print=1;
-  int repeat_count=1;
-  int fork_count=0;
-  int idx;
+  int i;
   std::string sql("");
   FrontierStatistics fstats;
   
+  opts.ttl=2;
+  opts.do_print=1;
+  opts.repeat_count=1;
+  opts.fork_count=0;
+  opts.num_threads=1;
+
   try
    {
     frontier::init();
@@ -99,19 +107,25 @@ int do_main(int argc, char **argv)
         exit(0);
        }
       if(strcmp(argv[arg_ind],"-r")==0)
-        ttl=1;
+        opts.ttl=1;
       else if(strcmp(argv[arg_ind],"-R")==0)
-        ttl=3;
+        opts.ttl=3;
       else if(strcmp(argv[arg_ind],"-n")==0)
-        do_print=0;
+        opts.do_print=0;
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-c")==0)
        {
-        repeat_count=atoi(argv[arg_ind+1]);
+        opts.repeat_count=atoi(argv[arg_ind+1]);
 	arg_ind++;
        }
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-F")==0)
        {
-        fork_count=atoi(argv[arg_ind+1]);
+        opts.fork_count=atoi(argv[arg_ind+1]);
+	arg_ind++;
+       }
+      else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-t")==0)
+       {
+	frontier::setThreadSafe();
+        opts.num_threads=atoi(argv[arg_ind+1]);
 	arg_ind++;
        }
       else if(argc>(arg_ind+1) && strcmp(argv[arg_ind],"-f")==0)
@@ -150,9 +164,68 @@ int do_main(int argc, char **argv)
       sql+=tmp;
      }
     if(file_name) {in_file.close();}
-    std::cout<<"Entered:\n"<<sql<<'\n';
+   }
+  catch(std::exception& e)
+   {
+    std::cout << "Error: " << e.what() << "\n";
+    exit(1);
+   }
+  catch(...)
+   {
+    std::cout << "Unknown exception\n";
+    exit(1);
+   }
+  opts.sql=sql;
+
+  pthread_t *threads=0;
+  if (opts.num_threads>1)
+    threads=new pthread_t[opts.num_threads-1];
+  for(i=0; i<opts.num_threads-1; i++)
+   {
+    pthread_create(&threads[i], NULL, do_queries, NULL);
+   }
+
+  do_queries(NULL);
+
+  int ret=0;
+  for(i=0; i<opts.num_threads-1; i++)
+   {
+    int tret;
+    // wait for the threads to complete
+    pthread_join(threads[i],(void**)&tret);
+    ret+=tret;
+   }
+
+  frontier_statistics_get(&fstats);
+  if(fstats.msecs_per_query.avg > 0)
+   {
+    std::cout << std::endl << "Read rate: " << std::endl << std::setprecision(4)
+      << fstats.bytes_per_query.avg / (float) fstats.msecs_per_query.avg <<
+	" kbytes/sec" << std::endl;
+   }
+  frontier_statistics_stop();
+
+  return ret;
+ }
+
+void *do_queries(void *param)
+ {
+  //char vc;
+  int vi;
+  long long vl;
+  float vf;
+  double vd;
+  std::string *vs=0;
+  frontier::AnyData ad;
+  int idx;
+
+  try
+   {
+    frontier::init();
+
+    std::cout<<"Entered:\n"<<opts.sql<<'\n';
     
-    std::string param=frontier::Request::encodeParam(sql);
+    std::string param=frontier::Request::encodeParam(opts.sql);
     std::cout<<"Param ["<<param<<"]\n";
           
     std::list<std::string> serverList;
@@ -161,13 +234,13 @@ int do_main(int argc, char **argv)
     //frontier::DataSource ds(serverList, proxyList);
     frontier::Connection con(serverList, proxyList);
 
-    for(idx=0;idx<repeat_count;idx++)
+    for(idx=0;idx<opts.repeat_count;idx++)
      {
-      if((fork_count>0)&&(idx==fork_count))
+      if((opts.fork_count>0)&&(idx==opts.fork_count))
         fork();
 
       frontier::Session ses(&con);
-      con.setTimeToLive(ttl);
+      con.setTimeToLive(opts.ttl);
 
       frontier::Request req(req_data,frontier::BLOB);
       req.addKey("p1",param);
@@ -198,7 +271,7 @@ int do_main(int argc, char **argv)
       std::cout<<"\nResult contains "<< nrec<<" objects.\n";
 	  
       while(ses.next()) {
-	if(!do_print)continue;
+	if(!opts.do_print)continue;
 	for(int k=0;k<field_num;k++) {
 	  ses.getAnyData(&ad);
 	  switch(ad.type()) {
@@ -275,20 +348,11 @@ int do_main(int argc, char **argv)
     goto errexit;
    }
 
-  frontier_statistics_get(&fstats);
-  if(fstats.msecs_per_query.avg > 0)
-   {
-    std::cout << std::endl << "Read rate: " << std::endl << std::setprecision(4)
-      << fstats.bytes_per_query.avg / (float) fstats.msecs_per_query.avg <<
-	" kbytes/sec" << std::endl;
-   }
-  frontier_statistics_stop();
-
-  return 0;
+  return (void *) 0;
 
 errexit:
   frontier_statistics_stop();
-  return 1;
+  return (void *) 1;
  }
 
 

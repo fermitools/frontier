@@ -103,6 +103,10 @@ int frontier::init(const std::string& logfilename, const std::string& loglevel)
   return ret;
  }
 
+void frontier::setThreadSafe()
+ {
+  frontier_setThreadSafe();
+ }
  
 Connection::Connection(const std::string& server_url,const std::string* proxy_url)
  {
