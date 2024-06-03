@@ -192,70 +192,71 @@ public class FilePlugin implements FrontierPlugin
       try
        {
         long timestamp=(new Date()).getTime();
-        PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
+	PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
 
-        out.println("GET "+getStr+" HTTP/1.1\r");
-        out.println("User-Agent: frontier\r");
-        out.println("Host: "+host+"\r");
-        if(if_modified_since>0)
-          out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
-        out.println("\r");
+	out.println("GET "+getStr+" HTTP/1.1\r");
+	out.println("User-Agent: frontier\r");
+	out.println("Host: "+host+"\r");
+	if(if_modified_since>0)
+	  out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
+	out.println("\r");
 
-        instream=new BufferedInputStream(sock.getInputStream());
-        String line=readHeaderLine(instream);
-        if(line==null)
-          throw new Exception("empty response from "+url);
-        if(!line.substring(0,7).equals("HTTP/1."))
-          throw new Exception("bad response "+line+" from "+url);
-        String responsecode=line.substring(8,8+5);
-        if(responsecode.equals(" 304 "))
-         {
-          if(Frontier.getHighVerbosity())Frontier.Log("NOT MODIFIED response");
-          sock.close();
-          return if_modified_since;
-         }
-        if(!responsecode.equals(" 200 "))
-          throw new Exception("bad response code "+line+" from "+url);
-            if(Frontier.getHighVerbosity())Frontier.Log("OK");
+	instream=new BufferedInputStream(sock.getInputStream());
+	String line=readHeaderLine(instream);
+	if(line==null)
+	  throw new Exception("empty response from "+url);
+	if(!line.substring(0,7).equals("HTTP/1."))
+	  throw new Exception("bad response "+line+" from "+url);
+	String responsecode=line.substring(8,8+5);
+	if(responsecode.equals(" 304 "))
+	 {
+	  if(Frontier.getHighVerbosity())Frontier.Log("NOT MODIFIED response");
+	  sock.close();
+	  return if_modified_since;
+	 }
+	if(!responsecode.equals(" 200 "))
+	  throw new Exception("bad response code "+line+" from "+url);
+        if(Frontier.getHighVerbosity())Frontier.Log("OK");
 
-        chunked=false;
-        while((line=readHeaderLine(instream))!=null)
-         {
-          // look at each header line
-          if(line.equals(""))
-            break;
-          int colonidx=line.indexOf(':');
-          if(colonidx<0)
-            continue;
-          String key=line.substring(0,colonidx).toLowerCase();
-          String val=line.substring(colonidx+2);
-          // Frontier.Log("header: "+key+": "+line.substring(colonidx+2));
-          if(key.equals("content-length"))
-           {
-            length=Integer.parseInt(val);
-            Frontier.Log("Content-Length: "+length);
-           }
-          else if(key.equals("transfer-encoding"))
-           {
-            if(val.equals("chunked"))
-             {
-              chunked=true;
-              if(Frontier.getHighVerbosity())Frontier.Log("Transfer-Encoding: chunked");
-             }
-           }
-          else if(key.equals("last-modified"))
-           {
-            if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
-            lastModified=FrontierServlet.parseDateHeader(val);
-           }
-         }
-         Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
+	chunked=false;
+	while((line=readHeaderLine(instream))!=null)
+	 {
+	  // look at each header line
+	  if(line.equals(""))
+	    break;
+	  int colonidx=line.indexOf(':');
+	  if(colonidx<0)
+	    continue;
+	  String key=line.substring(0,colonidx).toLowerCase();
+	  String val=line.substring(colonidx+2);
+	  // Frontier.Log("header: "+key+": "+line.substring(colonidx+2));
+	  if(key.equals("content-length"))
+	   {
+	    length=Integer.parseInt(val);
+	    Frontier.Log("Content-Length: "+length);
+	   }
+	  else if(key.equals("transfer-encoding"))
+	   {
+	    if(val.equals("chunked"))
+	     {
+	      chunked=true;
+	      if(Frontier.getHighVerbosity())Frontier.Log("Transfer-Encoding: chunked");
+	     }
+	   }
+	  else if(key.equals("last-modified"))
+	   {
+	    if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
+	    lastModified=FrontierServlet.parseDateHeader(val);
+	   }
+	 }
+
+        Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
        }
       catch(Exception e)
        {
-         // if any exception, close the socket & rethrow
-         sock.close();
-         throw e;
+	// if any exception, close the socket & rethrow
+	sock.close();
+	throw e;
        }
      }
     else
