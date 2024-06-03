@@ -22,6 +22,8 @@ import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import java.io.*;
 import java.net.Socket;
+import javax.net.ssl.*;
+import javax.net.*;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 
@@ -106,7 +108,7 @@ public class FilePlugin implements FrontierPlugin
     if(baseDir==null)
       throw new Exception("FileBaseDirectory not defined");
 
-    if (baseDir.substring(0,7).equals("http://"))
+    if (baseDir.substring(0,7).equals("http://") || baseDir.substring(0,8).equals("https://"))
      {
       // We'll return an answer later in getLastModified, don't want to
       //  ask the server until we have acquired the connection
@@ -145,107 +147,115 @@ public class FilePlugin implements FrontierPlugin
       throw new Exception("FileBaseDirectory not defined");
 
     long lastModified=0;
-    if (baseDir.substring(0,7).equals("http://"))
+    if (baseDir.substring(0,7).equals("http://") || baseDir.substring(0,8).equals("https://"))
      {
+      Integer index = 7;
+      String protocol = "http";
+      if (baseDir.substring(0,8).equals("https://"))
+       {
+        index = 8;
+        protocol = "https";
+       }
       // Retrieve file from http
       int port=80;
       String basePath="/";
-      String host=baseDir.substring(7);
+      String host=baseDir.substring(index);
       int endHost=host.indexOf(':');
       if(endHost<0)
 	endHost=host.indexOf('/');
       if(endHost>0)
        {
 	host=host.substring(0,endHost);
-	if(baseDir.charAt(7+endHost)==':')
+	if(baseDir.charAt(index+endHost)==':')
 	 {
-	  String portStr=baseDir.substring(7+endHost+1);
+	  String portStr=baseDir.substring(index+endHost+1);
 	  int endPort=portStr.indexOf('/');
 	  if(endPort>0)
 	   {
 	    portStr=portStr.substring(0,endPort);
-	    basePath=baseDir.substring(7+endHost+1+endPort);
+	    basePath=baseDir.substring(index+endHost+1+endPort);
 	   }
 	  port=Integer.parseInt(portStr);
 	 }
 	else
-	  basePath=baseDir.substring(7+endHost);
+	 {
+	  basePath=baseDir.substring(index+endHost);
+	  }
        }
 
       String getStr=basePath+param;
-      String url="http://"+host+":"+port+getStr;
+      String url= protocol + "://" + host + ":" + port + getStr;
       Frontier.Log("Reading url "+url);
 
-      Socket sock=new Socket(host,port);
-
+      SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+      SSLSocket sock = (SSLSocket) socketFactory.createSocket(host, port);
       try
        {
         long timestamp=(new Date()).getTime();
-	PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
+        PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
 
-	out.println("GET "+getStr+" HTTP/1.1\r");
-	out.println("User-Agent: frontier\r");
-	out.println("Host: "+host+"\r");
-	if(if_modified_since>0)
-	  out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
-	out.println("\r");
+        out.println("GET "+getStr+" HTTP/1.1\r");
+        out.println("User-Agent: frontier\r");
+        out.println("Host: "+host+"\r");
+        if(if_modified_since>0)
+          out.println("If-Modified-Since: "+FrontierServlet.dateHeader(if_modified_since)+"\r");
+        out.println("\r");
 
-	instream=new BufferedInputStream(sock.getInputStream());
-	String line=readHeaderLine(instream);
-	if(line==null)
-	  throw new Exception("empty response from "+url);
-	if(!line.substring(0,7).equals("HTTP/1."))
-	  throw new Exception("bad response "+line+" from "+url);
-	String responsecode=line.substring(8,8+5);
-	if(responsecode.equals(" 304 "))
-	 {
-	  if(Frontier.getHighVerbosity())Frontier.Log("NOT MODIFIED response");
-	  sock.close();
-	  return if_modified_since;
-	 }
-	if(!responsecode.equals(" 200 "))
-	  throw new Exception("bad response code "+line+" from "+url);
-        if(Frontier.getHighVerbosity())Frontier.Log("OK");
+        instream=new BufferedInputStream(sock.getInputStream());
+        String line=readHeaderLine(instream);
+        if(line==null)
+          throw new Exception("empty response from "+url);
+        if(!line.substring(0,7).equals("HTTP/1."))
+          throw new Exception("bad response "+line+" from "+url);
+        String responsecode=line.substring(8,8+5);
+        if(responsecode.equals(" 304 "))
+         {
+          if(Frontier.getHighVerbosity())Frontier.Log("NOT MODIFIED response");
+          sock.close();
+          return if_modified_since;
+         }
+        if(!responsecode.equals(" 200 "))
+          throw new Exception("bad response code "+line+" from "+url);
+            if(Frontier.getHighVerbosity())Frontier.Log("OK");
 
-	chunked=false;
-	while((line=readHeaderLine(instream))!=null)
-	 {
-	  // look at each header line
-	  if(line.equals(""))
-	    break;
-	  int colonidx=line.indexOf(':');
-	  if(colonidx<0)
-	    continue;
-	  String key=line.substring(0,colonidx).toLowerCase();
-	  String val=line.substring(colonidx+2);
-	  // Frontier.Log("header: "+key+": "+line.substring(colonidx+2));
-	  if(key.equals("content-length"))
-	   {
-	    length=Integer.parseInt(val);
-	    Frontier.Log("Content-Length: "+length);
-	   }
-	  else if(key.equals("transfer-encoding"))
-	   {
-	    if(val.equals("chunked"))
-	     {
-	      chunked=true;
-	      if(Frontier.getHighVerbosity())Frontier.Log("Transfer-Encoding: chunked");
-	     }
-	   }
-	  else if(key.equals("last-modified"))
-	   {
-	    if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
-	    lastModified=FrontierServlet.parseDateHeader(val);
-	   }
-	 }
-
-        Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
+        chunked=false;
+        while((line=readHeaderLine(instream))!=null)
+         {
+          // look at each header line
+          if(line.equals(""))
+            break;
+          int colonidx=line.indexOf(':');
+          if(colonidx<0)
+            continue;
+          String key=line.substring(0,colonidx).toLowerCase();
+          String val=line.substring(colonidx+2);
+          // Frontier.Log("header: "+key+": "+line.substring(colonidx+2));
+          if(key.equals("content-length"))
+           {
+            length=Integer.parseInt(val);
+            Frontier.Log("Content-Length: "+length);
+           }
+          else if(key.equals("transfer-encoding"))
+           {
+            if(val.equals("chunked"))
+             {
+              chunked=true;
+              if(Frontier.getHighVerbosity())Frontier.Log("Transfer-Encoding: chunked");
+             }
+           }
+          else if(key.equals("last-modified"))
+           {
+            if(Frontier.getHighVerbosity())Frontier.Log("received last-modified "+val);
+            lastModified=FrontierServlet.parseDateHeader(val);
+           }
+         }
+         Frontier.Log("Data ready length="+length+" msecs="+((new Date()).getTime()-timestamp));
        }
       catch(Exception e)
        {
-	// if any exception, close the socket & rethrow
-	sock.close();
-	throw e;
+         // if any exception, close the socket & rethrow
+         sock.close();
+         throw e;
        }
      }
     else
