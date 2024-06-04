@@ -1,7 +1,8 @@
 $Id$
 
 3.42 2024/06/04 (cvuosalo)
-    - Add support for https in URLs specified in servlets.conf.
+    - Add support for https in URLs specified by the FileBaseDirectory
+    configuration variable.
 
 3.41 2019/12/31 (dwd)
     - When a "X-Frontier-Opts: DontCacheErrors" request header is set, 
