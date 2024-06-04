@@ -1,5 +1,8 @@
 $Id$
 
+3.42 2024/06/04 (cvuosalo)
+    - Add support for https in URLs specified in servlets.conf.
+
 3.41 2019/12/31 (dwd)
     - When a "X-Frontier-Opts: DontCacheErrors" request header is set, 
       abort error responses before they send the zero-length http/1.1
