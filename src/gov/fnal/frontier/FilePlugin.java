@@ -22,6 +22,8 @@ import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import java.io.*;
 import java.net.Socket;
+import javax.net.ssl.*;
+import javax.net.*;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
 
@@ -106,7 +108,7 @@ public class FilePlugin implements FrontierPlugin
     if(baseDir==null)
       throw new Exception("FileBaseDirectory not defined");
 
-    if (baseDir.substring(0,7).equals("http://"))
+    if (baseDir.substring(0,7).equals("http://") || baseDir.substring(0,8).equals("https://"))
      {
       // We'll return an answer later in getLastModified, don't want to
       //  ask the server until we have acquired the connection
@@ -145,39 +147,57 @@ public class FilePlugin implements FrontierPlugin
       throw new Exception("FileBaseDirectory not defined");
 
     long lastModified=0;
-    if (baseDir.substring(0,7).equals("http://"))
+    if (baseDir.substring(0,7).equals("http://") || baseDir.substring(0,8).equals("https://"))
      {
-      // Retrieve file from http
+      Integer index = 7;
       int port=80;
+      String protocol = "http";
+      if (baseDir.substring(0,8).equals("https://"))
+       {
+        index = 8;
+        protocol = "https";
+        port = 443;
+       }
+      // Retrieve file from http
       String basePath="/";
-      String host=baseDir.substring(7);
+      String host=baseDir.substring(index);
       int endHost=host.indexOf(':');
       if(endHost<0)
 	endHost=host.indexOf('/');
       if(endHost>0)
        {
 	host=host.substring(0,endHost);
-	if(baseDir.charAt(7+endHost)==':')
+	if(baseDir.charAt(index+endHost)==':')
 	 {
-	  String portStr=baseDir.substring(7+endHost+1);
+	  String portStr=baseDir.substring(index+endHost+1);
 	  int endPort=portStr.indexOf('/');
 	  if(endPort>0)
 	   {
 	    portStr=portStr.substring(0,endPort);
-	    basePath=baseDir.substring(7+endHost+1+endPort);
+	    basePath=baseDir.substring(index+endHost+1+endPort);
 	   }
 	  port=Integer.parseInt(portStr);
 	 }
 	else
-	  basePath=baseDir.substring(7+endHost);
+	 {
+	  basePath=baseDir.substring(index+endHost);
+	  }
        }
 
       String getStr=basePath+param;
-      String url="http://"+host+":"+port+getStr;
+      String url= protocol + "://" + host + ":" + port + getStr;
       Frontier.Log("Reading url "+url);
 
-      Socket sock=new Socket(host,port);
-
+      Socket sock;
+      if (protocol.equals("http"))
+       {
+        sock = new Socket(host, port);
+       }
+      else
+       {
+        SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        sock = (SSLSocket) socketFactory.createSocket(host, port);
+       }
       try
        {
         long timestamp=(new Date()).getTime();
