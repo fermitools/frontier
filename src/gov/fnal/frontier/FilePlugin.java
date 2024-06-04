@@ -150,14 +150,15 @@ public class FilePlugin implements FrontierPlugin
     if (baseDir.substring(0,7).equals("http://") || baseDir.substring(0,8).equals("https://"))
      {
       Integer index = 7;
+      int port=80;
       String protocol = "http";
       if (baseDir.substring(0,8).equals("https://"))
        {
         index = 8;
         protocol = "https";
+        port = 443;
        }
       // Retrieve file from http
-      int port=80;
       String basePath="/";
       String host=baseDir.substring(index);
       int endHost=host.indexOf(':');
@@ -187,8 +188,16 @@ public class FilePlugin implements FrontierPlugin
       String url= protocol + "://" + host + ":" + port + getStr;
       Frontier.Log("Reading url "+url);
 
-      SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-      SSLSocket sock = (SSLSocket) socketFactory.createSocket(host, port);
+      Socket sock;
+      if (protocol.equals("http"))
+       {
+        sock = new Socket(host, port);
+       }
+      else
+       {
+        SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        sock = (SSLSocket) socketFactory.createSocket(host, port);
+       }
       try
        {
         long timestamp=(new Date()).getTime();
