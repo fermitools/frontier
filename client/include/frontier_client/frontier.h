@@ -12,6 +12,18 @@
  *  http://fermitools.fnal.gov/about/terms.html
  *
  */
+/*
+ * NOTEs on thread safety: 
+ * frontier_init(), frontier_initdebug(), and frontier_createChannel()
+ *   are always thread-safe.  The other functions might not be unless
+ *   the configuration option threadsafe=yes is set on any channel or
+ *   the function frontier_setThreadSafe() is called.  From then on all
+ *   functions should be safe.  Parallelism is limited however, and is
+ *   primarily only allowed while waiting for input and while doing
+ *   the cpu-intensive unpacking of data.
+ * With multiple threads, frontier_getErrorMsg() is not reliable outside
+ *   of the client and may return a value from a different thread.
+ */
 
 #ifndef __HEADER_H_FRONTIER_H
 #define __HEADER_H_FRONTIER_H
@@ -74,6 +86,8 @@ char *frontier_str_copy(const char *str);
 
 void *frontier_malloc(size_t size);
 void frontier_free(void *ptr);
+
+void frontier_setThreadSafe();
 
 // GZip and base64URL encode
 int fn_gzip_str2urlenc(const char *str,int size,char **out);

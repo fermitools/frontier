@@ -51,6 +51,7 @@ struct s_FrontierMemData
   int binzipped;
   unsigned char zipbuf[4096];
   int zipbuflen;
+  void *zstate;
  };
 typedef struct s_FrontierMemData FrontierMemData;
 FrontierMemData *frontierMemData_create(int zipped,int secured,const char *params1,const char *params2);
@@ -163,7 +164,10 @@ struct s_RSBlob
  };
 typedef struct s_RSBlob RSBlob;
 
-
+void frontier_init_lock();
+void frontier_init_unlock();
+void frontier_lock();
+int frontier_unlock();
 
 char *frontier_str_now(char *);
 
