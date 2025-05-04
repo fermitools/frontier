@@ -1,0 +1,112 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group = 'com.example'
+version = '1.0'
+
+ext {
+    appName = 'Frontier'
+    appVersion = '1.0'
+    catalinaHome = System.getenv('CATALINA_HOME') ?: '/path/to/tomcat'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Add dependencies here, e.g., servlet API
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+war {
+    archiveBaseName.set(appName)
+    archiveVersion.set('')
+    destinationDirectory.set(file("$buildDir/dist"))
+    webAppDirName = 'web'
+}
+
+tasks.register('prepare') {
+    doLast {
+        copy {
+            from 'web'
+            into "$buildDir/web"
+        }
+    }
+}
+
+tasks.register('customClean', Delete) {
+    delete "$buildDir", "$buildDir/dist", "$buildDir/test"
+}
+
+tasks.register('testinit') {
+    doLast {
+        delete "$buildDir/test/data", "$buildDir/test/reports"
+        mkdir "$buildDir/test/data"
+        mkdir "$buildDir/test/reports"
+    }
+}
+
+tasks.register('testcompile') {
+    dependsOn 'classes', 'testinit'
+    doLast {
+        copy {
+            from 'src/test'
+            into "$buildDir/test"
+            exclude '**/*.java'
+        }
+    }
+}
+
+tasks.test {
+    useJUnit()
+    reports {
+        junitXml.required.set(true)
+        junitXml.outputLocation.set(file("$buildDir/test/data"))
+        html.required.set(true)
+        html.outputLocation.set(file("$buildDir/test/reports"))
+    }
+}
+
+tasks.register('dist', Copy) {
+    dependsOn 'classes'
+    from 'docs'
+    into "$buildDir/dist/docs"
+    doLast {
+        war.archiveFile.get().asFile.copyTo(file("$buildDir/dist/${appName}.war"))
+    }
+}
+
+tasks.register('localinstall') {
+    dependsOn 'dist'
+    doLast {
+        copy {
+            from "$buildDir/dist/${appName}.war"
+            into "$catalinaHome/webapps"
+        }
+    }
+}
+
+tasks.register('localuninstall') {
+    doLast {
+        delete "$catalinaHome/webapps/${appName}.war"
+        delete "$catalinaHome/webapps/${appName}"
+    }
+}
+

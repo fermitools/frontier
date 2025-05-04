@@ -67,6 +67,7 @@
 -->
 <!-- The following file is specific for this project -->
   <property file="build.properties"/>
+    <property name="catalina.home" value="/Users/formica/Public/test/apache-tomcat-9.0.104"/>
 
 <!-- The following file is specific for a Tomcat installation -->
   <property file="${build}-build.xml"/>
@@ -121,10 +122,10 @@
   <property name="build.home"        value="${basedir}/build"/>
   <property name="dist.home"         value="${basedir}/dist"/>
   <property name="docs.home"         value="${basedir}/docs"/>
-  <property name="src.home"          value="${basedir}/src"/>
+  <property name="src.home"          value="${basedir}/src/main/java"/>
   <property name="web.home"          value="${basedir}/web"/>
 
-  <property name="test.home"         value="${build.home}/test"/>
+  <property name="test.home"         value="${build.home}/src/test/java"/>
   <property name="test.data.home"    value="${test.home}/data"/>
   <property name="test.reports.home" value="${test.home}/reports"/>
 
@@ -149,7 +150,11 @@
 
 -->
 
-  <taskdef name="install" classname="org.apache.catalina.ant.InstallTask"/>
+  <taskdef name="install" classname="org.apache.catalina.ant.InstallTask">
+    <classpath>
+        <pathelement location="${catalina.home}/lib/catalina-ant.jar"/>
+    </classpath>
+    </taskdef>
   <taskdef name="list"    classname="org.apache.catalina.ant.ListTask"/>
   <taskdef name="reload"  classname="org.apache.catalina.ant.ReloadTask"/>
   <taskdef name="remove"  classname="org.apache.catalina.ant.RemoveTask"/>
@@ -220,6 +225,7 @@
 <!--
     <pathelement location="${foo.jar}"/>
 -->
+
 
     <!-- Include all elements that Tomcat exposes to applications -->
     <pathelement location="${catalina.home}/common/classes"/>
