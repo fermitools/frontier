@@ -17,7 +17,7 @@
 
     <servlet-mapping>
       <servlet-name>Frontier</servlet-name>
-      <url-pattern>/Frontier/*</url-pattern>
+      <url-pattern>/atlas/*</url-pattern>
     </servlet-mapping>
 
     <resource-ref>

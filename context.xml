@@ -35,8 +35,18 @@
           maxTotal="20"
           maxIdle="10"
           maxWaitMillis="-1"
-          username="ATLAS_COOL_READER"
+          username="ATLAS_FRONTIER_READER"
           password="xxxx"
           driverClassName="oracle.jdbc.OracleDriver"
-          url="jdbc:oracle:thin:@localhost:1521:xe"/>
+          url="jdbc:oracle:thin:@(
+        DESCRIPTION=
+        (ADDRESS= (PROTOCOL=TCP) (HOST=xxxx) (PORT=10122) )
+        (LOAD_BALANCE=on)
+        (ENABLE=BROKEN)
+        (CONNECT_DATA=
+                (SERVER=DEDICATED)
+                (SERVICE_NAME=atonr_adg.cern.ch)
+        )
+)
+"/>
 </Context>

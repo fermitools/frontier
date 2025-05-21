@@ -47,7 +47,8 @@ public final class FrontierServlet extends HttpServlet
     Thread.currentThread().setName("FrontierInit");
     try
      {
-      Frontier.init();
+         Frontier.Log("Frontier.init() DONE:");
+         Frontier.init();
      }
     catch(Throwable e)
      {
@@ -133,6 +134,15 @@ public final class FrontierServlet extends HttpServlet
     ResponseFormat.payload_end(out,1,descript,max_age,check,-1,0);
     return msg;
   }
+
+ protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+      try {
+          response.getWriter().write("Servlet is working!");
+      }
+      catch (IOException e) {
+          throw new RuntimeException(e);
+      }
+ }
 
   public void service(HttpServletRequest request,HttpServletResponse response) throws ServletException,IOException
    {

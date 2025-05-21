@@ -17,6 +17,10 @@ repositories {
 }
 
 dependencies {
+
+    // Oracle JDBC driver (include in WAR)
+    implementation 'com.oracle.database.jdbc:ojdbc11:21.11.0.0'  // Explicit version
+
     // Add dependencies here, e.g., servlet API
     providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
     testImplementation 'junit:junit:4.13.2'
@@ -40,6 +44,9 @@ war {
     archiveVersion.set('')
     destinationDirectory.set(file("$buildDir/dist"))
     webAppDirName = 'web'
+    from configurations.runtimeClasspath.collect {
+        it.isDirectory() ? it : zipTree(it)
+    }
 }
 
 tasks.register('prepare') {
