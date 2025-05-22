@@ -1,0 +1,54 @@
+variables:
+    IMAGE: frontier-service
+    VERSION: '1.0'
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+# Make the gradle wrapper executable. This essentially downloads a copy of
+# Gradle to build the project with.
+# https://docs.gradle.org/current/userguide/gradle_wrapper.html
+# It is expected that any modern gradle project has a wrapper
+before_script:
+  - chmod +x gradlew
+
+include:
+  - project : 'ci-tools/container-image-ci-templates'
+    file : 'kaniko-image.gitlab-ci.yml'
+    ref: master
+
+stages:
+ - package_application
+ #- build
+ - push
+ - redeploy
+
+package_cern_application:
+  stage: package_application
+  environment: cern
+  image: registry.cern.ch/docker.io/eclipse-temurin:23-alpine
+  script:
+   - ./gradlew clean build -x test
+  allow_failure: false
+  artifacts:
+   paths:
+   - ./build/dist/Frontier.war
+
+# Can be used to test packaging helm chart, before merging to master for instance
+#build_helm:
+#  extends: .deploy_helm
+#  stage: build
+#  variables:
+#    REGISTRY_CHART_PATH: registry.cern.ch/crest/charts
+
+
+build_container_job:
+  rules:
+    - if: $DO_DOCKER_IMAGE == "yes" && $CI_PIPELINE_SOURCE != 'merge_request_event'
+  stage: push
+  extends: .build_kaniko
+  variables:
+    REGISTRY_IMAGE_PATH : "registry.cern.ch/crest/$IMAGE:$VERSION"
+    CONTEXT_DIR: ""
+    PUSH_IMAGE: "true"
+    DOCKER_FILE_NAME: "Dockerfile"
+
+
