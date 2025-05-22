@@ -17,9 +17,7 @@ include:
 
 stages:
  - package_application
- #- build
  - push
- - redeploy
 
 package_cern_application:
   stage: package_application
@@ -42,7 +40,7 @@ package_cern_application:
 
 build_container_job:
   rules:
-    - if: $DO_DOCKER_IMAGE == "yes" && $CI_PIPELINE_SOURCE != 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE != 'merge_request_event'
   stage: push
   extends: .build_kaniko
   variables:
