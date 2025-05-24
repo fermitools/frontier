@@ -29,24 +29,18 @@
     <Manager pathname="" />
     -->
 
-<Resource name="jdbc/frontiercms"
-          auth="Container"
-          type="javax.sql.DataSource"
-          maxTotal="20"
-          maxIdle="10"
-          maxWaitMillis="-1"
-          username="ATLAS_FRONTIER_READER"
-          password="xxxx"
-          driverClassName="oracle.jdbc.OracleDriver"
-          url="jdbc:oracle:thin:@(
-        DESCRIPTION=
-        (ADDRESS= (PROTOCOL=TCP) (HOST=xxxx) (PORT=10122) )
-        (LOAD_BALANCE=on)
-        (ENABLE=BROKEN)
-        (CONNECT_DATA=
-                (SERVER=DEDICATED)
-                (SERVICE_NAME=atonr_adg.cern.ch)
-        )
-)
-"/>
+    <Resource
+            auth="Container"
+            name="jdbc/atlr"
+            type="javax.sql.DataSource"
+            factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+            url="jdbc:oracle:thin:@ATONR_FRONTIER_ADG"
+            driverClassName="oracle.jdbc.driver.OracleDriver"
+            minIdle="0" initialSize="0"
+            maxIdle="50" maxActive="50"
+            maxWait="-1" maxAge="300000"
+            minEvictableIdleTimeMillis="60000" timeBetweenEvictionRunsMillis="20000"
+            removeAbandoned="true" removeAbandonedTimeout="300" logAbandoned="true"
+            username="${DB_USERNAME}" password="${DB_PASSWORD}"
+    />
 </Context>
