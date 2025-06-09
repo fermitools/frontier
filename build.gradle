@@ -3,12 +3,12 @@ plugins {
     id 'war'
 }
 
-group = 'com.example'
-version = '1.0'
+group = 'gov.fnal'
+version = '3.42'
 
 ext {
     appName = 'Frontier'
-    appVersion = '1.0'
+    appVersion = '3.0'
     catalinaHome = System.getenv('CATALINA_HOME') ?: '/path/to/tomcat'
 }
 
@@ -39,81 +39,79 @@ sourceSets {
     }
 }
 
+// Define reusable paths using layout API
+def distDir = layout.buildDirectory.dir('dist')
+def webDir = layout.buildDirectory.dir('web')
+def testDataDir = layout.buildDirectory.dir('test/data')
+def testReportsDir = layout.buildDirectory.dir('test/reports')
+
+
 war {
     archiveBaseName.set(appName)
     archiveVersion.set('')
-    destinationDirectory.set(file("$buildDir/dist"))
+    destinationDirectory.set(distDir)
     webAppDirName = 'web'
     from configurations.runtimeClasspath.collect {
         it.isDirectory() ? it : zipTree(it)
     }
 }
 
-tasks.register('prepare') {
-    doLast {
-        copy {
-            from 'web'
-            into "$buildDir/web"
-        }
-    }
+
+tasks.register('prepare', Copy) {
+    from 'web'
+    into webDir
 }
 
 tasks.register('customClean', Delete) {
-    delete "$buildDir", "$buildDir/dist", "$buildDir/test"
+    delete layout.buildDirectory
 }
+
 
 tasks.register('testinit') {
     doLast {
-        delete "$buildDir/test/data", "$buildDir/test/reports"
-        mkdir "$buildDir/test/data"
-        mkdir "$buildDir/test/reports"
+        delete testDataDir, testReportsDir
+        mkdir testDataDir
+        mkdir testReportsDir
     }
 }
 
-tasks.register('testcompile') {
+tasks.register('testcompile', Copy) {
     dependsOn 'classes', 'testinit'
-    doLast {
-        copy {
-            from 'src/test'
-            into "$buildDir/test"
-            exclude '**/*.java'
-        }
-    }
+    from 'src/test'
+    into layout.buildDirectory.dir('test')
+    exclude '**/*.java'
 }
+
 
 tasks.test {
     useJUnit()
     reports {
         junitXml.required.set(true)
-        junitXml.outputLocation.set(file("$buildDir/test/data"))
+        junitXml.outputLocation.set(testDataDir)
         html.required.set(true)
-        html.outputLocation.set(file("$buildDir/test/reports"))
+        html.outputLocation.set(testReportsDir)
     }
 }
 
 tasks.register('dist', Copy) {
     dependsOn 'classes'
     from 'docs'
-    into "$buildDir/dist/docs"
+    into distDir.dir('docs')
+
     doLast {
-        war.archiveFile.get().asFile.copyTo(file("$buildDir/dist/${appName}.war"))
+        def warFile = war.archiveFile.get().asFile
+        warFile.copyTo(distDir.file("${appName}.war").get().asFile)
     }
 }
 
-tasks.register('localinstall') {
+tasks.register('localinstall', Copy) {
     dependsOn 'dist'
-    doLast {
-        copy {
-            from "$buildDir/dist/${appName}.war"
-            into "$catalinaHome/webapps"
-        }
-    }
+    from distDir.file("${appName}.war")
+    into file("$catalinaHome/webapps")
 }
 
-tasks.register('localuninstall') {
-    doLast {
-        delete "$catalinaHome/webapps/${appName}.war"
-        delete "$catalinaHome/webapps/${appName}"
-    }
+tasks.register('localuninstall', Delete) {
+    delete file("$catalinaHome/webapps/${appName}.war")
+    delete file("$catalinaHome/webapps/${appName}")
 }
 

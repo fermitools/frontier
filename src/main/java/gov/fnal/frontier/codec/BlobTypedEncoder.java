@@ -114,7 +114,7 @@ public class BlobTypedEncoder implements Encoder
       else
        {
 	Integer zipint;
-	try {zipint=new Integer(zipparam);}
+	try {zipint=Integer.valueOf(zipparam);}
 	catch(Exception e)
 	 {
 	  throw new Exception("BLOB zip level "+zipparam+" not an integer");

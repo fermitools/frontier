@@ -4,19 +4,19 @@
 
 <web-app>
     <display-name>Frontier 3</display-name>
-    <description>Frontier 3 - XSD v2, writing, finders, etc.</description>
+    <description>Frontier 3</description>
     <session-config>
         <session-timeout>300</session-timeout>    <!-- 300 minutes -->
     </session-config>
 
     <servlet>
-        <servlet-name>atlr</servlet-name>
+        <servlet-name>Frontier</servlet-name>
         <servlet-class>gov.fnal.frontier.FrontierServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>atlr</servlet-name>
+        <servlet-name>Frontier</servlet-name>
         <url-pattern>/Frontier/*</url-pattern>
     </servlet-mapping>
 
@@ -25,7 +25,7 @@
             This is the refererence to the Oracle data source we
             use to talk to the database configured in server.xml.
         </description>
-        <res-ref-name>jdbc/atlr</res-ref-name>
+        <res-ref-name>jdbc/frontiercms</res-ref-name>
         <res-type>javax.sql.DataSource</res-type>
         <res-auth>Container</res-auth>
     </resource-ref>
