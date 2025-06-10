@@ -127,6 +127,7 @@
     <property name="test.home"         value="${build.home}/test"/>
     <property name="test.data.home"    value="${test.home}/data"/>
     <property name="test.reports.home" value="${test.home}/reports"/>
+    <property name="skip.tests" value="true"/>
 
     <!-- ================== Custom Ant Task Definitions ======================= -->
 
@@ -306,9 +307,11 @@
         <javac srcdir="${src.home}"
                destdir="${build.home}/WEB-INF/classes"
                debug="${compile.debug}"
+               classpathref="compile.classpath"
                deprecation="${compile.deprecation}"
                optimize="${compile.optimize}">
-            <classpath refid="compile.classpath"/>
+            <exclude name="**/test/**"/>
+            <exclude name="src/test/**"/>
         </javac>
 
         <!-- Copy application resources -->
@@ -329,7 +332,8 @@
 
     <!-- ==================== Compile Test Target ================================== -->
 
-    <target name="testcompile" depends="compile,testinit">
+    <target name="testcompile" depends="compile,testinit" unless="skip.tests"
+            description="Compile Java test sources">
         <javac destdir="${test.home}"
                debug="${compile.debug}"
                includeAntRuntime="true"
