@@ -1,6 +1,28 @@
 plugins {
     id 'java'
     id 'war'
+    id 'maven-publish'
+}
+
+publishing {
+    publications {
+        library(MavenPublication) {
+            // from components.java
+            from components.web
+        }
+    }
+    repositories {
+        maven {
+            url = "https://gitlab.cern.ch/api/v4/projects/209928/packages/maven"
+            credentials(HttpHeaderCredentials) {
+                name = "Private-Token"
+                value = System.getenv("GITLAB_TOKEN") ?: project.findProperty("gitLabPrivateToken")
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
 }
 
 group = 'gov.fnal'
@@ -47,10 +69,11 @@ def testReportsDir = layout.buildDirectory.dir('test/reports')
 
 
 war {
-    archiveBaseName.set(appName)
-    archiveVersion.set('')
-    destinationDirectory.set(distDir)
-    webAppDirName = 'web'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // or WARN, INCLUDE, FAIL
+    archiveBaseName = appName
+    archiveVersion = ''
+    destinationDirectory = distDir
+    webAppDirectory = file('web')
     from configurations.runtimeClasspath.collect {
         it.isDirectory() ? it : zipTree(it)
     }
@@ -86,10 +109,14 @@ tasks.register('testcompile', Copy) {
 tasks.test {
     useJUnit()
     reports {
-        junitXml.required.set(true)
-        junitXml.outputLocation.set(testDataDir)
-        html.required.set(true)
-        html.outputLocation.set(testReportsDir)
+        junitXml {
+            required = true           // ✅ Correct
+            outputLocation = testDataDir  // ✅ Correct
+        }
+        html {
+            required = true          // ✅ Correct
+            outputLocation = testReportsDir // ✅ Correct
+        }
     }
 }
 
