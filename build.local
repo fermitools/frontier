@@ -121,13 +121,15 @@
   <property name="build.home"        value="${basedir}/build"/>
   <property name="dist.home"         value="${basedir}/dist"/>
   <property name="docs.home"         value="${basedir}/docs"/>
-  <property name="src.home"          value="${basedir}/src"/>
+  <property name="src.home"          value="${basedir}/src/main/java"/>
+  <property name="test.home"          value="${basedir}/src/test/java"/>
   <property name="web.home"          value="${basedir}/web"/>
-  <property name="catalina.home"     value="${basedir}/../../TOMCAT/apache-tomcat-5.5.15"/>
+  <property name="catalina.home"     value="${basedir}/../../TOMCAT/apache-tomcat-9.0.104"/>
 
   <property name="test.home"         value="${build.home}/test"/>
   <property name="test.data.home"    value="${test.home}/data"/>
   <property name="test.reports.home" value="${test.home}/reports"/>
+  <property name="skip.tests" value="true"/>
 
 <!-- ================== Custom Ant Task Definitions ======================= -->
 
@@ -335,7 +337,7 @@
 
 <!-- ==================== Test Target ================================== -->
 
-<target name="test" depends="testcompile"
+<target name="test" depends="testcompile" unless="skip.tests"
   description="Run tests over Java sources">
 
   <junit printsummary="false"

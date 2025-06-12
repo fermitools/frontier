@@ -1,0 +1,144 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'maven-publish'
+}
+
+publishing {
+    publications {
+        library(MavenPublication) {
+            // from components.java
+            from components.web
+        }
+    }
+    repositories {
+        maven {
+            url = "https://gitlab.cern.ch/api/v4/projects/209928/packages/maven"
+            credentials(HttpHeaderCredentials) {
+                name = "Private-Token"
+                value = System.getenv("GITLAB_TOKEN") ?: project.findProperty("gitLabPrivateToken")
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+
+group = 'gov.fnal'
+version = '3.42'
+
+ext {
+    appName = 'Frontier'
+    appVersion = '3.0'
+    catalinaHome = System.getenv('CATALINA_HOME') ?: '/path/to/tomcat'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // Oracle JDBC driver (include in WAR)
+    implementation 'com.oracle.database.jdbc:ojdbc11:21.11.0.0'  // Explicit version
+
+    // Add dependencies here, e.g., servlet API
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+// Define reusable paths using layout API
+def distDir = layout.buildDirectory.dir('dist')
+def webDir = layout.buildDirectory.dir('web')
+def testDataDir = layout.buildDirectory.dir('test/data')
+def testReportsDir = layout.buildDirectory.dir('test/reports')
+
+
+war {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // or WARN, INCLUDE, FAIL
+    archiveBaseName = appName
+    archiveVersion = ''
+    destinationDirectory = distDir
+    webAppDirectory = file('web')
+    from configurations.runtimeClasspath.collect {
+        it.isDirectory() ? it : zipTree(it)
+    }
+}
+
+
+tasks.register('prepare', Copy) {
+    from 'web'
+    into webDir
+}
+
+tasks.register('customClean', Delete) {
+    delete layout.buildDirectory
+}
+
+
+tasks.register('testinit') {
+    doLast {
+        delete testDataDir, testReportsDir
+        mkdir testDataDir
+        mkdir testReportsDir
+    }
+}
+
+tasks.register('testcompile', Copy) {
+    dependsOn 'classes', 'testinit'
+    from 'src/test'
+    into layout.buildDirectory.dir('test')
+    exclude '**/*.java'
+}
+
+
+tasks.test {
+    useJUnit()
+    reports {
+        junitXml {
+            required = true           // ✅ Correct
+            outputLocation = testDataDir  // ✅ Correct
+        }
+        html {
+            required = true          // ✅ Correct
+            outputLocation = testReportsDir // ✅ Correct
+        }
+    }
+}
+
+tasks.register('dist', Copy) {
+    dependsOn 'classes'
+    from 'docs'
+    into distDir.dir('docs')
+
+    doLast {
+        def warFile = war.archiveFile.get().asFile
+        warFile.copyTo(distDir.file("${appName}.war").get().asFile)
+    }
+}
+
+tasks.register('localinstall', Copy) {
+    dependsOn 'dist'
+    from distDir.file("${appName}.war")
+    into file("$catalinaHome/webapps")
+}
+
+tasks.register('localuninstall', Delete) {
+    delete file("$catalinaHome/webapps/${appName}.war")
+    delete file("$catalinaHome/webapps/${appName}")
+}
+

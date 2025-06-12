@@ -34,595 +34,602 @@
 
 <project name="${app.name}" default="compile" basedir=".">
 
-<!-- ===================== Property Definitions =========================== -->
-<!--
+    <!-- ===================== Property Definitions =========================== -->
+    <!--
 
-  Each of the following properties are used in the build script.
-  Values for these properties are set by the first place they are
-  defined, from the following list:
+      Each of the following properties are used in the build script.
+      Values for these properties are set by the first place they are
+      defined, from the following list:
 
-  * Definitions on the "ant" command line (ant -Dfoo=bar compile).
+      * Definitions on the "ant" command line (ant -Dfoo=bar compile).
 
-  * Definitions from a "build.properties" file in the top level
-    source directory of this application.
+      * Definitions from a "build.properties" file in the top level
+        source directory of this application.
 
-  * Definitions from a "{build}-build.xml" file in the top level
-    source directory of this application. The value of the property
-    "deploy" must be specified on the "ant" command line
-    (ant -Ddeploy=somewhere ...)
-    This file contains parameters related to the build environment on
-    the named machine.
+      * Definitions from a "{build}-build.xml" file in the top level
+        source directory of this application. The value of the property
+        "deploy" must be specified on the "ant" command line
+        (ant -Ddeploy=somewhere ...)
+        This file contains parameters related to the build environment on
+        the named machine.
 
-  * Definitions from a "build.properties" file in the developer's
-    home directory.
+      * Definitions from a "build.properties" file in the developer's
+        home directory.
 
-  * Default definitions in this build.xml file.
+      * Default definitions in this build.xml file.
 
-  You will note below that property values can be composed based on the
-  contents of previously defined properties.  This is a powerful technique
-  that helps you minimize the number of changes required when your development
-  environment is modified.  Note that property composition is allowed within
-  "build.properties" files as well as in the "build.xml" script.
+      You will note below that property values can be composed based on the
+      contents of previously defined properties.  This is a powerful technique
+      that helps you minimize the number of changes required when your development
+      environment is modified.  Note that property composition is allowed within
+      "build.properties" files as well as in the "build.xml" script.
 
--->
-<!-- The following file is specific for this project -->
-  <property file="build.properties"/>
+    -->
+    <!-- The following file is specific for this project -->
+    <property file="build.properties"/>
 
-<!-- The following file is specific for a Tomcat installation -->
-  <property file="${build}-build.xml"/>
+    <!-- The following file is specific for a Tomcat installation -->
+    <property file="${build}-build.xml"/>
 
-<!-- The following file is specific for a single user -->
-  <property file="${user.home}/build.properties"/>
+    <!-- The following file is specific for a single user -->
+    <property file="${user.home}/build.properties"/>
 
-<!-- ==================== File and Directory Names ======================== -->
+    <!-- ==================== File and Directory Names ======================== -->
 
-<!--
+    <!--
 
-  These properties generally define file and directory names (or paths) that
-  affect where the build process stores its outputs.
+      These properties generally define file and directory names (or paths) that
+      affect where the build process stores its outputs.
 
-  app.name             Base name of this application, used to
-                       construct filenames and directories.
-                       Defaults to "myapp".
+      app.name             Base name of this application, used to
+                           construct filenames and directories.
+                           Defaults to "myapp".
 
-  app.path             Context path to which this application should be
-                       deployed (defaults to "/" plus the value of the
-                       "app.name" property).
+      app.path             Context path to which this application should be
+                           deployed (defaults to "/" plus the value of the
+                           "app.name" property).
 
-  app.version          Version number of this iteration of the application.
+      app.version          Version number of this iteration of the application.
 
-  build.home           The directory into which the "prepare" and
-                       "compile" targets will generate their output.
-                       Defaults to "build".
+      build.home           The directory into which the "prepare" and
+                           "compile" targets will generate their output.
+                           Defaults to "build".
 
-  catalina.home        The directory in which you have installed
-                       a binary distribution of Tomcat .  This will
-                       be used by the "deploy" target. It is also used in
-                       compilation, when building the CLASSPATH.
+      catalina.home        The directory in which you have installed
+                           a binary distribution of Tomcat .  This will
+                           be used by the "deploy" target. It is also used in
+                           compilation, when building the CLASSPATH.
 
-  dist.home            The name of the base directory in which
-                       distribution files are created.
-                       Defaults to "dist".
+      dist.home            The name of the base directory in which
+                           distribution files are created.
+                           Defaults to "dist".
 
-  manager.password     The login password of a user that is assigned the
-                       "manager" role (so that he or she can execute
-                       commands via the "/manager" web application)
+      manager.password     The login password of a user that is assigned the
+                           "manager" role (so that he or she can execute
+                           commands via the "/manager" web application)
 
-  manager.url          The URL of the "/manager" web application on the
-                       Tomcat installation to which we will deploy web
-                       applications and web services.
+      manager.url          The URL of the "/manager" web application on the
+                           Tomcat installation to which we will deploy web
+                           applications and web services.
 
-  manager.username     The login username of a user that is assigned the
-                       "manager" role (so that he or she can execute
-                       commands via the "/manager" web application)
+      manager.username     The login username of a user that is assigned the
+                           "manager" role (so that he or she can execute
+                           commands via the "/manager" web application)
 
--->
-  <property name="app.path"          value="/${app.name}"/>
-  <property name="build.home"        value="${basedir}/build"/>
-  <property name="dist.home"         value="${basedir}/dist"/>
-  <property name="docs.home"         value="${basedir}/docs"/>
-  <property name="src.home"          value="${basedir}/src"/>
-  <property name="web.home"          value="${basedir}/web"/>
+    -->
+    <property name="app.path"          value="/${app.name}"/>
+    <property name="build.home"        value="${basedir}/build"/>
+    <property name="dist.home"         value="${basedir}/dist"/>
+    <property name="docs.home"         value="${basedir}/docs"/>
+    <property name="src.home"          value="${basedir}/src/main/java"/>
+    <property name="web.home"          value="${basedir}/web"/>
 
-  <property name="test.home"         value="${build.home}/test"/>
-  <property name="test.data.home"    value="${test.home}/data"/>
-  <property name="test.reports.home" value="${test.home}/reports"/>
+    <property name="test.home"         value="${build.home}/test"/>
+    <property name="test.data.home"    value="${test.home}/data"/>
+    <property name="test.reports.home" value="${test.home}/reports"/>
+    <property name="skip.tests" value="true"/>
 
-<!-- ================== Custom Ant Task Definitions ======================= -->
+    <!-- ================== Custom Ant Task Definitions ======================= -->
 
-<!--
+    <!--
 
-  These properties define custom tasks for the Ant build tool that interact
-  with the "/manager" web application installed with Tomcat .  Before they
-  can be successfully utilized, you must perform the following steps:
+      These properties define custom tasks for the Ant build tool that interact
+      with the "/manager" web application installed with Tomcat .  Before they
+      can be successfully utilized, you must perform the following steps:
 
-  - Copy the file "server/lib/catalina-ant.jar" from your Tomcat
-    installation into the "lib" directory of your Ant installation.
+      - Copy the file "server/lib/catalina-ant.jar" from your Tomcat
+        installation into the "lib" directory of your Ant installation.
 
-  - Create a "build.properties" file in your application's top-level
-    source directory (or your user login home directory) that defines
-    appropriate values for the "manager.password", "manager.url", and
-    "manager.username" properties described above.
+      - Create a "build.properties" file in your application's top-level
+        source directory (or your user login home directory) that defines
+        appropriate values for the "manager.password", "manager.url", and
+        "manager.username" properties described above.
 
-  For more information about the Manager web application, and the functionality
-  of these tasks, see <http://localhost:8080/tomcat-docs/manager-howto.html>.
+      For more information about the Manager web application, and the functionality
+      of these tasks, see <http://localhost:8080/tomcat-docs/manager-howto.html>.
 
--->
+    -->
+    <!-- Does not exists anymore in recent tomcat versions :
+    <taskdef name="install" classname="org.apache.catalina.ant.InstallTask"/>
+    -->
+    <taskdef name="list"    classname="org.apache.catalina.ant.ListTask"/>
+    <taskdef name="reload"  classname="org.apache.catalina.ant.ReloadTask"/>
+    <!-- Does not exists anymore in recent tomcat versions :
+    <taskdef name="remove"  classname="org.apache.catalina.ant.RemoveTask"/>
+    -->
 
-  <taskdef name="install" classname="org.apache.catalina.ant.InstallTask"/>
-  <taskdef name="list"    classname="org.apache.catalina.ant.ListTask"/>
-  <taskdef name="reload"  classname="org.apache.catalina.ant.ReloadTask"/>
-  <taskdef name="remove"  classname="org.apache.catalina.ant.RemoveTask"/>
 
+    <!--  ==================== Compilation Control Options ==================== -->
 
-<!--  ==================== Compilation Control Options ==================== -->
+    <!--
 
-<!--
+      These properties control option settings on the Javac compiler when it
+      is invoked using the <javac> task.
 
-  These properties control option settings on the Javac compiler when it
-  is invoked using the <javac> task.
+      compile.debug        Should compilation include the debug option?
 
-  compile.debug        Should compilation include the debug option?
+      compile.deprecation  Should compilation include the deprecation option?
 
-  compile.deprecation  Should compilation include the deprecation option?
+      compile.optimize     Should compilation include the optimize option?
 
-  compile.optimize     Should compilation include the optimize option?
+    -->
 
--->
+    <property name="compile.debug"       value="true"/>
+    <property name="compile.deprecation" value="false"/>
+    <property name="compile.optimize"    value="true"/>
 
-  <property name="compile.debug"       value="true"/>
-  <property name="compile.deprecation" value="false"/>
-  <property name="compile.optimize"    value="true"/>
 
 
+    <!-- ==================== External Dependencies =========================== -->
+    <!--
 
-<!-- ==================== External Dependencies =========================== -->
-<!--
+      Use property values to define the locations of external JAR files on which
+      your application will depend.  In general, these values will be used for
+      two purposes:
+      * Inclusion on the classpath that is passed to the Javac compiler
+      * Being copied into the "/WEB-INF/lib" directory during execution
+        of the "deploy" target.
 
-  Use property values to define the locations of external JAR files on which
-  your application will depend.  In general, these values will be used for
-  two purposes:
-  * Inclusion on the classpath that is passed to the Javac compiler
-  * Being copied into the "/WEB-INF/lib" directory during execution
-    of the "deploy" target.
+      Because we will automatically include all of the Java classes that Tomcat
+      exposes to web applications, we will not need to explicitly list any of those
+      dependencies.  You only need to worry about external dependencies for JAR
+      files that you are going to include inside your "/WEB-INF/lib" directory.
 
-  Because we will automatically include all of the Java classes that Tomcat
-  exposes to web applications, we will not need to explicitly list any of those
-  dependencies.  You only need to worry about external dependencies for JAR
-  files that you are going to include inside your "/WEB-INF/lib" directory.
+    -->
 
--->
+    <!-- Dummy external dependency -->
+    <!--
+      <property name="foo.jar"
+               value="/path/to/foo.jar"/>
+    -->
 
-<!-- Dummy external dependency -->
-<!--
-  <property name="foo.jar"
-           value="/path/to/foo.jar"/>
--->
 
+    <!-- ==================== Compilation Classpath =========================== -->
 
-<!-- ==================== Compilation Classpath =========================== -->
+    <!--
 
-<!--
+      Rather than relying on the CLASSPATH environment variable, Ant includes
+      features that makes it easy to dynamically construct the classpath you
+      need for each compilation.  The example below constructs the compile
+      classpath to include the servlet.jar file, as well as the other components
+      that Tomcat makes available to web applications automatically, plus anything
+      that you explicitly added.
 
-  Rather than relying on the CLASSPATH environment variable, Ant includes
-  features that makes it easy to dynamically construct the classpath you
-  need for each compilation.  The example below constructs the compile
-  classpath to include the servlet.jar file, as well as the other components
-  that Tomcat makes available to web applications automatically, plus anything
-  that you explicitly added.
+    -->
 
--->
+    <path id="compile.classpath">
 
-  <path id="compile.classpath">
+        <!-- Include all JAR files that will be included in /WEB-INF/lib -->
+        <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+        <!--
+            <pathelement location="${foo.jar}"/>
+        -->
 
-    <!-- Include all JAR files that will be included in /WEB-INF/lib -->
-    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
-<!--
-    <pathelement location="${foo.jar}"/>
--->
+        <!-- Include all elements that Tomcat exposes to applications -->
+        <pathelement location="${catalina.home}/common/classes"/>
+        <fileset dir="${catalina.home}/common/endorsed">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${catalina.home}/common/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${catalina.home}/shared/classes"/>
+        <fileset dir="${catalina.home}/shared/lib">
+            <include name="*.jar"/>
+        </fileset>
 
-    <!-- Include all elements that Tomcat exposes to applications -->
-    <pathelement location="${catalina.home}/common/classes"/>
-    <fileset dir="${catalina.home}/common/endorsed">
-      <include name="*.jar"/>
-    </fileset>
-    <fileset dir="${catalina.home}/common/lib">
-      <include name="*.jar"/>
-    </fileset>
-    <pathelement location="${catalina.home}/shared/classes"/>
-    <fileset dir="${catalina.home}/shared/lib">
-      <include name="*.jar"/>
-    </fileset>
+        <!-- Include the jar files that will be added to the war file -->
+        <fileset dir="${web.home}/WEB-INF/lib">
+            <include name="*.jar"/>
+        </fileset>
 
-    <!-- Include the jar files that will be added to the war file -->
-    <fileset dir="${web.home}/WEB-INF/lib">
-      <include name="*.jar"/>
-    </fileset>
+    </path>
 
-  </path>
+    <path id="test.classpath">
+        <path refid="compile.classpath"/>
+        <pathelement location="${junit.jar}"/>
+        <pathelement location="${build.home}/classes"/>
+        <pathelement location="${build.home}/test"/>
+        <pathelement location="${build.home}/WEB-INF/classes"/>
+    </path>
 
-  <path id="test.classpath">
-    <path refid="compile.classpath"/>
-    <pathelement location="${junit.jar}"/>
-    <pathelement location="${build.home}/classes"/>
-    <pathelement location="${build.home}/test"/>
-    <pathelement location="${build.home}/WEB-INF/classes"/>
-  </path>
 
 
+    <!-- ==================== All Target ====================================== -->
 
-<!-- ==================== All Target ====================================== -->
+    <!--
 
-<!--
+      The "all" target is a shortcut for running the "clean" target followed
+      by the "compile" target, to force a complete recompile.
 
-  The "all" target is a shortcut for running the "clean" target followed
-  by the "compile" target, to force a complete recompile.
+    -->
 
--->
+    <target name="all" depends="clean,compile"
+            description="Clean build and dist directories, then compile"/>
 
-  <target name="all" depends="clean,compile"
-   description="Clean build and dist directories, then compile"/>
 
 
+    <!-- ==================== Clean Target ==================================== -->
 
-<!-- ==================== Clean Target ==================================== -->
+    <!--
 
-<!--
+      The "clean" target deletes any previous "build" and "dist" directory,
+      so that you can be ensured the application can be built from scratch.
 
-  The "clean" target deletes any previous "build" and "dist" directory,
-  so that you can be ensured the application can be built from scratch.
+    -->
 
--->
+    <target name="clean"
+            description="Delete old build test/reports, test/data and dist directories">
+        <delete dir="${build.home}"/>
+        <delete dir="${dist.home}"/>
+        <delete dir="${test.reports.home}"/>
+        <delete dir="${test.data.home}"/>
+    </target>
 
-  <target name="clean"
-   description="Delete old build test/reports, test/data and dist directories">
-    <delete dir="${build.home}"/>
-    <delete dir="${dist.home}"/>
-    <delete dir="${test.reports.home}"/>
-    <delete dir="${test.data.home}"/>
-  </target>
 
 
+    <!-- ==================== Compile Target ================================== -->
 
-<!-- ==================== Compile Target ================================== -->
+    <!--
 
-<!--
+      The "compile" target transforms source files (from your "src" directory)
+      into object files in the appropriate location in the build directory.
+      This example assumes that you will be including your classes in an
+      unpacked directory hierarchy under "/WEB-INF/classes".
 
-  The "compile" target transforms source files (from your "src" directory)
-  into object files in the appropriate location in the build directory.
-  This example assumes that you will be including your classes in an
-  unpacked directory hierarchy under "/WEB-INF/classes".
+    -->
 
--->
+    <target name="compile" depends="prepare"
+            description="Compile Java sources">
 
-  <target name="compile" depends="prepare"
-   description="Compile Java sources">
+        <!-- Compile Java classes as necessary -->
+        <mkdir    dir="${build.home}/WEB-INF/classes"/>
+        <javac srcdir="${src.home}"
+               destdir="${build.home}/WEB-INF/classes"
+               debug="${compile.debug}"
+               classpathref="compile.classpath"
+               deprecation="${compile.deprecation}"
+               optimize="${compile.optimize}">
+            <exclude name="**/test/**"/>
+            <exclude name="src/test/**"/>
+        </javac>
 
-    <!-- Compile Java classes as necessary -->
-    <mkdir    dir="${build.home}/WEB-INF/classes"/>
-    <javac srcdir="${src.home}"
-          destdir="${build.home}/WEB-INF/classes"
-            debug="${compile.debug}"
-      deprecation="${compile.deprecation}"
-         optimize="${compile.optimize}">
-        <classpath refid="compile.classpath"/>
-    </javac>
+        <!-- Copy application resources -->
+        <copy  todir="${build.home}/WEB-INF/classes">
+            <fileset dir="${src.home}" excludes="**/*.java"/>
+        </copy>
+    </target>
 
-    <!-- Copy application resources -->
-    <copy  todir="${build.home}/WEB-INF/classes">
-      <fileset dir="${src.home}" excludes="**/*.java"/>
-    </copy>
-  </target>
+    <!-- ==================== Test Init Target ================================== -->
 
-<!-- ==================== Test Init Target ================================== -->
+    <target name="testinit">
+        <delete dir="${test.data.home}"/>
+        <delete dir="${test.reports.home}"/>
 
-<target name="testinit">
-  <delete dir="${test.data.home}"/>
-  <delete dir="${test.reports.home}"/>
+        <mkdir dir="${test.data.home}"/>
+        <mkdir dir="${test.reports.home}"/>
+    </target>
 
-  <mkdir dir="${test.data.home}"/>
-  <mkdir dir="${test.reports.home}"/>
-</target>
+    <!-- ==================== Compile Test Target ================================== -->
 
-<!-- ==================== Compile Test Target ================================== -->
+    <target name="testcompile" depends="compile,testinit" unless="skip.tests"
+            description="Compile Java test sources">
+        <javac destdir="${test.home}"
+               debug="${compile.debug}"
+               includeAntRuntime="true"
+               srcdir="test">
+            <classpath refid="test.classpath"/>
+        </javac>
 
-<target name="testcompile" depends="compile,testinit">
-  <javac destdir="${test.home}"
-         debug="${compile.debug}"
-         includeAntRuntime="true"
-         srcdir="test">
-    <classpath refid="test.classpath"/>
-  </javac>
+        <copy todir="${test.home}">
+            <fileset dir="test" excludes="**/*.java"/>
+        </copy>
+    </target>
 
-  <copy todir="${test.home}">
-    <fileset dir="test" excludes="**/*.java"/>
-  </copy>
-</target>
+    <!-- ==================== Test Target ================================== -->
 
-<!-- ==================== Test Target ================================== -->
+    <target name="test" depends="testcompile"
+            description="Run tests over Java sources">
 
-<target name="test" depends="testcompile"
-  description="Run tests over Java sources">
+        <junit printsummary="false"
+               errorProperty="test.failed"
+               failureProperty="test.failed">
+            <classpath refid="test.classpath"/>
+            <formatter type="brief" usefile="false"/>
+            <formatter type="xml"/>
+            <test name="${testcase}" todir="${test.data.home}" if="testcase"/>
+            <batchtest todir="${test.data.home}" unless="testcase">
+                <fileset dir="${test.home}" includes="**/*Test.class"/>
+            </batchtest>
+        </junit>
 
-  <junit printsummary="false"
-         errorProperty="test.failed"
-         failureProperty="test.failed">
-    <classpath refid="test.classpath"/>
-    <formatter type="brief" usefile="false"/>
-    <formatter type="xml"/>
-    <test name="${testcase}" todir="${test.data.home}" if="testcase"/>
-    <batchtest todir="${test.data.home}" unless="testcase">
-      <fileset dir="${test.home}" includes="**/*Test.class"/>
-    </batchtest>
-  </junit>
+        <junitreport todir="${test.data.home}">
+            <fileset dir="${test.data.home}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames"
+                    todir="${test.reports.home}"/>
+        </junitreport>
 
-  <junitreport todir="${test.data.home}">
-     <fileset dir="${test.data.home}">
-       <include name="TEST-*.xml"/>
-     </fileset>
-     <report format="frames"
-        todir="${test.reports.home}"/>
-  </junitreport>
+        <fail message="Tests failed!! Check log and/or reports."
+              if="test.failed"/>
 
-  <fail message="Tests failed!! Check log and/or reports."
-      if="test.failed"/>
+    </target>
 
-</target>
+    <!-- ==================== Dist Target ===================================== -->
 
-<!-- ==================== Dist Target ===================================== -->
 
+    <!--
 
-<!--
+      The "dist" target creates a binary distribution the application
+      in the form of a WAR. Note that this target depends on two others:
 
-  The "dist" target creates a binary distribution the application
-  in the form of a WAR. Note that this target depends on two others:
+      * "compile" so that the entire web application (including external
+        dependencies) will have been assembled
 
-  * "compile" so that the entire web application (including external
-    dependencies) will have been assembled
+      * "javadoc" so that the application Javadocs will have been created
 
-  * "javadoc" so that the application Javadocs will have been created
+      * orig dist target.
+      <target name="dist" depends="compile,javadoc"
+    -->
 
-  * orig dist target.
-  <target name="dist" depends="compile,javadoc"
--->
+    <target name="dist" depends="compile"
+            description="Create binary distribution">
 
-  <target name="dist" depends="compile"
-   description="Create binary distribution">
+        <!-- Copy documentation subdirectories -->
+        <mkdir   dir="${dist.home}/docs"/>
+        <copy    todir="${dist.home}/docs">
+            <fileset dir="${docs.home}"/>
+        </copy>
 
-    <!-- Copy documentation subdirectories -->
-    <mkdir   dir="${dist.home}/docs"/>
-    <copy    todir="${dist.home}/docs">
-      <fileset dir="${docs.home}"/>
-    </copy>
+        <!-- Create application JAR file -->
+        <!-- File name changed from the original
+             "${dist.home}/${app.name}-${app.version}.war"
+             because that made Tomcat deploy it with a path that include the
+             version number. -->
+        <jar jarfile="${dist.home}/${app.name}.war"
+             basedir="${build.home}"/>
 
-    <!-- Create application JAR file -->
-    <!-- File name changed from the original
-         "${dist.home}/${app.name}-${app.version}.war"
-         because that made Tomcat deploy it with a path that include the
-         version number. -->
-    <jar jarfile="${dist.home}/${app.name}.war"
-         basedir="${build.home}"/>
+        <!-- Copy additional files to ${dist.home} as necessary -->
 
-    <!-- Copy additional files to ${dist.home} as necessary -->
+    </target>
 
-  </target>
+    <!-- ================== LocalInstall Target =============================== -->
+    <!--
 
-<!-- ================== LocalInstall Target =============================== -->
-<!--
+      The "localinstall" target intalls a binary distribution of the application
+      on the local server, by copying the WAR file. This target depends on
+      "dist", to make sure and up-to-date distribution is available.
 
-  The "localinstall" target intalls a binary distribution of the application
-  on the local server, by copying the WAR file. This target depends on
-  "dist", to make sure and up-to-date distribution is available.
+    -->
 
--->
+    <target name="localinstall" depends="dist"
+            description="Install a binary distribution locally">
 
- <target name="localinstall" depends="dist"
-  description="Install a binary distribution locally">
+        <property name="deploy.home"
+                  value="${catalina.home}/webapps"
+        />
 
-  <property name="deploy.home"
-            value="${catalina.home}/webapps"
-  />
+        <!-- Copy the WAR file -->
+        <copy file="${dist.home}/${app.name}.war"
+              tofile="${deploy.home}/${app.name}.war"
+              overwrite="true"
+              verbose="true"
+        />
 
-  <!-- Copy the WAR file -->
-  <copy file="${dist.home}/${app.name}.war"
-        tofile="${deploy.home}/${app.name}.war"
-        overwrite="true"
-        verbose="true"
-  />
+        <!-- Unpack the WAR file -->
+        <unzip src="${deploy.home}/${app.name}.war"
+               dest="${deploy.home}/${app.name}/"
+               overwrite="true"
+        />
+    </target>
 
-  <!-- Unpack the WAR file -->
-  <unzip src="${deploy.home}/${app.name}.war"
-         dest="${deploy.home}/${app.name}/"
-         overwrite="true"
-  />
- </target>
+    <!-- ================= LocalUninstall Target ============================== -->
+    <!--
 
-<!-- ================= LocalUninstall Target ============================== -->
-<!--
+      The "localuninstall" target unintalls a binary distribution of the
+      application on the local server. It deletes the WAR file and the
+      unpacked directory.
 
-  The "localuninstall" target unintalls a binary distribution of the
-  application on the local server. It deletes the WAR file and the
-  unpacked directory.
+    -->
 
--->
+    <target name="localuninstall"
+            description="Uninstall a local binary distribution">
 
- <target name="localuninstall"
-  description="Uninstall a local binary distribution">
+        <property name="deploy.home"
+                  value="${catalina.home}/webapps"
+        />
 
-  <property name="deploy.home"
-            value="${catalina.home}/webapps"
-  />
+        <!-- Delete the WAR file -->
+        <delete file="${deploy.home}/${app.name}.war"
+                verbose="true"
+        />
 
-  <!-- Delete the WAR file -->
-  <delete file="${deploy.home}/${app.name}.war"
-          verbose="true"
-  />
+        <!-- Delete the unpacked directory -->
+        <delete dir="${deploy.home}/${app.name}"
+        />
 
-  <!-- Delete the unpacked directory -->
-  <delete dir="${deploy.home}/${app.name}"
-  />
+    </target>
 
- </target>
 
+    <!-- ==================== Install Target ================================== -->
 
-<!-- ==================== Install Target ================================== -->
+    <!--
 
-<!--
+      The "install" target tells the specified Tomcat installation to dynamically
+      install this web application and make it available for execution.  It does
+      *not* cause the existence of this web application to be remembered across
+      Tomcat restarts; if you restart the server, you will need to re-install all
+      this web application.
 
-  The "install" target tells the specified Tomcat installation to dynamically
-  install this web application and make it available for execution.  It does
-  *not* cause the existence of this web application to be remembered across
-  Tomcat restarts; if you restart the server, you will need to re-install all
-  this web application.
+      If you have already installed this application, and simply want Tomcat to
+      recognize that you have updated Java classes (or the web.xml file), use the
+      "reload" target instead.
 
-  If you have already installed this application, and simply want Tomcat to
-  recognize that you have updated Java classes (or the web.xml file), use the
-  "reload" target instead.
+      NOTE:  This target will only succeed if it is run from the same server that
+      Tomcat is running on.
 
-  NOTE:  This target will only succeed if it is run from the same server that
-  Tomcat is running on.
+      NOTE:  This is the logical opposite of the "remove" target.
 
-  NOTE:  This is the logical opposite of the "remove" target.
+    -->
 
--->
+    <target name="install" depends="compile"
+            description="Install application to servlet container">
 
-  <target name="install" depends="compile"
-   description="Install application to servlet container">
+        <install url="${manager.url}"
+                 username="${manager.username}"
+                 password="${manager.password}"
+                 path="${app.path}"
+                 war="file://${build.home}"/>
 
-    <install url="${manager.url}"
-        username="${manager.username}"
-        password="${manager.password}"
-            path="${app.path}"
-             war="file://${build.home}"/>
+    </target>
 
-  </target>
 
+    <!-- ==================== Javadoc Target ================================== -->
 
-<!-- ==================== Javadoc Target ================================== -->
+    <!--
 
-<!--
+      The "javadoc" target creates Javadoc API documentation for the Java
+      classes included in your application.  Normally, this is only required
+      when preparing a distribution release, but is available as a separate
+      target in case the developer wants to create Javadocs independently.
 
-  The "javadoc" target creates Javadoc API documentation for the Java
-  classes included in your application.  Normally, this is only required
-  when preparing a distribution release, but is available as a separate
-  target in case the developer wants to create Javadocs independently.
+    -->
 
--->
+    <target name="javadoc" depends="compile"
+            description="Create Javadoc API documentation">
 
-  <target name="javadoc" depends="compile"
-   description="Create Javadoc API documentation">
+        <mkdir          dir="${dist.home}/docs/api"/>
+        <javadoc sourcepath="${src.home}"
+                 destdir="${dist.home}/docs/api"
+                 packagenames="*">
+            <classpath refid="compile.classpath"/>
+        </javadoc>
 
-    <mkdir          dir="${dist.home}/docs/api"/>
-    <javadoc sourcepath="${src.home}"
-                destdir="${dist.home}/docs/api"
-           packagenames="*">
-      <classpath refid="compile.classpath"/>
-    </javadoc>
+    </target>
 
-  </target>
 
 
+    <!-- ====================== List Target =================================== -->
 
-<!-- ====================== List Target =================================== -->
+    <!--
 
-<!--
+      The "list" target asks the specified Tomcat installation to list the
+      currently running web applications, either loaded at startup time or
+      installed dynamically.  It is useful to determine whether or not the
+      application you are currently developing has been installed.
 
-  The "list" target asks the specified Tomcat installation to list the
-  currently running web applications, either loaded at startup time or
-  installed dynamically.  It is useful to determine whether or not the
-  application you are currently developing has been installed.
+    -->
 
--->
+    <target name="list"
+            description="List installed applications on servlet container">
 
-  <target name="list"
-   description="List installed applications on servlet container">
+        <list    url="${manager.url}"
+                 username="${manager.username}"
+                 password="${manager.password}"/>
 
-    <list    url="${manager.url}"
-        username="${manager.username}"
-        password="${manager.password}"/>
 
+    </target>
 
-  </target>
 
+    <!-- ==================== Prepare Target ================================== -->
 
-<!-- ==================== Prepare Target ================================== -->
+    <!--
 
-<!--
+      The "prepare" target is used to create the "build" destination directory,
+      and copy the static contents of your web application to it.  If you need
+      to copy static files from external dependencies, you can customize the
+      contents of this task.
 
-  The "prepare" target is used to create the "build" destination directory,
-  and copy the static contents of your web application to it.  If you need
-  to copy static files from external dependencies, you can customize the
-  contents of this task.
+      Normally, this task is executed indirectly when needed.
 
-  Normally, this task is executed indirectly when needed.
+    -->
 
--->
+    <target name="prepare">
 
-  <target name="prepare">
+        <!-- Create build directories as needed -->
+        <mkdir  dir="${build.home}"/>
+        <mkdir  dir="${build.home}/WEB-INF"/>
+        <mkdir  dir="${build.home}/WEB-INF/classes"/>
 
-    <!-- Create build directories as needed -->
-    <mkdir  dir="${build.home}"/>
-    <mkdir  dir="${build.home}/WEB-INF"/>
-    <mkdir  dir="${build.home}/WEB-INF/classes"/>
 
+        <!-- Copy static content of this web application -->
+        <copy todir="${build.home}">
+            <fileset dir="${web.home}"/>
+        </copy>
 
-    <!-- Copy static content of this web application -->
-    <copy todir="${build.home}">
-      <fileset dir="${web.home}"/>
-    </copy>
+        <!-- Copy external dependencies as required -->
+        <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+        <mkdir  dir="${build.home}/WEB-INF/lib"/>
+        <!--
+            <copy todir="${build.home}/WEB-INF/lib" file="${foo.jar}"/>
+        -->
 
-    <!-- Copy external dependencies as required -->
-    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
-    <mkdir  dir="${build.home}/WEB-INF/lib"/>
-<!--
-    <copy todir="${build.home}/WEB-INF/lib" file="${foo.jar}"/>
--->
+        <!-- Copy static files from external dependencies as needed -->
+        <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
 
-    <!-- Copy static files from external dependencies as needed -->
-    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
+    </target>
 
-  </target>
 
+    <!-- ==================== Reload Target =================================== -->
 
-<!-- ==================== Reload Target =================================== -->
+    <!--
 
-<!--
+      The "reload" target tells the specified Tomcat installation to dynamically
+      reload this web application, to reflect changes in the underlying classes or
+      the "web.xml" deployment descriptor.
 
-  The "reload" target tells the specified Tomcat installation to dynamically
-  reload this web application, to reflect changes in the underlying classes or
-  the "web.xml" deployment descriptor.
+    -->
 
--->
+    <target name="reload" depends="compile"
+            description="Reload application on servlet container">
 
-  <target name="reload" depends="compile"
-   description="Reload application on servlet container">
+        <reload url="${manager.url}"
+                username="${manager.username}"
+                password="${manager.password}"
+                path="${app.path}"/>
 
-    <reload url="${manager.url}"
-       username="${manager.username}"
-       password="${manager.password}"
-           path="${app.path}"/>
+    </target>
 
-  </target>
 
+    <!-- ==================== Remove Target =================================== -->
 
-<!-- ==================== Remove Target =================================== -->
+    <!--
 
-<!--
+      The "remove" target tells the specified Tomcat installation to dynamically
+      remove this web application from service.
 
-  The "remove" target tells the specified Tomcat installation to dynamically
-  remove this web application from service.
+      NOTE:  This is the logical opposite of the "install" target.
 
-  NOTE:  This is the logical opposite of the "install" target.
+    -->
 
--->
+    <target name="remove"
+            description="Remove application on servlet container">
 
-  <target name="remove"
-   description="Remove application on servlet container">
+        <remove url="${manager.url}"
+                username="${manager.username}"
+                password="${manager.password}"
+                path="${app.path}"/>
 
-    <remove url="${manager.url}"
-       username="${manager.username}"
-       password="${manager.password}"
-           path="${app.path}"/>
-
-  </target>
+    </target>
 </project>

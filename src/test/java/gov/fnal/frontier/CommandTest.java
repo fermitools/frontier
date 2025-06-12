@@ -2,6 +2,8 @@ package gov.fnal.frontier;
 
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
+
+import gov.fnal.frontier.Command;
 import junit.framework.TestCase;
 
 public class CommandTest extends TestCase {
