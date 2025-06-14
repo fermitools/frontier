@@ -1,0 +1,129 @@
+plugins {
+    id 'java'
+    id 'war'
+}
+
+group = 'gov.fnal'
+version = '4.0'
+// Set java version for compilation compatibility
+// sourceCompatibility = '21'
+ext {
+    appName = 'Frontier'
+    appVersion = '4.0'
+    catalinaHome = System.getenv('CATALINA_HOME') ?: '/path/to/tomcat'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations.all {
+    exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
+}
+
+dependencies {
+    // Oracle JDBC driver (include in WAR)
+    implementation 'com.oracle.database.jdbc:ojdbc11:21.11.0.0'  // Explicit version
+    // Jakarta Servlet API (Tomcat 11 uses Jakarta EE 10)
+    // compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    // Add dependencies here, e.g., servlet API
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
+    }
+}
+
+
+// Define reusable paths using layout API
+def distDir = layout.buildDirectory.dir('dist')
+def webDir = layout.buildDirectory.dir('web')
+def testDataDir = layout.buildDirectory.dir('test/data')
+def testReportsDir = layout.buildDirectory.dir('test/reports')
+
+
+war {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // or WARN, INCLUDE, FAIL
+    archiveBaseName = appName
+    archiveVersion = ''
+    destinationDirectory = distDir
+    webAppDirectory = file('web')
+    from configurations.runtimeClasspath.collect {
+        it.isDirectory() ? it : zipTree(it)
+    }
+}
+
+
+tasks.register('prepare', Copy) {
+    from 'web'
+    into webDir
+}
+
+tasks.register('customClean', Delete) {
+    delete layout.buildDirectory
+}
+
+
+tasks.register('testinit') {
+    doLast {
+        delete testDataDir, testReportsDir
+        mkdir testDataDir
+        mkdir testReportsDir
+    }
+}
+
+tasks.register('testcompile', Copy) {
+    dependsOn 'classes', 'testinit'
+    from 'src/test'
+    into layout.buildDirectory.dir('test')
+    exclude '**/*.java'
+}
+
+
+tasks.test {
+    useJUnit()
+    reports {
+        junitXml {
+            required = true           // ✅ Correct
+            outputLocation = testDataDir  // ✅ Correct
+        }
+        html {
+            required = true          // ✅ Correct
+            outputLocation = testReportsDir // ✅ Correct
+        }
+    }
+}
+
+tasks.register('dist', Copy) {
+    dependsOn 'classes'
+    from 'docs'
+    into distDir.dir('docs')
+
+    doLast {
+        def warFile = war.archiveFile.get().asFile
+        warFile.copyTo(distDir.file("${appName}.war").get().asFile)
+    }
+}
+
+tasks.register('localinstall', Copy) {
+    dependsOn 'dist'
+    from distDir.file("${appName}.war")
+    into file("$catalinaHome/webapps")
+}
+
+tasks.register('localuninstall', Delete) {
+    delete file("$catalinaHome/webapps/${appName}.war")
+    delete file("$catalinaHome/webapps/${appName}")
+}
+
+
