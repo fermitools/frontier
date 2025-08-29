@@ -13,7 +13,6 @@ package gov.fnal.frontier.plugin;
 
 import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.*;
-import javax.servlet.ServletOutputStream;
 
 public interface FrontierPlugin
  {

@@ -16,7 +16,6 @@ import gov.fnal.frontier.plugin.*;
 import gov.fnal.frontier.codec.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import java.sql.*;
 import javax.sql.DataSource;
 import java.util.Hashtable;
@@ -25,7 +24,6 @@ import com.jcraft.jzlib.*;
 import java.util.regex.*;
 import java.util.Iterator;
 import java.util.Date;
-import javax.servlet.ServletOutputStream;
 
 public class SQLPlugin implements FrontierPlugin
  {

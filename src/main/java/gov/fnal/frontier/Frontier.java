@@ -12,8 +12,8 @@
 package gov.fnal.frontier;
 
 import gov.fnal.frontier.codec.*;
-import javax.servlet.*;
-import javax.servlet.http.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import java.util.*;
 import java.util.regex.*;
 import java.text.SimpleDateFormat;

@@ -12,8 +12,8 @@
 package gov.fnal.frontier;
 
 import java.io.*;
-import javax.servlet.*;
-import javax.servlet.http.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
 import com.jcraft.jzlib.*;
@@ -25,7 +25,7 @@ public final class FrontierServlet extends HttpServlet
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
-  private static Boolean mutex=new Boolean(true);
+  private static Boolean mutex=Boolean.TRUE;
   
   public static String frontierVersion() {return frontierVersion;}
   public static String xmlVersion() {return xmlVersion;}

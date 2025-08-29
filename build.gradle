@@ -22,7 +22,9 @@ dependencies {
     implementation 'com.oracle.database.jdbc:ojdbc11:21.11.0.0'  // Explicit version
 
     // Add dependencies here, e.g., servlet API
-    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    // Jakarta Servlet API (Tomcat 11 uses Jakarta EE 10)
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
     testImplementation 'junit:junit:4.13.2'
 }
 

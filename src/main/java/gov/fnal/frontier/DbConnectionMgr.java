@@ -12,14 +12,12 @@
 package gov.fnal.frontier;
 
 import gov.fnal.frontier.plugin.*;
-import java.io.OutputStream;
-import java.io.PrintStream;
+
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 
 /**
  * Singleton class which provides database connections.  The specific
@@ -95,9 +93,9 @@ public class DbConnectionMgr
    }
 
   private static DbConnectionMgr instance=null;
-  private static Boolean mutex=new Boolean(true);
+  private static Boolean mutex=Boolean.TRUE;
   private ReentrantLock acquireLock=new ReentrantLock(true);
-  private Boolean counterMutex=new Boolean(true);
+  private Boolean counterMutex=Boolean.TRUE;
   private int numAcquiredConnections=0;
   // Could use a list instead of a HashMap because there will be only
   //  a small number of entries, but a hashed interface is convenient.
