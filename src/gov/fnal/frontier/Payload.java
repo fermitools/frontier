@@ -16,7 +16,7 @@ import java.io.*;
 import gov.fnal.frontier.codec.*;
 import gov.fnal.frontier.fdo.*;
 import java.util.*;
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 import javax.crypto.Cipher;
 
 public class Payload

@@ -15,7 +15,7 @@ import java.io.*;
 import gov.fnal.frontier.fdo.*;
 import gov.fnal.frontier.plugin.*;
 import java.util.*;
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
 
 
 public class PluginDataObject implements FrontierDataObject

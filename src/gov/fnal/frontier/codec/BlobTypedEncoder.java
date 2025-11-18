@@ -114,12 +114,12 @@ public class BlobTypedEncoder implements Encoder
       else
        {
 	Integer zipint;
-	try {zipint=new Integer(zipparam);}
+	try {zipint=Integer.valueOf(zipparam);}
 	catch(Exception e)
 	 {
 	  throw new Exception("BLOB zip level "+zipparam+" not an integer");
 	 }
-        ziplevel=zipint.intValue();
+        ziplevel= zipint;
         if ((ziplevel < 0) || (ziplevel > 9))
 	 {
           throw new Exception("BLOB zip level less than 0 or greater than 9");
