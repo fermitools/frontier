@@ -25,7 +25,7 @@ public final class FrontierServlet extends HttpServlet
   private static final String xmlVersion="1.0";
   private static int count_total=0;
   private static int count_current=0;
-  private static final Object mutex = new Object();
+  private static final Object mutex=new Object();
 
   public static String frontierVersion() {return frontierVersion;}
   public static String xmlVersion() {return xmlVersion;}
