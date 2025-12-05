@@ -297,6 +297,7 @@
           destdir="${build.home}/WEB-INF/classes"
             debug="${compile.debug}"
       deprecation="${compile.deprecation}"
+includeAntRuntime="false"
          optimize="${compile.optimize}">
         <classpath refid="compile.classpath"/>
       <compilerarg value="-Xlint:unchecked"/>
