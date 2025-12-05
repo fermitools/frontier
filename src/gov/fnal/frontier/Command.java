@@ -12,7 +12,7 @@
 package gov.fnal.frontier;
 
 import java.util.*;
-import javax.servlet.http.*;
+import jakarta.servlet.http.*;
 import gov.fnal.frontier.fdo.*;
 
 

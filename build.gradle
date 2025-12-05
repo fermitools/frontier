@@ -18,16 +18,15 @@ repositories {
 }
 
 configurations.all {
-    exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
+    // exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
 }
 
 dependencies {
     // Oracle JDBC driver (include in WAR)
     implementation 'com.oracle.database.jdbc:ojdbc11:21.11.0.0'  // Explicit version
     // Jakarta Servlet API (Tomcat 11 uses Jakarta EE 10)
-    // compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
-    // Add dependencies here, e.g., servlet API
-    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
     testImplementation 'junit:junit:4.13.2'
 }
 
