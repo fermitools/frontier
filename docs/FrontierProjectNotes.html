@@ -133,6 +133,9 @@ Prepare and release the sources:
 <br>
 <tt>scp Frontier_servlet__`echo $SERVLETVERSION|tr _ .`__src.tar.gz dbfrontier@frontier.cern.ch:dist</tt>
 <li>
+Download the Jakarta EE migration tool: https://tomcat.apache.org/download-migration.cgi
+<br>
+<li>
 Prepare and release the binaries:
 <br>
 <tt>cd Frontier_$SERVLETVERSION</tt>
@@ -143,6 +146,10 @@ Prepare and release the binaries:
 <br>
 (where CATALINA_HOME is set to the top level directory of a tomcat
 installation)
+<br>
+<tt>java -jar jakartaee-migration-1.0.10/lib/jakartaee-migration-1.0.10.jar dist/Frontier.war dist/FrontierJEE.war
+<br>
+<tt>mv dist/FrontierJEE.war dist/Frontier.war
 <br>
 <tt>scp dist/Frontier.war dbfrontier@frontier.cern.ch:dist/Frontier_`echo $SERVLETVERSION|tr _ .`.war</tt>
 <br>
