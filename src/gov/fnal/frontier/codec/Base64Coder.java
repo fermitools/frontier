@@ -128,7 +128,17 @@ public static int encode (byte[] in, int ip, int iLen, byte[] out, int op) {
 public static byte[] decode (byte[] in) {
    int iLen = in.length;
    while (iLen > 0 && in[iLen-1] == '=') iLen--;
-   int oLen = ((iLen*3)+2) / 4;
+
+   // Decoding converts every 4 encoded bytes into 3 bytes. The encoded value was padded
+   // to make its length a multiple of 4. Each encoded byte is decoded into a 6-bit word.
+   // For some integer n, original iLen must be 4n.  After any padding is stripped
+   // off, decoding will transform input length to output length as follows, with m=n-1:
+   // 4n -> 3n
+   // 4m+2 -> 3m+1 (in the formula below, 3m+int(6/4) = 3m+1) (4 bits dropped at end)
+   // 4m+3 -> 3m+2 (in the formula below, 3m+int(9/4) = 3m+2) (2 bits dropped at end)
+
+   int oLen = (iLen * 3) / 4;
+
    byte[] out = new byte[oLen];
    int ip = 0;
    int op = 0;

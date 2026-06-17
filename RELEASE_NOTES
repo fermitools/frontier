@@ -1,5 +1,8 @@
 $Id$
 
+3.44 2026/06/16 (cvuosalo)
+    - Fix Base64 decoding of keys so the output size is correct.
+
 3.43 2026/05/21 (cvuosalo)
     - Migrate Frontier.war to Jakarta-EE to support
       frontier-tomcat-10.1.54.
