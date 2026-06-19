@@ -92,6 +92,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
   int zipped_size=0;
   unsigned char *p;
   FrontierMemBuf *mb;
+  int lockret;
   
   fpl->blob = 0;
   fpl->error = FRONTIER_OK;
@@ -147,6 +148,8 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     fpl->error=FRONTIER_EMEM;
     goto errcleanup;
    }
+  // This is a time-consuming loop so release a thread lock
+  lockret=frontier_unlock();
   mb=fpl->md->firstbuf;
   p=fpl->blob;
   while(mb!=0)
@@ -155,6 +158,7 @@ int frontierPayload_finalize(FrontierPayload *fpl)
     p+=mb->len;
     mb=mb->nextbuf;
    }
+  if(lockret==0)frontier_lock();
 
   zipped_size=fpl->md->zipped_total;
   frontierMemData_delete(fpl->md);
